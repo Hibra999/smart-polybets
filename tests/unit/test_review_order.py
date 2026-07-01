@@ -1,8 +1,6 @@
 from datetime import datetime, timezone
 from decimal import Decimal
 
-import pytest
-
 from core.types import OrderSide, OrderType
 from execution.functions.review_order import (
     build_trade_order_from_decision,
@@ -35,6 +33,13 @@ def test_rejects_started_event():
     late = datetime(2026, 6, 20, 14, 0, tzinfo=timezone.utc)  # después del kickoff 13:00
     ok, reason = validate_placeable(_decision(), now=late, live_price=Decimal("0.58"))
     assert ok is False and "empez" in reason.lower()
+
+
+def test_rejects_missing_event_start_utc():
+    # Sin timestamp del evento → no colocable (no se puede validar expiración).
+    ok, reason = validate_placeable(_decision(opp={"event_start_utc": None}),
+                                    now=NOW, live_price=Decimal("0.58"))
+    assert ok is False and "event_start_utc" in reason.lower()
 
 
 def test_rejects_missing_token():

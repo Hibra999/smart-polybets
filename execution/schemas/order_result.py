@@ -11,7 +11,7 @@ class OrderResult(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     order_id: str
-    status: str                  # "filled" | "partial" | "open" | "rejected" | "stubbed"
+    status: str                  # "live"|"dry_run"|"cancelled"|"rejected"|"error"|"filled"|"partial"
     filled_size_usdc: Decimal
     avg_price: Decimal | None
     tx_hash: str | None = None

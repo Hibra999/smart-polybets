@@ -32,7 +32,9 @@ def validate_placeable(
     if not token:
         return False, "sin token_id en la decisión"
     start = opp.get("event_start_utc")
-    if start and _parse_utc(start) <= now:
+    if not start:
+        return False, "sin event_start_utc en la decisión"
+    if _parse_utc(start) <= now:
         return False, "el evento ya empezó/terminó"
     if live_price is None or to_decimal(live_price) <= 0:
         return False, "no se pudo repreciar (best_ask live no disponible)"

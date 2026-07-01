@@ -103,7 +103,8 @@ def cmd_approve(key: str, *, decisions: dict, client: LocalStateClient,
         return
 
     result = broker.place(order)
-    if result.status != "error":
+    # Sólo una colocación REAL (live) actualiza el estado; dry_run/rejected/error no.
+    if result.status == "live":
         client.mark_executed(full_key, result.model_dump(mode="json"))
     print(f"    → {result.status}  order_id={result.order_id}  raw={result.raw.get('note') or result.raw.get('error') or ''}")
 
