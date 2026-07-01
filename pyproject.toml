@@ -1,0 +1,66 @@
+[project]
+name = "sports-quant-trading"
+version = "0.3.0"
+description = "Hedge fund sintético asistido por Claude para mercados de predicción deportivos en Polymarket"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.6",
+    "requests>=2.31",
+]
+
+[project.optional-dependencies]
+# cvxpy es opcional: optimization/ degrada a Kelly fraccional si no está disponible.
+optimize = ["cvxpy>=1.4"]
+# live: ejecución real en Polymarket CLOB V2 (SDK oficial, colateral pUSD).
+# Sin esto, execution/ corre en dry-run. Instalar: pip install --pre polymarket-client
+live = ["polymarket-client>=0.1.0b8"]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "ruff>=0.4",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+# El repo usa namespace plano: cada área es un paquete top-level importable.
+packages = [
+    "core",
+    "adapters",
+    "adapters.football",
+    "adapters.american_football",
+    "research",
+    "research.functions",
+    "research.schemas",
+    "risk",
+    "risk.functions",
+    "risk.schemas",
+    "optimization",
+    "optimization.functions",
+    "optimization.schemas",
+    "execution",
+    "execution.functions",
+    "execution.schemas",
+    "portfolio",
+    "portfolio.functions",
+    "portfolio.schemas",
+    "editorial",
+    "editorial.functions",
+    "editorial.schemas",
+    "tournaments",
+    "agent",
+    "agent.tools",
+    "agent.workflows",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

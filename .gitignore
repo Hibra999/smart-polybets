@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Datos generados (las DB se construyen con scripts/build_db.py)
+data/**/*.sqlite
+data/**/*.sqlite-journal
+
+# Estado local del agente (idempotencia/registro de apuestas)
+data/agent_state.json
+
+# Reportes generados por editorial/
+editorial/reports/**/*.md
+!editorial/reports/.gitkeep
+
+# Entorno
+.env

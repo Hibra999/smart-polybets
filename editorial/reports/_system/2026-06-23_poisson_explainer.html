@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cómo funciona el modelo de goles</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+ :root{--bg:#0F1117;--surface:#1A1D27;--surface-alt:#22262F;--border:#2D3340;
+   --text:#E2E8F0;--muted:#94A3B8;--blue:#2563EB;--cyan:#22D3EE;--green:#10B981;--amber:#F59E0B}
+ *{box-sizing:border-box} html{scroll-behavior:smooth}
+ body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;
+   line-height:1.7;-webkit-font-smoothing:antialiased}
+ .num{font-family:'JetBrains Mono',ui-monospace,monospace} .muted{color:var(--muted)}
+ .wrap{max-width:820px;margin:0 auto;padding:56px 24px 80px}
+ .eyebrow{font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--cyan)}
+ h1{font-size:clamp(2.2rem,5vw,3.2rem);font-weight:900;letter-spacing:-.025em;line-height:1.05;margin:.4rem 0 .6rem}
+ .lead{font-size:1.15rem;color:var(--muted);max-width:680px}
+ section{margin-top:56px;scroll-margin-top:24px}
+ .step{font-size:.78rem;font-weight:700;color:var(--blue);letter-spacing:.08em;text-transform:uppercase}
+ h2{font-size:1.7rem;font-weight:800;letter-spacing:-.015em;margin:.3rem 0 .6rem}
+ p{margin:.6rem 0}
+ .formula{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+   padding:18px 22px;font-family:'JetBrains Mono',monospace;font-size:.95rem;margin:18px 0;
+   overflow-x:auto;line-height:1.9}
+ .formula .v{color:var(--cyan)} .formula .c{color:var(--muted)}
+ .ex{border-left:3px solid var(--cyan);background:#22D3EE0c;border-radius:0 10px 10px 0;
+   padding:14px 18px;margin:18px 0}
+ .ex .tag{font-size:.7rem;font-weight:700;color:var(--cyan);text-transform:uppercase;letter-spacing:.06em}
+ .ex table{width:100%;border-collapse:collapse;margin-top:8px;font-size:.9rem}
+ .ex td{padding:4px 0} .ex td:last-child{text-align:right}
+ .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:18px 0}
+ .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px}
+ .card .k{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+ .card .val{font-size:1.6rem;font-weight:800;color:var(--cyan)}
+ table.data{width:100%;border-collapse:collapse;font-size:.88rem;margin-top:8px}
+ table.data th{text-align:left;color:var(--muted);font-weight:600;font-size:.68rem;text-transform:uppercase;
+   letter-spacing:.04em;padding:8px;border-bottom:1px solid var(--border)}
+ table.data td{padding:8px;border-bottom:1px solid var(--border)}
+ .tbl{border:1px solid var(--border);border-radius:12px;overflow:hidden}
+ .pill{display:inline-block;font-size:.72rem;color:var(--muted);background:var(--surface-alt);
+   border:1px solid var(--border);border-radius:9999px;padding:4px 12px;margin:3px 4px 3px 0}
+ .warn{border-left:3px solid var(--amber);background:#F59E0B0c;border-radius:0 10px 10px 0;padding:14px 18px;margin:18px 0}
+ .warn b{color:var(--amber)}
+ footer{margin-top:64px;color:var(--muted);font-size:.82rem;border-top:1px solid var(--border);padding-top:24px}
+ @media(max-width:560px){.grid2{grid-template-columns:1fr}}
+</style></head><body><div class="wrap">
+
+ <div class="eyebrow">Sports Quant Trading, modelo complementario</div>
+ <h1>Cómo funciona el modelo de goles</h1>
+ <p class="lead">Un modelo aparte que no predice quién gana, sino cuántos goles se
+ anotan. Eso abre apuestas de Over/Under, ambos anotan y marcador. Aquí está, paso
+ a paso y sin matemática de más, cómo llega a sus números.</p>
+
+ <section>
+   <div class="step">La idea</div>
+   <h2>Los goles llegan como gotas de lluvia</h2>
+   <p>Un gol es un evento raro que puede pasar en cualquier minuto. Cuando algo así
+   se repite a un ritmo promedio conocido, la estadística tiene una herramienta
+   exacta para eso: la <b>distribución de Poisson</b>. Si sé que un equipo anota en
+   promedio, digamos, 2 goles por partido, Poisson me dice la probabilidad de que
+   anote 0, 1, 2, 3 o más. Todo el modelo se reduce a estimar bien ese promedio
+   para cada lado y dejar que Poisson haga el resto.</p>
+ </section>
+
+ <section>
+   <div class="step">Paso 1</div>
+   <h2>Ataque y defensa de cada equipo</h2>
+   <p>Primero mido qué tan goleador y qué tan frágil es cada equipo, comparado con
+   el promedio del torneo. Dos números por equipo:</p>
+   <div class="formula">
+     <span class="v">ataque</span> = goles que anota por partido / promedio de la liga&nbsp;&nbsp;<span class="c">(&gt;1 anota más que la media)</span><br>
+     <span class="v">defensa</span> = goles que recibe por partido / promedio de la liga&nbsp;&nbsp;<span class="c">(&gt;1 defiende peor)</span>
+   </div>
+   <div class="ex">
+     <span class="tag">Ejemplo real, England vs Ghana</span>
+     <table>
+       <tr><td>England: ataque 1.478 (anota más que la media), defensa 0.919 (concede menos)</td><td class="num">5 partidos</td></tr>
+       <tr><td>Ghana: ataque 1.149, defensa 1.062</td><td class="num">3 partidos</td></tr>
+     </table>
+   </div>
+ </section>
+
+ <section>
+   <div class="step">Paso 2</div>
+   <h2>Los goles esperados de este partido</h2>
+   <p>El ataque de uno choca con la defensa del otro. Multiplico el promedio de la
+   liga por el ataque del que ataca y por la defensa del que defiende:</p>
+   <div class="formula">
+     <span class="v">goles esperados local</span> = base x ataque(local) x defensa(visita)<br>
+     <span class="v">goles esperados visita</span> = base x ataque(visita) x defensa(local)<br>
+     <span class="c">base = 1.431 goles/equipo/partido (promedio del torneo)</span>
+   </div>
+   <div class="grid2">
+     <div class="card"><div class="k">England</div><div class="val num">2.246</div><div class="muted">goles esperados</div></div>
+     <div class="card"><div class="k">Ghana</div><div class="val num">1.512</div><div class="muted">goles esperados</div></div>
+   </div>
+   <p class="muted">1.431 x 1.478 x 1.062 = 2.246 para England;
+   total esperado del partido: <b class="num" style="color:var(--cyan)">3.758</b> goles.</p>
+ </section>
+
+ <section>
+   <div class="step">Paso 3</div>
+   <h2>De los goles esperados a las probabilidades</h2>
+   <p>Con los dos promedios, Poisson da la probabilidad de cada marcador exacto
+   (0-0, 1-0, 2-1, ...). Sumando las casillas correctas salen todos los mercados:</p>
+   <div class="grid2">
+     <div class="card"><div class="k">Over 2.5 goles</div><div class="val num">72.4%</div></div>
+     <div class="card"><div class="k">Ambos anotan (BTTS)</div><div class="val num">69.7%</div></div>
+   </div>
+   <p><span class="pill">Over 2.5 = sumar todos los marcadores con 3+ goles</span>
+   <span class="pill">BTTS = ambos &gt; 0</span>
+   <span class="pill">1X2 = comparar goles local vs visita</span></p>
+   <div class="ex">
+     <span class="tag">Salida del modelo, England vs Ghana</span>
+     <table>
+       <tr><td>1X2 por goles</td><td class="num">England 54.2% / empate 20.1% / Ghana 25.6%</td></tr>
+       <tr><td>Marcadores más probables</td><td class="num">2-1 (8.9%), 1-1 (7.9%), 2-2 (6.7%), 3-1 (6.7%)</td></tr>
+       <tr><td>Confianza</td><td class="num">MEDIUM</td></tr>
+     </table>
+   </div>
+ </section>
+
+ <section>
+   <div class="step">Dato fino</div>
+   <h2>Cuando hay pocos partidos, el modelo es humilde</h2>
+   <p>Un Mundial tiene pocos partidos por equipo. Si juzgara a un equipo por un solo
+   resultado, un 4-0 lo volvería "ofensivo" para siempre. Para evitarlo, las tasas
+   se <b>encogen hacia el promedio</b> (shrinkage): con pocos partidos, el equipo se
+   parece a la media de la liga; recién con más juegos se le permite despegarse. Por
+   eso los equipos sin historial (debutantes) salen con confianza baja y números
+   cercanos al promedio, en vez de exagerados.</p>
+ </section>
+
+ <section>
+   <div class="step">Corrección</div>
+   <h2>En el Mundial no hay ventaja de local</h2>
+   <p>Los datos sugerían una "ventaja local" enorme (el equipo listado primero
+   anotaba casi el doble). Pero el Mundial se juega en <b>cancha neutral</b>: ese
+   sesgo no era la cancha, era que el equipo nombrado primero suele ser el más
+   fuerte. Aplicarlo habría inflado los goles del primer equipo. El modelo lo
+   detecta y reparte parejo, así invertir local y visita solo intercambia los
+   números, sin regalarle goles a nadie.</p>
+ </section>
+
+ <section>
+   <div class="step">Los datos</div>
+   <h2>De dónde salen los promedios</h2>
+   <p>El modelo se alimenta de partidos reales con goles: el Mundial de Qatar 2022
+   completo (48 partidos) más los del Mundial 2026 ya jugados. Sobre eso ajusta el
+   ataque y la defensa de 54 selecciones.</p>
+   <p><span class="pill">Qatar 2022: 48 partidos</span>
+   <span class="pill">2026 en curso: se suman al jugarse</span>
+   <span class="pill">~2.77 goles por partido</span></p>
+ </section>
+
+ <section>
+   <div class="step">La prueba</div>
+   <h2>¿Le pega a la realidad?</h2>
+   <p>Se backtesteó prediciendo cada partido solo con los anteriores y comparando
+   contra el promedio simple. La métrica BSS mide cuánto le gana al promedio
+   (positivo = aporta):</p>
+   <div class="tbl"><table class="data"><thead><tr>
+     <th>Mercado</th><th>n</th><th>Base</th><th>BSS</th><th></th>
+   </tr></thead><tbody><tr><td>Over 1.5</td><td class="num">16</td><td class="num">87.5%</td><td class="num" style="color:#94A3B8;font-weight:700">-0.066</td><td style="color:#94A3B8">sin skill</td></tr><tr><td>Over 2.5</td><td class="num">16</td><td class="num">68.8%</td><td class="num" style="color:#22D3EE;font-weight:700">+0.138</td><td style="color:#22D3EE">tiene skill</td></tr><tr><td>Over 3.5</td><td class="num">16</td><td class="num">37.5%</td><td class="num" style="color:#94A3B8;font-weight:700">-0.065</td><td style="color:#94A3B8">sin skill</td></tr><tr><td>BTTS</td><td class="num">16</td><td class="num">68.8%</td><td class="num" style="color:#22D3EE;font-weight:700">+0.045</td><td style="color:#22D3EE">tiene skill</td></tr></tbody></table></div>
+   <div class="warn"><b>Lo honesto:</b> el modelo muestra skill real en Over/Under
+   2.5 (la línea principal), pero la muestra es chica (n=16) y ganarle al promedio
+   histórico NO es ganarle a la línea de Polymarket, que ya lo incorpora. Es un buen
+   modelo de research; para apostarlo de verdad hay que validarlo hacia adelante
+   (registrar predicción vs línea live y medir el resultado real).</div>
+ </section>
+
+ <section>
+   <div class="step">Resumen</div>
+   <h2>Qué abre y qué no</h2>
+   <p><b>Abre:</b> Over/Under total y por equipo, ambos anotan, marcador exacto,
+   1X2 derivado de goles, hándicap. <b>No hace:</b> props de jugador, ni incorpora
+   lesiones, alineaciones o clima. Es deliberadamente simple: estima goles a partir
+   de la fuerza histórica de ataque y defensa, nada más.</p>
+ </section>
+
+ <footer>
+   Modelo Poisson de goles, complementario al match-winner (Elo+Bayes+TrueSkill).
+   Generado por el agente el 2026-06-23 09:33 UTC. No es consejo financiero.
+ </footer>
+</div></body></html>
