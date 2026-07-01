@@ -26,6 +26,9 @@ python scripts/wc_suggestions.py --date 2026-06-20        # tabla de sugerencias
 python scripts/portfolio.py                               # portafolio + trades (abiertos/cerrados/pendientes)
 python scripts/account.py                                # saldo, posiciones y órdenes live (requiere .[live]+key)
 python scripts/account.py --reconcile                    # drift vs estado local + ajusta bankroll
+python scripts/orders.py --list                          # REVIEWs pendientes + órdenes abiertas live
+python scripts/orders.py --approve <key> [--live]        # coloca la orden de una REVIEW (repricing + confirmación)
+python scripts/orders.py --cancel <order_id> [--live]    # cancela una orden abierta
 ```
 
 `portfolio.py` lee el estado local (`data/agent_state.json`) y asienta el PnL de los
