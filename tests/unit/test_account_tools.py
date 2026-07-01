@@ -3,7 +3,12 @@ from datetime import datetime, timezone
 from decimal import Decimal
 
 from agent.tools import account_tools
-from portfolio.schemas.account import AccountBalance, LivePosition, OpenOrder
+from portfolio.schemas.account import (
+    AccountBalance,
+    ClosedPositionLive,
+    LivePosition,
+    OpenOrder,
+)
 
 
 class FakeSource:
@@ -18,6 +23,10 @@ class FakeSource:
     def get_open_orders(self):
         return [OpenOrder(order_id="o1", condition_id="0xa", token_id="1",
                           side="BUY", price=Decimal("0.55"), size_shares=Decimal("20"))]
+
+    def get_closed_positions(self, limit=6):
+        return [ClosedPositionLive(condition_id="0xb", token_id="2", outcome="YES",
+                                   avg_price=Decimal("0.40"), realized_pnl=Decimal("12.50"))][:limit]
 
 
 def _decisions():
@@ -34,3 +43,9 @@ def test_snapshot_tags_and_marks():
     assert pos.unrealized_pnl == Decimal("10.0")   # marked
     assert snap["open_orders"][0].event_id == "wc_49"
     assert snap["balance"].usdc_balance == Decimal("1000")
+    assert snap["closed"][0].realized_pnl == Decimal("12.50")
+
+
+def test_get_closed_positions_respects_limit():
+    assert account_tools.get_closed_positions(FakeSource(), limit=0) == []
+    assert len(account_tools.get_closed_positions(FakeSource(), limit=6)) == 1

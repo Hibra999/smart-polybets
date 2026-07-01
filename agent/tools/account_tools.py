@@ -9,7 +9,12 @@ from portfolio.functions.account_reconcile import (
     tag_positions,
 )
 from portfolio.functions.account_source import AccountSource
-from portfolio.schemas.account import AccountBalance, LivePosition, OpenOrder
+from portfolio.schemas.account import (
+    AccountBalance,
+    ClosedPositionLive,
+    LivePosition,
+    OpenOrder,
+)
 
 
 def get_balance(source: AccountSource) -> AccountBalance:
@@ -47,10 +52,16 @@ def get_open_orders(source: AccountSource, *,
     return out
 
 
+def get_closed_positions(source: AccountSource, *, limit: int = 6) -> list[ClosedPositionLive]:
+    return source.get_closed_positions(limit=limit)
+
+
 def account_snapshot(source: AccountSource, *, price_of=None,
-                     decisions: list[dict] | None = None) -> dict[str, Any]:
+                     decisions: list[dict] | None = None,
+                     closed_limit: int = 6) -> dict[str, Any]:
     return {
         "balance": get_balance(source),
         "positions": get_positions(source, price_of=price_of, decisions=decisions),
         "open_orders": get_open_orders(source, decisions=decisions),
+        "closed": get_closed_positions(source, limit=closed_limit),
     }

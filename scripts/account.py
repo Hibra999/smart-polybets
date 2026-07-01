@@ -21,8 +21,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core.console import enable_utf8
+from core.env import load_env
 
 enable_utf8()  # consola Windows: stdout/stderr en UTF-8
+load_env(Path(__file__).resolve().parent.parent / ".env")  # POLYMARKET_PRIVATE_KEY, etc.
 
 from agent.tools import account_tools
 from core.exceptions import AccountUnavailableError
@@ -48,13 +50,14 @@ def _match_filter(tag_event, tag_tournament, event, tournament) -> bool:
 
 
 def run(state_path: str, bankroll: float, event: str | None,
-        tournament: str | None, do_reconcile: bool, as_json: bool) -> None:
+        tournament: str | None, do_reconcile: bool, as_json: bool, closed_n: int) -> None:
     client = LocalStateClient(state_path, bankroll_usdc=bankroll)
     decisions = list(client._state.get("decisions", {}).values())
     source = PolymarketAccountSource()
 
     try:
-        snap = account_tools.account_snapshot(source, price_of=None, decisions=decisions)
+        snap = account_tools.account_snapshot(
+            source, price_of=None, decisions=decisions, closed_limit=closed_n)
     except AccountUnavailableError as exc:
         print(f"\n  Cuenta live no disponible: {exc}")
         print('  (instala el extra live: pip install --pre -e ".[live]" y define POLYMARKET_PRIVATE_KEY)\n')
@@ -64,6 +67,7 @@ def run(state_path: str, bankroll: float, event: str | None,
                  if _match_filter(p.event_id, p.tournament_id, event, tournament)]
     orders = [o for o in snap["open_orders"]
               if _match_filter(o.event_id, o.tournament_id, event, tournament)]
+    closed = snap["closed"]
     balance = snap["balance"]
 
     if do_reconcile:
@@ -92,26 +96,39 @@ def run(state_path: str, bankroll: float, event: str | None,
             "balance": balance.model_dump(mode="json"),
             "positions": [p.model_dump(mode="json") for p in positions],
             "open_orders": [o.model_dump(mode="json") for o in orders],
+            "closed": [c.model_dump(mode="json") for c in closed],
         }, indent=2, default=str))
         return
 
-    print(f"\n=== Cuenta Polymarket (as_of {balance.as_of.isoformat(timespec='minutes')}) ===")
-    print(f"    saldo pUSD: {_dec(balance.usdc_balance)}")
+    def _tag(obj) -> str:
+        return obj.title or obj.event_id or (obj.condition_id[:12] + "…")
 
-    print(f"\n  ── POSICIONES ({len(positions)}) ─────────────────────────────────────")
-    print(f"  {'EVENTO/COND':<20}{'OUT':<5}{'SHARES':>10}{'ENTRY':>7}{'PRICE':>7}{'uPnL':>10}")
+    print(f"\n=== Cuenta Polymarket (as_of {balance.as_of.isoformat(timespec='minutes')}) ===")
+    print(f"    saldo pUSD: {_dec(balance.usdc_balance)}"
+          + (f"  ·  wallet {balance.address}" if balance.address else ""))
+
+    upnl = sum((p.unrealized_pnl for p in positions if p.unrealized_pnl is not None), Decimal("0"))
+    print(f"\n  ── POSICIONES ABIERTAS ({len(positions)}) · uPnL {_pnl(upnl)} ──────────────")
+    print(f"  {'MERCADO':<34}{'OUT':<5}{'SHARES':>10}{'ENTRY':>7}{'PRICE':>7}{'uPnL':>10}")
     for p in positions:
-        tag = p.event_id or (p.condition_id[:10] + "…")
         price = "  n/d" if p.current_price is None else f"{p.current_price:.2f}"
-        print(f"  {str(tag)[:19]:<20}{p.outcome[:4]:<5}{p.size_shares:>10,.2f}"
+        print(f"  {_tag(p)[:33]:<34}{p.outcome[:4]:<5}{p.size_shares:>10,.2f}"
               f"{p.avg_entry_price:>7.2f}{price:>7}{_pnl(p.unrealized_pnl):>10}")
 
-    print(f"\n  ── ÓRDENES ABIERTAS ({len(orders)}) ──────────────────────────────────")
-    print(f"  {'EVENTO/COND':<20}{'SIDE':<5}{'PRICE':>7}{'SIZE':>10}{'MATCHED':>10}")
-    for o in orders:
-        tag = o.event_id or (o.condition_id[:10] + "…")
-        print(f"  {str(tag)[:19]:<20}{o.side[:4]:<5}{o.price:>7.2f}"
-              f"{o.size_shares:>10,.2f}{o.size_matched:>10,.2f}")
+    if orders:
+        print(f"\n  ── ÓRDENES ABIERTAS ({len(orders)}) ──────────────────────────────────")
+        print(f"  {'MERCADO':<34}{'SIDE':<5}{'PRICE':>7}{'SIZE':>10}{'MATCHED':>10}")
+        for o in orders:
+            print(f"  {_tag(o)[:33]:<34}{o.side[:4]:<5}{o.price:>7.2f}"
+                  f"{o.size_shares:>10,.2f}{o.size_matched:>10,.2f}")
+
+    rpnl = sum((c.realized_pnl for c in closed), Decimal("0"))
+    print(f"\n  ── ÚLTIMAS {len(closed)} CERRADAS · PnL realizado {_pnl(rpnl)} ──────────────")
+    print(f"  {'FECHA':<12}{'MERCADO':<34}{'OUT':<5}{'ENTRY':>7}{'PnL':>10}")
+    for c in closed:
+        when = c.closed_at.isoformat()[:10] if c.closed_at else "?"
+        print(f"  {when:<12}{_tag(c)[:33]:<34}{c.outcome[:4]:<5}"
+              f"{c.avg_price:>7.2f}{_pnl(c.realized_pnl):>10}")
     print()
 
 
@@ -122,9 +139,10 @@ def main() -> None:
     ap.add_argument("--event", default=None, help="filtra por event_id")
     ap.add_argument("--tournament", default=None, help="filtra por tournament_id")
     ap.add_argument("--reconcile", action="store_true", help="drift vs estado local + ajusta bankroll")
+    ap.add_argument("--closed", type=int, default=6, help="cuántas posiciones cerradas mostrar")
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args()
-    run(a.state, a.bankroll, a.event, a.tournament, a.reconcile, a.json)
+    run(a.state, a.bankroll, a.event, a.tournament, a.reconcile, a.json, a.closed)
 
 
 if __name__ == "__main__":

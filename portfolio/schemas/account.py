@@ -24,6 +24,7 @@ class LivePosition(BaseModel):
     size_shares: Decimal
     avg_entry_price: Decimal        # precio medio de entrada (0-1)
     current_price: Decimal | None = None   # best_bid live (valor de salida)
+    title: str | None = None        # nombre legible del mercado (del SDK live)
     event_id: str | None = None
     tournament_id: str | None = None
     strategy_id: str | None = None
@@ -39,6 +40,22 @@ class LivePosition(BaseModel):
         if self.current_price is None:
             return None
         return self.current_price * self.size_shares
+
+
+class ClosedPositionLive(BaseModel):
+    """Posición ya cerrada/resuelta en la wallet (historial live). PnL realizado."""
+
+    model_config = ConfigDict(frozen=True)
+
+    condition_id: str
+    token_id: str
+    outcome: str
+    avg_price: Decimal
+    realized_pnl: Decimal
+    current_price: Decimal | None = None
+    closed_at: datetime | None = None
+    title: str | None = None
+    event_id: str | None = None
 
 
 class OpenOrder(BaseModel):
