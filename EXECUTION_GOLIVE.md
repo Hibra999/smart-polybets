@@ -24,6 +24,8 @@ Sólo los **AUTO** se colocan. REVIEW espera aprobación humana; DISCARD/SKIP no
 python scripts/place_bets.py --date 2026-06-20            # qué se colocaría hoy
 python scripts/wc_suggestions.py --date 2026-06-20        # tabla de sugerencias
 python scripts/portfolio.py                               # portafolio + trades (abiertos/cerrados/pendientes)
+python scripts/account.py                                # saldo, posiciones y órdenes live (requiere .[live]+key)
+python scripts/account.py --reconcile                    # drift vs estado local + ajusta bankroll
 ```
 
 `portfolio.py` lee el estado local (`data/agent_state.json`) y asienta el PnL de los
