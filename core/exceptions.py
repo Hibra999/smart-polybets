@@ -48,3 +48,7 @@ class InsufficientLiquidityError(AgentError):
 
 class PriceMovedError(AgentError):
     """El precio live se movió más allá de la tolerancia respecto a la señal."""
+
+
+class AccountUnavailableError(RuntimeError):
+    """La cuenta live de Polymarket no está disponible (SDK no instalado o falta key)."""
