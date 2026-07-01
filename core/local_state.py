@@ -25,8 +25,9 @@ class LocalStateClient:
     def __init__(self, path: str | Path = "data/agent_state.json",
                  bankroll_usdc: float = 1000.0) -> None:
         self.path = Path(path)
-        self.initial_bankroll = Decimal(str(bankroll_usdc))
         self._state = self._load()
+        stored = self._state.get("bankroll_usdc")
+        self.initial_bankroll = Decimal(str(stored if stored is not None else bankroll_usdc))
 
     def _load(self) -> dict:
         if self.path.exists():
@@ -77,6 +78,13 @@ class LocalStateClient:
         d["executed_at"] = utcnow().isoformat()
         self._save()
         return d
+
+    def set_bankroll(self, value: Decimal | float) -> dict:
+        """Persiste el bankroll (p. ej. tras reconciliar con el balance real)."""
+        self._state["bankroll_usdc"] = str(value)
+        self.initial_bankroll = Decimal(str(value))
+        self._save()
+        return {"bankroll_usdc": self._state["bankroll_usdc"]}
 
     def get_active_tournaments(self) -> list[dict]:
         return [{"tournament_id": "fifa_world_cup_2026"}]
