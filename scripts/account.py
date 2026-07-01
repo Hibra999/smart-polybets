@@ -67,7 +67,8 @@ def run(state_path: str, bankroll: float, event: str | None,
     balance = snap["balance"]
 
     if do_reconcile:
-        rep = reconcile(decisions, balance, snap["positions"], bankroll_param=bankroll)
+        rep = reconcile(decisions, balance, snap["positions"],
+                        bankroll_param=client.initial_bankroll)
         if as_json:
             print(json.dumps(rep, indent=2, default=str))
         else:
@@ -81,9 +82,9 @@ def run(state_path: str, bankroll: float, event: str | None,
                 print(f"    sin fill on-chain: {', '.join(rep['missing_fills'])}")
             if rep["external_positions"]:
                 print(f"    externas (no en ledger): {', '.join(rep['external_positions'])}")
-        # Única escritura: ajustar el bankroll local al balance real.
+            print(f"    bankroll local ajustado a {_dec(balance.usdc_balance)}\n")
+        # Única escritura: ajustar el bankroll local al balance real (ambos modos).
         client.set_bankroll(balance.usdc_balance)
-        print(f"    bankroll local ajustado a {_dec(balance.usdc_balance)}\n")
         return
 
     if as_json:

@@ -32,6 +32,12 @@ def test_mark_to_market_sets_price_and_derives_pnl():
     assert marked[0].unrealized_pnl == Decimal("10.0")
 
 
+def test_mark_to_market_loser_negative_pnl():
+    marked = mark_to_market([_pos("0xa", entry="0.70")], price_of=lambda p: Decimal("0.50"))
+    assert marked[0].current_price == Decimal("0.50")
+    assert marked[0].unrealized_pnl == Decimal("-20.0")   # (0.50-0.70)*100
+
+
 def test_mark_to_market_leaves_none_when_no_price():
     marked = mark_to_market([_pos("0xa")], price_of=lambda p: None)
     assert marked[0].current_price is None
