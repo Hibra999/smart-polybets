@@ -136,3 +136,38 @@ class PolymarketBroker:
                 avg_price=price, submitted_at=utcnow(),
                 raw={**raw, "error": f"{type(exc).__name__}: {exc}"},
             )
+
+    def best_ask(self, token_id: str) -> Decimal | None:
+        """Mejor ask (precio de compra) del order book live. None si no se puede."""
+        if not self.private_key:
+            return None
+        try:
+            book = self._get_client().get_order_book(token_id=token_id)
+        except Exception:  # noqa: BLE001 — pricing best-effort, nunca rompe
+            return None
+        asks = getattr(book, "asks", None) or []
+        prices = [to_decimal(level.price) for level in asks]
+        return min(prices) if prices else None
+
+    def cancel(self, order_id: str) -> OrderResult:
+        """Cancela una orden abierta (dry-run salvo live)."""
+        base = {"action": "cancel", "order_id": order_id}
+        if not self.live:
+            return OrderResult(
+                order_id=order_id, status="dry_run", filled_size_usdc=Decimal("0"),
+                avg_price=None, submitted_at=utcnow(),
+                raw={**base, "dry_run": True, "blocked_reason": self._blocked_reason},
+            )
+        try:
+            resp = self._get_client().cancel_order(order_id=order_id)
+            return OrderResult(
+                order_id=order_id, status="cancelled", filled_size_usdc=Decimal("0"),
+                avg_price=None, submitted_at=utcnow(),
+                raw={**base, "response": str(resp)[:500]},
+            )
+        except Exception as exc:  # noqa: BLE001
+            return OrderResult(
+                order_id=order_id, status="error", filled_size_usdc=Decimal("0"),
+                avg_price=None, submitted_at=utcnow(),
+                raw={**base, "error": f"{type(exc).__name__}: {exc}"},
+            )
