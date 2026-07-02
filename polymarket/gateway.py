@@ -13,6 +13,8 @@ from __future__ import annotations
 
 import hashlib
 import os
+import pathlib
+import sys
 from decimal import ROUND_DOWN, ROUND_HALF_UP, Decimal
 
 from core.exceptions import AccountUnavailableError
@@ -20,12 +22,14 @@ from core.polymarket_client import build_secure_client
 from core.utils import to_decimal, utcnow
 from execution.schemas.order_result import OrderResult
 from execution.schemas.trade_order import TradeOrder
+from polymarket.matching import match_event
 from portfolio.schemas.account import (
     AccountBalance,
     ClosedPositionLive,
     LivePosition,
     OpenOrder,
 )
+from research.functions.market_scanner import PolymarketMarket
 
 # Colateral USDC de Polymarket: entero en micro-unidades (6 decimales).
 _USDC_DECIMALS = Decimal(10) ** 6
@@ -58,6 +62,7 @@ class PolymarketGateway:
         self.private_key = private_key or os.getenv("POLYMARKET_PRIVATE_KEY") or None
         self.funder = funder or os.getenv("POLYMARKET_FUNDER") or None
         self._client = None
+        self._pub_client = None  # PublicClient del SDK (inyectable en tests)
 
         env_live = os.getenv("POLYMARKET_LIVE", "") in ("1", "true", "yes", "on")
         self.live = bool(live and env_live and self.private_key and not _kill_switch_on())
@@ -250,3 +255,109 @@ class PolymarketGateway:
                 avg_price=None, submitted_at=utcnow(),
                 raw={**base, "error": f"{type(exc).__name__}: {exc}"},
             )
+
+    # ── descubrimiento de mercados (PublicClient — read-only) ─────────────────
+
+    def _ensure_pub_client(self):
+        """Lazy-init del PublicClient del SDK.
+
+        Usa un truco de sys.path/sys.modules para importar PublicClient desde el
+        SDK (polymarket-client en site-packages) sin que el paquete local
+        `polymarket/` lo enmascare. El resultado se cachea en self._pub_client.
+        """
+        if self._pub_client is not None:
+            return self._pub_client
+
+        # Buscar el SDK en site-packages (directorio distinto al paquete local)
+        _here = pathlib.Path(__file__).parent
+        site = next(
+            (
+                p for p in sys.path
+                if "site-packages" in p.lower()
+                and (pathlib.Path(p) / "polymarket" / "__init__.py").exists()
+                and pathlib.Path(p) / "polymarket" != _here
+            ),
+            None,
+        )
+        if site is None:
+            raise AccountUnavailableError(
+                "SDK polymarket-client no encontrado en site-packages. "
+                "Instalar: pip install --pre polymarket-client"
+            )
+
+        # Guardar entradas del paquete local para restaurar después
+        _stash = {
+            k: sys.modules.pop(k)
+            for k in list(sys.modules.keys())
+            if k == "polymarket" or k.startswith("polymarket.")
+        }
+        # Poner site-packages al frente para que 'import polymarket' encuentre el SDK
+        _orig_idx = sys.path.index(site)
+        sys.path.insert(0, sys.path.pop(_orig_idx))
+
+        try:
+            from polymarket.clients.public import PublicClient  # SDK — no paquete local
+            self._pub_client = PublicClient()
+        except ImportError as exc:
+            raise AccountUnavailableError(
+                f"No se pudo importar PublicClient del SDK: {exc}"
+            ) from exc
+        finally:
+            # Restaurar posición original de site-packages en sys.path
+            sys.path.insert(_orig_idx, sys.path.pop(0))
+            # Restaurar nuestro paquete local como entrada 'polymarket'
+            sys.modules.update(_stash)
+
+        return self._pub_client
+
+    def find_match_markets(
+        self,
+        home: str,
+        away: str,
+        *,
+        tag_ids: int | list[int] | None = None,
+        closed: bool = False,
+        page_size: int = 100,
+    ) -> list[PolymarketMarket]:
+        """Descubrir mercados de Polymarket para un partido home vs. away.
+
+        Usa PublicClient.list_events (SDK oficial, sin Gamma requests) y aplica
+        match_event() para encontrar los mercados "Will X win?" correspondientes.
+
+        Args:
+            home:     Nombre del equipo local.
+            away:     Nombre del equipo visitante.
+            tag_ids:  Tag(s) para filtrar eventos (ej: 102232 = WC 2026). None = sin filtro.
+            closed:   Incluir eventos cerrados (default False).
+            page_size: Tamaño de página en la paginación del SDK.
+
+        Returns:
+            Lista de PolymarketMarket con model_outcome HOME_WIN o AWAY_WIN.
+        """
+        pub = self._ensure_pub_client()
+        kwargs: dict = {"closed": closed, "page_size": page_size}
+        if tag_ids is not None:
+            kwargs["tag_ids"] = tag_ids
+
+        results: list[PolymarketMarket] = []
+        for event in pub.list_events(**kwargs).iter_items():
+            matches = match_event(event, home, away)
+            if not matches:
+                continue
+            for info in matches:
+                results.append(PolymarketMarket(
+                    condition_id=info["condition_id"],
+                    token_id=info["token_id"],
+                    outcome="YES",
+                    model_outcome=info["model_outcome"],
+                    market_probability=info["yes_price"],
+                    volume_usdc=info["volume"],
+                    liquidity_usdc=info["liquidity"],
+                    best_ask=info["best_ask"],
+                    best_bid=info["best_bid"],
+                    neg_risk=info["neg_risk"],
+                    tick_size=info["tick_size"],
+                    min_order_size=info["min_order_size"],
+                    accepting_orders=info["accepting_orders"],
+                ))
+        return results
