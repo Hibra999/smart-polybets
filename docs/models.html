@@ -44,7 +44,7 @@
   <p class="sub">Cómo el sistema estima la probabilidad de cada resultado <span class="pill">adapters/football/</span></p>
 
   <div class="lead">
-    Hay <b>cuatro</b> modelos, todos <b>funciones puras</b> (sin DB, sin red) sembrados desde el ranking FIFA y evolucionados partido a partido con resultados reales del torneo. Tres predicen el <b>ganador</b> (Elo, Bayes, TrueSkill) y se combinan en un <b>ensemble</b>; uno predice <b>goles</b> (Poisson) para mercados Over/Under y BTTS. La probabilidad resultante se compara con el precio de Polymarket para calcular el <b>edge</b>.
+    Hay <b>cuatro</b> modelos, todos <b>funciones puras</b> (sin DB, sin red) sembrados desde el ranking FIFA y evolucionados partido a partido con resultados reales del torneo. Tres predicen el <b>ganador</b> (Elo, Bayes, TrueSkill) y se combinan en un <b>ensemble</b>; uno predice <b>goles</b> (Poisson) para mercados Over/Under y BTTS, y además <b>precia la doble-oportunidad</b> (1X). La probabilidad resultante se compara con el precio de Polymarket para calcular el <b>edge</b>.
   </div>
 
   <!-- FLOW DIAGRAM -->
@@ -185,6 +185,7 @@ goles ~ Poisson(λ)   (home y away independientes)
 P(Over 2.5)  = Σ P(i,j) para i+j ≥ 3
 P(BTTS)      = (1−e^−λ_home)(1−e^−λ_away)</div>
     <ul><li><b>Salida:</b> P(Over/Under), P(BTTS), 1X2 derivado y marcadores más probables.</li>
+    <li><b>Precia la doble-oportunidad (1X):</b> <code>P(pick)+P(empate)</code> del 1X2 es la probabilidad del bet <code>double_chance</code> (que el rival del pick NO gane a 90'), usada para el edge vs el precio del lado NO del mercado del rival. Es el único modelo con probabilidad de empate, por eso precia este bet.</li>
     <li>El shrinkage evita que un único resultado extremo dispare las tasas de un equipo con 2–3 partidos.</li></ul>
   </div>
 

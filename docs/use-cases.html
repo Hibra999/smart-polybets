@@ -81,10 +81,18 @@ Argentina vs Cape Verde    HOME_WIN    93.0%    84.5%   <span class="g">+8.5%</s
   <span class="m">[skip] Round of 32 Winner…: sin mercado en Polymarket (bracket TBD)</span></pre></div>
   </div>
 
+  <div class="uc">
+    <h3>Doble-oportunidad: apostar a que el rival NO gana <span class="tag live">1X · nuevo</span></h3>
+    <p class="cap">Con <code>bet_type: double_chance</code> en el <code>STRATEGY.md</code>, en vez de apostar el pick a ganar (que pierde en empate), apuesta a que el <b>rival del pick NO gana</b> — el pick gana <b>o</b> empata a 90'. El <b>Poisson</b> lo precia con <code>P(pick)+P(empate)</code> y el edge sale contra el precio del lado <b>NO</b> del mercado del rival. Mismo resolver que las órdenes, así que scan y ejecución coinciden. Backtest: <b>+4.8%</b> ROI vs −1.1% del modo ganador.</p>
+    <div class="term"><pre>FIXTURE                    PICK           MODELO  MERCADO    EDGE   KICKOFF PDC/ET
+Spain vs Austria           HOME_WIN <span class="g">[1X]</span>  85.2%    76.0%  <span class="g">+9.2%</span>   07-02 13:00/14:00
+  <span class="m">(outcome=NO del rival · Polymarket resuelve a 90' incluso en knockouts)</span></pre></div>
+  </div>
+
   <div class="grid">
-    <div class="mini"><b>Gateway único (venue/)</b><small><code>find_match_markets</code>, <code>best_ask</code>, order book, <code>list_events</code>, sports/tags — todo sobre <b>una</b> librería SDK.</small></div>
-    <div class="mini"><b>Modelo deportivo</b><small>Elo + Bayes + TrueSkill (blend), evolucionado partido a partido; elige lado y probabilidad.</small></div>
-    <div class="mini"><b>Deportes como plugins</b><small><code>SignalProvider</code> por deporte + registro. Agregar un deporte = registrar un provider, sin tocar el pipeline.</small></div>
+    <div class="mini"><b>Gateway único (venue/)</b><small><code>find_match_markets</code>, <code>best_ask</code>, order book, <code>list_events</code> (vía <code>venue/discovery</code>) — todo sobre <b>una</b> librería SDK, cero scrapers.</small></div>
+    <div class="mini"><b>Modelo deportivo</b><small>Elo + Bayes + TrueSkill (blend) elige lado; <b>Poisson</b> precia la doble-oportunidad. Evolucionado partido a partido.</small></div>
+    <div class="mini"><b>Horario local</b><small><code>core/timez</code> muestra los kickoffs en tu hora (PDC/UTC-5) + ET, la zona con que Polymarket etiqueta sus mercados.</small></div>
   </div>
 
   <!-- 2 -->

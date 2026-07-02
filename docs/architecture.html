@@ -187,7 +187,7 @@
       <path class="edge-amber" d="M842,86 C842,50 300,50 200,50 L155,50" style="marker-end:url(#aha)"/>
       <text class="ts" x="500" y="44" text-anchor="middle">reporte REVIEW</text>
     </svg>
-    <figcaption>Flujo unidireccional por contratos tipados. En <b>Risk</b> se ramifica: AUTO sigue al sizing; REVIEW va al CIO; DISCARD se detiene.</figcaption>
+    <figcaption>Flujo unidireccional por contratos tipados. En <b>Research</b>, <code>resolve_bet_market</code> elige mercado/lado según <code>bet_type</code>: <b>win</b> (el pick gana) o <b>double_chance</b> (el rival no gana — 1X a 90', preciado por Poisson). En <b>Risk</b> se ramifica: AUTO sigue al sizing; REVIEW va al CIO; DISCARD se detiene.</figcaption>
   </figure>
 
   <!-- ============ FIG 3 — GATEWAY HUB ============ -->
@@ -228,7 +228,7 @@
       <text class="ts" x="836" y="170" text-anchor="middle">+ Gamma · pUSD</text>
       <line class="e3" x1="740" y1="150" x2="782" y2="150"/>
     </svg>
-    <figcaption>Los 3 adapters <b>delegan</b> en un único gateway sobre el <b>SDK oficial</b>. (Antes: dos clientes — un scraper HTTP a Gamma + el SDK; el scraper fue retirado.)</figcaption>
+    <figcaption>Los 3 adapters <b>delegan</b> en un único gateway sobre el <b>SDK oficial</b>. (Antes: dos clientes — un scraper HTTP a Gamma + el SDK; el scraper fue retirado.) El módulo <code>venue/</code> agrupa el <b>gateway</b> (saldos/posiciones/órdenes), <code>discovery</code> (descubrimiento de eventos) y <code>matching</code> (mercado↔partido) — todo sobre el SDK, sin scrapers.</figcaption>
   </figure>
 
   <!-- ============ FIG 4 — EJECUCIÓN SEGURA ============ -->
