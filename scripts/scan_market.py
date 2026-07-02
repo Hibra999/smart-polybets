@@ -30,6 +30,7 @@ from core.console import enable_utf8  # noqa: E402
 enable_utf8()
 
 from core.env import load_env  # noqa: E402
+from core.timez import fmt_local_et_short  # noqa: E402
 
 load_env(_REPO / ".env")
 
@@ -117,10 +118,11 @@ def run(tournament_id: str, hours: int, sport: str, as_json: bool) -> int:
         print(
             f"\n=== scan_market · {tournament_id} · próximas {hours}h "
             f"· deporte={sport} ===\n"
+            "    (KICKOFF en PDC/UTC-5 y ET; Polymarket etiqueta sus mercados por la fecha ET)\n"
         )
         header = (
             f"{'FIXTURE':<34} {'PICK':<10} {'MODELO':>8} {'MERCADO':>8} "
-            f"{'EDGE':>7}  {'CONF':<8} {'N':>5}"
+            f"{'EDGE':>7}  {'CONF':<8} {'N':>5}  {'KICKOFF PDC/ET':<15}"
         )
         print(header)
         print("  " + "-" * (len(header) + 2))
@@ -204,7 +206,8 @@ def run(tournament_id: str, hours: int, sport: str, as_json: bool) -> int:
             print(
                 f"{label:<34} {sig.side:<10} "
                 f"{_pct(sig.model_probability):>8} {_pct(matched.market_probability):>8} "
-                f"{_edge_str(edge):>7}  {sig.model_confidence:<8} {sig.sample_size:>5}"
+                f"{_edge_str(edge):>7}  {sig.model_confidence:<8} {sig.sample_size:>5}  "
+                f"{fmt_local_et_short(kickoff):<15}"
             )
 
     if as_json:
