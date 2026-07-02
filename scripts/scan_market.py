@@ -31,6 +31,8 @@ enable_utf8()
 
 from core.env import load_env  # noqa: E402
 from core.timez import fmt_local_et_short  # noqa: E402
+from research.functions.wc_strategy import resolve_bet_market  # noqa: E402
+from research.functions.poisson_loader import match_result_probs  # noqa: E402
 
 load_env(_REPO / ".env")
 
@@ -55,6 +57,20 @@ def _edge_str(edge) -> str:
         return f"{float(edge) * 100:+.1f}%"
     except (TypeError, ValueError):
         return " n/d"
+
+
+def _bet_row(sig_side, sig_prob, markets, strategy, poisson_result):
+    """Pure helper: resolves the bet target and returns (outcome, model_prob, market_prob, edge).
+
+    Internally calls resolve_bet_market. Returns None if no suitable market exists
+    (e.g. no NO token for double_chance, or no poisson_result when required).
+    """
+    target = resolve_bet_market(sig_side, sig_prob, markets, strategy, poisson_result)
+    if target is None:
+        return None
+    m = target.market
+    return m.outcome, target.model_probability, m.market_probability, \
+        target.model_probability - m.market_probability
 
 
 def run(tournament_id: str, hours: int, sport: str, as_json: bool) -> int:
@@ -121,7 +137,7 @@ def run(tournament_id: str, hours: int, sport: str, as_json: bool) -> int:
             "    (KICKOFF en PDC/UTC-5 y ET; Polymarket etiqueta sus mercados por la fecha ET)\n"
         )
         header = (
-            f"{'FIXTURE':<34} {'PICK':<10} {'MODELO':>8} {'MERCADO':>8} "
+            f"{'FIXTURE':<34} {'PICK':<14} {'MODELO':>8} {'MERCADO':>8} "
             f"{'EDGE':>7}  {'CONF':<8} {'N':>5}  {'KICKOFF PDC/ET':<15}"
         )
         print(header)
@@ -170,29 +186,29 @@ def run(tournament_id: str, hours: int, sport: str, as_json: bool) -> int:
             _skip(label, msg, as_json, rows)
             continue
 
-        # Buscar el mercado que coincide con el lado del modelo
-        matched = next(
-            (m for m in markets if m.model_outcome == sig.side), None
-        )
-        if matched is None:
-            sides_found = [m.model_outcome for m in markets] or ["ninguno"]
-            _skip(
-                label,
-                f"sin mercado para '{sig.side}' en Polymarket "
-                f"(encontrados: {', '.join(sides_found)})",
-                as_json,
-                rows,
-            )
+        # Resolver el mercado/lado según bet_type (win: YES del pick; double_chance: NO del rival)
+        poisson_result = (match_result_probs(tournament_id, fixture_id)
+                          if strategy.bet_type == "double_chance" else None)
+        bet = _bet_row(sig.side, sig.model_probability, markets, strategy, poisson_result)
+        if bet is None:
+            _skip(label, f"sin mercado apto para bet_type={strategy.bet_type}", as_json, rows)
             continue
+        outcome_side, model_prob, market_prob, edge = bet
 
-        edge = sig.model_probability - matched.market_probability
+        # Market details (condition_id / token_id / best_ask) from the resolved target.
+        _tgt = resolve_bet_market(sig.side, sig.model_probability, markets, strategy, poisson_result)
+        matched = _tgt.market  # non-None: _bet_row already confirmed non-None
+
+        pick_label = (f"{sig.side} [1X]" if strategy.bet_type == "double_chance"
+                      else sig.side)
 
         row = {
             "fixture": label,
             "kickoff_utc": kickoff,
             "side": sig.side,
-            "model_prob": float(sig.model_probability),
-            "market_prob": float(matched.market_probability),
+            "outcome": outcome_side,
+            "model_prob": float(model_prob),
+            "market_prob": float(market_prob),
             "edge": float(edge),
             "confidence": sig.model_confidence,
             "sample_size": sig.sample_size,
@@ -204,8 +220,8 @@ def run(tournament_id: str, hours: int, sport: str, as_json: bool) -> int:
 
         if not as_json:
             print(
-                f"{label:<34} {sig.side:<10} "
-                f"{_pct(sig.model_probability):>8} {_pct(matched.market_probability):>8} "
+                f"{label:<34} {pick_label:<14} "
+                f"{_pct(model_prob):>8} {_pct(market_prob):>8} "
                 f"{_edge_str(edge):>7}  {sig.model_confidence:<8} {sig.sample_size:>5}  "
                 f"{fmt_local_et_short(kickoff):<15}"
             )

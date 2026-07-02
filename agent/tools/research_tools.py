@@ -42,7 +42,11 @@ def scan_event(
     markets = find_markets(prediction, strategy, market_source=market_source)
 
     if prediction.components:
-        opp = build_worldcup_opportunity(prediction, markets, strategy, now=now)
+        from research.functions.poisson_loader import match_result_probs
+        poisson_result = (match_result_probs(strategy.tournament_id, prediction.event_id)
+                          if strategy.bet_type == "double_chance" else None)
+        opp = build_worldcup_opportunity(prediction, markets, strategy, now=now,
+                                         poisson_result=poisson_result)
         return [opp] if opp is not None else []
 
     opps = [calculate_edge(prediction, m, strategy, now=now) for m in markets]

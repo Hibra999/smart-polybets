@@ -84,7 +84,10 @@ def compute(
             rows.append(row)
             continue
 
-        opp = build_worldcup_opportunity(pred, markets, strat)
+        from research.functions.poisson_loader import match_result_probs
+        poisson_result = (match_result_probs(strat.tournament_id, pred.event_id)
+                          if strat.bet_type == "double_chance" else None)
+        opp = build_worldcup_opportunity(pred, markets, strat, poisson_result=poisson_result)
         if opp is None:
             row.update({"verdict": "SKIP", "reason": "warmup / filtro Bayes",
                         "model_prob": _f(pk["model_prob"]), "market_prob": None,
