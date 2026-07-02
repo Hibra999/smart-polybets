@@ -6,8 +6,12 @@ El pipeline Poisson se cachea por tournament_id por proceso (fit es caro).
 """
 from __future__ import annotations
 
+import logging
+
 from adapters.football.db_reader import FootballDBReader
 from adapters.football.wc_poisson_pipeline import WorldCupPoissonPipeline
+
+logger = logging.getLogger(__name__)
 
 _PIPELINE_CLS = WorldCupPoissonPipeline   # indirección para tests
 _READER_CLS = FootballDBReader
@@ -34,4 +38,8 @@ def match_result_probs(tournament_id: str, event_id: str) -> dict[str, float] | 
             return None
         return {"home": float(r["home"]), "draw": float(r["draw"]), "away": float(r["away"])}
     except Exception:
+        # Fail-safe (no se inventa prob), pero dejamos rastro: un adapter regresado
+        # silenciaría toda la estrategia double_chance sin señal.
+        logger.warning("poisson_loader falló tournament=%s event=%s",
+                       tournament_id, event_id, exc_info=True)
         return None

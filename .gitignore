@@ -24,3 +24,6 @@ editorial/reports/**/*.md
 
 # SDD scratch (progreso de refactor, no versionar)
 .superpowers/
+
+# Backups locales (ingesta/sync) — nunca versionar
+data/**/*.bak-*
