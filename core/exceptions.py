@@ -30,14 +30,6 @@ class AdapterError(AgentError):
     """Fallo en la capa de adapters (lectura de SQLite / modelos)."""
 
 
-class DjangoAPIError(AgentError):
-    """El Django App respondió un error o está caído. El workflow PARA."""
-
-    def __init__(self, message: str, status_code: int | None = None) -> None:
-        super().__init__(message)
-        self.status_code = status_code
-
-
 class IdempotencyConflict(AgentError):
     """Ya existe un DecisionLog para esta idempotency_key en estado != expired."""
 

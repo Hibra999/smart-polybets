@@ -16,7 +16,7 @@ from typing import Callable
 
 from decimal import Decimal
 
-from core.django_client import DjangoClient
+from core.local_state import LocalStateClient
 from core.exceptions import NoActiveStrategyError
 from agent.tools import execution_tools, portfolio_tools, research_tools, risk_tools
 from editorial.functions import build_execution_summary, build_review_report
@@ -29,7 +29,7 @@ def run(
     event_id: str,
     tournament_id: str,
     *,
-    client: DjangoClient | None = None,
+    client: LocalStateClient | None = None,
     market_source: Callable | None = None,
     qualitative_flags: list[str] | None = None,
     broker: PolymarketBroker | None = None,

@@ -5,7 +5,6 @@ Ninguna área importa de otra área; sólo de `core/`.
 from core.exceptions import (
     AgentError,
     AdapterError,
-    DjangoAPIError,
     IdempotencyConflict,
     InsufficientLiquidityError,
     NoActiveStrategyError,
@@ -25,7 +24,6 @@ from core.types import (
 __all__ = [
     "AgentError",
     "AdapterError",
-    "DjangoAPIError",
     "IdempotencyConflict",
     "InsufficientLiquidityError",
     "NoActiveStrategyError",

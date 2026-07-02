@@ -86,5 +86,10 @@ class LocalStateClient:
         self._save()
         return {"bankroll_usdc": self._state["bankroll_usdc"]}
 
+    def get_exposure_by_participant(self, tournament_id: str) -> dict:
+        """Exposición por participante (ratio sobre bankroll) para el torneo dado."""
+        state = self.get_portfolio_state()
+        return state.get("exposure_by_participant", {})
+
     def get_active_tournaments(self) -> list[dict]:
         return [{"tournament_id": "fifa_world_cup_2026"}]
