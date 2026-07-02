@@ -9,14 +9,13 @@ TODO Task 2.x: implementar `PolymarketGateway.find_goals_markets(home, away, ...
 """
 from __future__ import annotations
 
-import re
+import warnings
 from dataclasses import dataclass
 from decimal import Decimal
 
 from research.functions.polymarket_live import _canon  # noqa: F401 — re-export compat
 
 WORLD_CUP_TAG_ID = 102232
-_MORE = re.compile(r"^(.+?)\s+vs\.?\s+(.+?)\s*-\s*More\s+Markets", re.I)
 
 
 @dataclass(frozen=True)
@@ -48,4 +47,9 @@ def fetch_goals_market(
 
     Devuelve None hasta que `PolymarketGateway.find_goals_markets` esté implementado.
     """
+    warnings.warn(
+        "fetch_goals_market: migración al gateway pendiente (Task 2.x) — NO busca "
+        "mercados de goles; devuelve None (no es un 'sin mercado' real).",
+        stacklevel=2,
+    )
     return None
