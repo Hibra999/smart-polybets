@@ -3,281 +3,273 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sports Quant Trading System — Arquitectura (Polymarket-first)</title>
+<title>Sports Quant Trading System — Arquitectura</title>
 <style>
-  :root{
-    --bg:#0d1117; --panel:#161b22; --panel2:#1c2333; --ink:#e6edf3; --muted:#8b949e;
-    --line:#30363d; --accent:#58a6ff;
-    --gw:#f778ba; --adapter:#d29922; --domain:#3fb950; --tools:#a371f7;
-    --flow:#58a6ff; --core:#39c5cf; --ext:#e6683c; --safe:#2ea043; --danger:#f85149;
-    --plan:#7d8590;
-  }
+  :root{--bg:#0d1117;--panel:#161b22;--ink:#e6edf3;--muted:#8b949e;--line:#30363d;--accent:#58a6ff}
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);
-    font:15px/1.55 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
-  .wrap{max-width:1180px;margin:0 auto;padding:32px 22px 80px}
-  h1{font-size:30px;margin:0 0 4px}
-  h2{font-size:20px;margin:44px 0 6px;padding-bottom:8px;border-bottom:1px solid var(--line)}
-  h3{font-size:15px;margin:18px 0 8px;color:var(--accent)}
-  .sub{color:var(--muted);margin:0 0 8px}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 -apple-system,Segoe UI,Roboto,Arial,sans-serif}
+  .wrap{max-width:1040px;margin:0 auto;padding:32px 20px 80px}
+  h1{font-size:28px;margin:0 0 4px}
+  h2{font-size:19px;margin:40px 0 4px}
+  .sub{color:var(--muted);margin:0}
   p{color:#c9d1d9}
-  code{background:#010409;border:1px solid var(--line);border-radius:5px;padding:1px 6px;
-    font:13px/1.4 "SF Mono",Consolas,monospace;color:#e6edf3}
-  .lead{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-top:14px}
-  .legend{display:flex;flex-wrap:wrap;gap:10px 18px;margin:14px 0 0;font-size:13px;color:var(--muted)}
-  .legend span{display:inline-flex;align-items:center;gap:7px}
-  .dot{width:12px;height:12px;border-radius:3px;display:inline-block}
-  .layer{border:1px solid var(--line);border-left-width:5px;border-radius:10px;
-    background:var(--panel);margin:10px 0;padding:12px 14px}
-  .layer .lbl{font-size:11px;letter-spacing:1.3px;text-transform:uppercase;color:var(--muted);margin-bottom:9px;font-weight:600}
-  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:9px}
-  .card{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px 11px}
-  .card b{display:block;font-size:13.5px}
-  .card small{color:var(--muted);font-size:11.5px;line-height:1.4;display:block;margin-top:3px}
-  .arrow{text-align:center;color:var(--muted);font-size:20px;line-height:1;margin:-2px 0}
-  .gwband{border:2px solid var(--gw);border-radius:12px;background:linear-gradient(180deg,rgba(247,120,186,.08),rgba(247,120,186,.02));
-    margin:10px 0;padding:14px}
-  .gwband .lbl{color:var(--gw)}
-  .pipe{display:flex;flex-wrap:wrap;align-items:stretch;gap:0;margin-top:12px}
-  .stage{flex:1;min-width:140px;background:var(--panel);border:1px solid var(--line);
-    border-top:3px solid var(--flow);border-radius:8px;padding:11px 12px}
-  .stage b{font-size:14px}.stage small{display:block;color:var(--muted);font-size:11.5px;margin-top:4px}
-  .chev{display:flex;align-items:center;color:var(--flow);font-size:22px;padding:0 4px}
-  .contract{font-size:11px;color:var(--core);margin-top:7px;border-top:1px dashed var(--line);padding-top:6px}
-  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px}
-  .grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:12px}
-  .box{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
-  .box h3{margin-top:0}
-  ul{margin:6px 0;padding-left:20px}li{margin:3px 0;color:#c9d1d9}
-  .tag{display:inline-block;font-size:10.5px;padding:2px 7px;border-radius:20px;font-weight:600}
-  .t-auto{background:rgba(46,160,67,.18);color:#3fb950;border:1px solid #238636}
-  .t-review{background:rgba(210,153,34,.18);color:#d29922;border:1px solid #9e6a03}
-  .t-discard{background:rgba(248,81,73,.16);color:#f85149;border:1px solid #b62324}
-  .flowsteps{margin-top:12px}
-  .step{display:flex;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:10px 14px;margin:8px 0}
-  .step .n{flex:0 0 26px;height:26px;border-radius:50%;background:var(--accent);color:#0d1117;font-weight:700;display:grid;place-items:center;font-size:13px}
-  .step div b{font-size:13.5px}.step div small{color:var(--muted);display:block;font-size:12px}
-  .gate{border-left:4px solid var(--danger)}.safe{border-left:4px solid var(--safe)}
-  table{width:100%;border-collapse:collapse;margin-top:12px;font-size:13.5px}
-  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
-  th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase}
-  .phase{border:1px dashed var(--plan);border-radius:10px;padding:12px 14px;margin:10px 0;background:rgba(125,133,144,.06)}
-  .phase b.h{color:var(--accent)}
-  .status{font-size:10.5px;padding:2px 8px;border-radius:20px;font-weight:700;margin-left:8px}
-  .done{background:rgba(46,160,67,.18);color:#3fb950;border:1px solid #238636}
-  .next{background:rgba(125,133,144,.15);color:#adbac7;border:1px solid #444c56}
-  .foot{margin-top:40px;color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);padding-top:14px}
   .pill{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:20px;padding:2px 9px}
+  figure{margin:14px 0 0;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px}
+  figcaption{color:var(--muted);font-size:12.5px;margin-top:8px;padding:0 4px}
+  svg{width:100%;height:auto;display:block}
+  .legend{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:12px;font-size:12.5px;color:var(--muted)}
+  .legend span{display:inline-flex;align-items:center;gap:7px}
+  .sw{width:13px;height:13px;border-radius:3px;display:inline-block;border:1px solid rgba(255,255,255,.15)}
+  /* SVG element styles */
+  .band{fill:#12161d;stroke:#2b333d}
+  .box{fill:#1c2333;stroke:#39414d}
+  .box-gov{fill:#12233a;stroke:#1f6feb}
+  .box-tool{fill:#241a3a;stroke:#8957e5}
+  .box-dom{fill:#12261a;stroke:#238636}
+  .box-gw{fill:#331d2b;stroke:#da3b8b}
+  .box-core{fill:#0f2b2e;stroke:#1b8a92}
+  .box-ext{fill:#2c1d14;stroke:#bd561d}
+  .box-warn{fill:#2a1c10;stroke:#9e6a03}
+  .box-bad{fill:#2b1416;stroke:#b62324}
+  .lbl{fill:#8b949e;font:600 11px sans-serif;letter-spacing:1.2px}
+  .t{fill:#e6edf3;font:600 12.5px sans-serif}
+  .tb{fill:#e6edf3;font:700 14px sans-serif}
+  .ts{fill:#9aa4af;font:10.5px sans-serif}
+  .tc{fill:#39c5cf;font:italic 10.5px sans-serif}
+  .edge{stroke:#58a6ff;stroke-width:2;fill:none;marker-end:url(#ah)}
+  .edge-dim{stroke:#5b6673;stroke-width:1.6;fill:none;marker-end:url(#ahg)}
+  .edge-bad{stroke:#f85149;stroke-width:1.8;fill:none;marker-end:url(#ahr)}
+  .edge-amber{stroke:#d29922;stroke-width:1.8;fill:none;marker-end:url(#aha)}
+  .tg{fill:#3fb950;font:700 11px sans-serif}
+  .tr{fill:#f85149;font:700 11px sans-serif}
+  .ty{fill:#d29922;font:700 11px sans-serif}
 </style>
 </head>
 <body>
 <div class="wrap">
 
   <h1>Sports Quant Trading System</h1>
-  <p class="sub">Hedge fund sintético asistido por Claude · <b>Polymarket‑first</b>, deportes como plugins · <span class="pill">repo: pypro_polymarket_agent</span></p>
-
-  <div class="lead">
-    <b>Idea central.</b> Claude opera como <b>analista cuantitativo, gestor de riesgo y operador</b>;
-    el humano es el <b>CIO</b> que aprueba lo ambiguo y delega lo obvio. Principio rector:
-    <b>reproducibilidad hacia adelante</b> — cada decisión es determinística: inputs documentados →
-    funciones puras versionadas con contratos Pydantic. <b>Polymarket es el mercado principal</b> y
-    se accede por <b>un único gateway sobre una sola librería</b> (el SDK oficial); los deportes se
-    “pegan” encima como proveedores de señal.
-  </div>
+  <p class="sub">Arquitectura · hedge fund cuant asistido por Claude sobre Polymarket <span class="pill">Polymarket-first</span></p>
 
   <div class="legend">
-    <span><i class="dot" style="background:var(--tools)"></i>Agente / tools (efectos)</span>
-    <span><i class="dot" style="background:var(--domain)"></i>Dominio puro</span>
-    <span><i class="dot" style="background:var(--gw)"></i>Gateway Polymarket (venue/)</span>
-    <span><i class="dot" style="background:var(--adapter)"></i>Adapters / modelos</span>
-    <span><i class="dot" style="background:var(--core)"></i>Core</span>
-    <span><i class="dot" style="background:var(--ext)"></i>Externos</span>
+    <span><i class="sw" style="background:#12233a;border-color:#1f6feb"></i>Gobernanza</span>
+    <span><i class="sw" style="background:#241a3a;border-color:#8957e5"></i>Tools (efectos)</span>
+    <span><i class="sw" style="background:#12261a;border-color:#238636"></i>Dominio (puro)</span>
+    <span><i class="sw" style="background:#331d2b;border-color:#da3b8b"></i>Gateway Polymarket</span>
+    <span><i class="sw" style="background:#0f2b2e;border-color:#1b8a92"></i>Core / adapters</span>
+    <span><i class="sw" style="background:#2c1d14;border-color:#bd561d"></i>Externo</span>
   </div>
 
-  <!-- STACK -->
-  <h2>1 · Arquitectura en capas</h2>
-  <p>El agente sólo toca la capa de tools. Toda la interacción con Polymarket pasa por <b>un</b> gateway.</p>
+  <!-- ============ FIG 1 — CAPAS ============ -->
+  <h2>1 · Vista en capas</h2>
+  <figure>
+    <svg viewBox="0 0 900 588" role="img" aria-label="Diagrama de capas">
+      <defs>
+        <marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#58a6ff"/></marker>
+      </defs>
 
-  <div class="layer" style="border-left-color:var(--accent)">
-    <div class="lbl">Gobernanza</div>
-    <div class="cards">
-      <div class="card"><b>CIO (humano)</b><small>Aprueba/rechaza REVIEW, aprueba STRATEGY.md, activa el kill-switch.</small></div>
-      <div class="card"><b>Claude — agente</b><small>Analista + riesgo + operador (<code>agent/CLAUDE.md</code>).</small></div>
-    </div>
-  </div>
-  <div class="arrow">▼</div>
-  <div class="layer" style="border-left-color:var(--flow)">
-    <div class="lbl">Orquestación · agent/workflows/</div>
-    <div class="cards">
-      <div class="card"><b>full_analysis</b><small>Pipeline por evento de punta a punta.</small></div>
-      <div class="card"><b>daily_suggestions</b><small>Sugerencias del día.</small></div>
-      <div class="card"><b>scan_market <span class="status done">✓</span></b><small>Entrypoint Polymarket‑first (mercado→señal→edge).</small></div>
-    </div>
-  </div>
-  <div class="arrow">▼</div>
-  <div class="layer" style="border-left-color:var(--tools)">
-    <div class="lbl">Capa 1 — agent/tools/ · efectos (I/O, estado, red vía gateway)</div>
-    <div class="cards">
-      <div class="card"><b>research_tools</b><small>predicción · mercados · edge.</small></div>
-      <div class="card"><b>risk_tools</b><small>AUTO / REVIEW / DISCARD.</small></div>
-      <div class="card"><b>execution_tools</b><small>build_order · classify · submit.</small></div>
-      <div class="card"><b>portfolio_tools</b><small>estado · idempotencia · mark_executed.</small></div>
-      <div class="card"><b>account_tools</b><small>saldo · posiciones · cerradas.</small></div>
-      <div class="card"><b>publish_tools</b><small>editorial.</small></div>
-    </div>
-  </div>
-  <div class="arrow">▼</div>
-  <div class="layer" style="border-left-color:var(--domain)">
-    <div class="lbl">Capa 2 — dominio puro · functions/ + schemas/ (testeable, sin I/O)</div>
-    <div class="cards">
-      <div class="card"><b>research/</b><small>MarketOpportunity (edge = señal − precio).</small></div>
-      <div class="card"><b>risk/</b><small>RiskVerdict + Kelly.</small></div>
-      <div class="card"><b>optimization/</b><small>size_single (cvxpy → Kelly).</small></div>
-      <div class="card"><b>execution/</b><small>order_builder · review_order · price_validator.</small></div>
-      <div class="card"><b>portfolio/</b><small>trade_ledger · account_reconcile · pnl.</small></div>
-      <div class="card"><b>editorial/</b><small>reportes MD/HTML.</small></div>
-    </div>
-  </div>
-  <div class="arrow">▼</div>
+      <!-- band 1: gobernanza -->
+      <rect class="band" x="20" y="14" width="860" height="66" rx="9"/>
+      <text class="lbl" x="34" y="34">GOBERNANZA</text>
+      <rect class="box-gov" x="300" y="26" width="260" height="42" rx="7"/>
+      <text class="t" x="430" y="45" text-anchor="middle">CIO (humano)</text>
+      <text class="ts" x="430" y="60" text-anchor="middle">aprueba REVIEW · kill-switch</text>
+      <rect class="box-gov" x="580" y="26" width="280" height="42" rx="7"/>
+      <text class="t" x="720" y="45" text-anchor="middle">Claude — agente</text>
+      <text class="ts" x="720" y="60" text-anchor="middle">analista · riesgo · operador</text>
+      <line class="edge" x1="450" y1="80" x2="450" y2="98"/>
 
-  <!-- GATEWAY BAND -->
-  <div class="gwband">
-    <div class="lbl" style="font-size:11px;letter-spacing:1.3px;text-transform:uppercase;font-weight:600;margin-bottom:9px">
-      Gateway único de Polymarket · venue/ <span class="status done">Fase 1</span>
-    </div>
-    <p style="margin:0 0 10px;color:#c9d1d9">Los adapters ya no tienen cliente propio: <b>delegan todos en <code>venue.PolymarketGateway</code></b>, el único objeto que habla con Polymarket (descubrimiento + cuenta + órdenes).</p>
-    <div class="cards">
-      <div class="card" style="border-color:var(--gw)"><b>venue/gateway.py</b><small>PolymarketGateway: <code>find_match_markets</code>, <code>balance/positions/open_orders/closed_positions</code>, <code>place/cancel/best_ask</code>.</small></div>
-      <div class="card" style="border-color:var(--gw)"><b>venue/matching.py</b><small>canon/alias + matching partido→mercado (puro).</small></div>
-      <div class="card"><b>adapters que delegan</b><small>PolymarketLiveSource · PolymarketAccountSource · PolymarketBroker → finos wrappers del gateway.</small></div>
-    </div>
-  </div>
-  <div class="arrow">▼</div>
+      <!-- band 2: orquestación -->
+      <rect class="band" x="20" y="100" width="860" height="60" rx="9"/>
+      <text class="lbl" x="34" y="120">ORQUESTACIÓN</text>
+      <rect class="box" x="300" y="112" width="176" height="38" rx="7"/><text class="t" x="388" y="136" text-anchor="middle">full_analysis</text>
+      <rect class="box" x="486" y="112" width="176" height="38" rx="7"/><text class="t" x="574" y="136" text-anchor="middle">daily_suggestions</text>
+      <rect class="box" x="672" y="112" width="188" height="38" rx="7"/><text class="t" x="766" y="136" text-anchor="middle">scan_market</text>
+      <line class="edge" x1="450" y1="160" x2="450" y2="178"/>
 
-  <div class="layer" style="border-left-color:var(--adapter)">
-    <div class="lbl">Adapters de datos + modelos deportivos</div>
-    <div class="cards">
-      <div class="card"><b>adapters/football</b><small>db_reader (SQLite RO) + Elo/Bayes/TrueSkill/Poisson.</small></div>
-      <div class="card"><b>adapters/american_football</b><small>NFL: reader + Elo.</small></div>
-      <div class="card"><b>signals/ <span class="status done">✓</span></b><small>SignalProvider por deporte (fútbol; NFL a futuro).</small></div>
-    </div>
-  </div>
-  <div class="arrow">▼</div>
-  <div class="layer" style="border-left-color:var(--core)">
-    <div class="lbl">core/ · utilidades compartidas</div>
-    <div class="cards">
-      <div class="card"><b>polymarket_client</b><small>fábrica + <b>cache por proceso</b> del cliente SDK (autentica 1×/run, ~6–12 s más rápido).</small></div>
-      <div class="card"><b>strategy</b><small>STRATEGY.md → StrategyConfig.</small></div>
-      <div class="card"><b>local_state</b><small>único backend de estado (JSON). <span class="status done">✓ Django retirado</span></small></div>
-      <div class="card"><b>types · utils · exceptions · env · console</b><small>enums · Decimal · idempotencia · .env · UTF‑8.</small></div>
-    </div>
-  </div>
-  <div class="arrow">▼</div>
-  <div class="layer" style="border-left-color:var(--ext)">
-    <div class="lbl">Externos — UNA sola librería</div>
-    <div class="cards">
-      <div class="card"><b>SDK oficial <code>polymarket</code></b><small>PublicClient (descubrimiento) + SecureClient (cuenta/órdenes) · CLOB V2 · pUSD · wallet derivado.</small></div>
-      <div class="card"><b>SQLite por torneo</b><small><code>data/&lt;t&gt;.sqlite</code> desde DDL canónico.</small></div>
-    </div>
-  </div>
+      <!-- band 3: tools -->
+      <rect class="band" x="20" y="180" width="860" height="62" rx="9"/>
+      <text class="lbl" x="34" y="200">TOOLS</text><text class="ts" x="34" y="214">efectos</text>
+      <g>
+        <rect class="box-tool" x="150" y="192" width="112" height="38" rx="6"/><text class="t" x="206" y="216" text-anchor="middle">research</text>
+        <rect class="box-tool" x="270" y="192" width="96" height="38" rx="6"/><text class="t" x="318" y="216" text-anchor="middle">risk</text>
+        <rect class="box-tool" x="374" y="192" width="118" height="38" rx="6"/><text class="t" x="433" y="216" text-anchor="middle">optimization</text>
+        <rect class="box-tool" x="500" y="192" width="112" height="38" rx="6"/><text class="t" x="556" y="216" text-anchor="middle">execution</text>
+        <rect class="box-tool" x="620" y="192" width="110" height="38" rx="6"/><text class="t" x="675" y="216" text-anchor="middle">portfolio</text>
+        <rect class="box-tool" x="738" y="192" width="110" height="38" rx="6"/><text class="t" x="793" y="216" text-anchor="middle">account</text>
+      </g>
+      <line class="edge" x1="450" y1="242" x2="450" y2="260"/>
 
-  <!-- PIPELINE -->
-  <h2>2 · Pipeline unidireccional (por contratos)</h2>
-  <div class="pipe">
-    <div class="stage"><b>Research</b><small>Modelo/señal vs precio de mercado.</small><div class="contract">→ MarketOpportunity</div></div>
-    <div class="chev">›</div>
-    <div class="stage"><b>Risk</b><small>Reglas del STRATEGY.md + Kelly + límites.</small><div class="contract">→ RiskVerdict</div></div>
-    <div class="chev">›</div>
-    <div class="stage"><b>Optimization</b><small>Refina sizing (Kelly ¼).</small><div class="contract">→ SizingOutput</div></div>
-    <div class="chev">›</div>
-    <div class="stage"><b>Execution</b><small>Orden al best_ask live + slippage/tick (vía gateway).</small><div class="contract">→ TradeOrder → OrderResult</div></div>
-    <div class="chev">›</div>
-    <div class="stage"><b>Portfolio</b><small>Estado, idempotencia, PnL, reconciliación.</small><div class="contract">→ PortfolioState</div></div>
-    <div class="chev">›</div>
-    <div class="stage"><b>Editorial</b><small>Reportes REVIEW / resúmenes.</small><div class="contract">→ MD/HTML</div></div>
-  </div>
+      <!-- band 4: dominio -->
+      <rect class="band" x="20" y="262" width="860" height="62" rx="9"/>
+      <text class="lbl" x="34" y="282">DOMINIO</text><text class="ts" x="34" y="296">puro</text>
+      <g>
+        <rect class="box-dom" x="150" y="274" width="112" height="38" rx="6"/><text class="t" x="206" y="298" text-anchor="middle">research</text>
+        <rect class="box-dom" x="270" y="274" width="96" height="38" rx="6"/><text class="t" x="318" y="298" text-anchor="middle">risk</text>
+        <rect class="box-dom" x="374" y="274" width="118" height="38" rx="6"/><text class="t" x="433" y="298" text-anchor="middle">optimization</text>
+        <rect class="box-dom" x="500" y="274" width="112" height="38" rx="6"/><text class="t" x="556" y="298" text-anchor="middle">execution</text>
+        <rect class="box-dom" x="620" y="274" width="110" height="38" rx="6"/><text class="t" x="675" y="298" text-anchor="middle">portfolio</text>
+        <rect class="box-dom" x="738" y="274" width="110" height="38" rx="6"/><text class="t" x="793" y="298" text-anchor="middle">editorial</text>
+      </g>
+      <line class="edge" x1="450" y1="324" x2="450" y2="342"/>
 
-  <!-- DECISIÓN -->
-  <h2>3 · Ciclo de vida de una decisión</h2>
-  <div class="flowsteps">
-    <div class="step"><span class="n">1</span><div><b>Idempotencia</b><small><code>check_idempotency(key)</code>; si existe → SKIP. <code>key = hash(condition_id+outcome+strategy_id+version+date)</code>.</small></div></div>
-    <div class="step"><span class="n">2</span><div><b>Research → oportunidad</b><small>señal (modelo/plugin) + edge vs Polymarket.</small></div></div>
-    <div class="step"><span class="n">3</span><div><b>Risk evaluate</b><small>Aplica STRATEGY.md →
-      <span class="tag t-auto">AUTO</span> <span class="tag t-review">REVIEW</span> <span class="tag t-discard">DISCARD</span></small></div></div>
-    <div class="step"><span class="n">4</span><div><b>Optimization</b><small>Kelly fraccional, topes max_bet / max_kelly_fraction.</small></div></div>
-    <div class="step"><span class="n">5</span><div><b>Execution</b><small>best_ask live + slippage + tick + min + neg-risk (gateway).</small></div></div>
-    <div class="step"><span class="n">6</span><div><b>Portfolio</b><small>AUTO → submit → mark_executed; REVIEW → reporte y espera al CIO.</small></div></div>
-  </div>
+      <!-- band 5: gateway -->
+      <rect class="band" x="20" y="344" width="860" height="60" rx="9"/>
+      <text class="lbl" x="34" y="364">GATEWAY</text>
+      <rect class="box-gw" x="230" y="352" width="440" height="44" rx="8"/>
+      <text class="tb" x="450" y="371" text-anchor="middle">venue.PolymarketGateway</text>
+      <text class="ts" x="450" y="387" text-anchor="middle">descubrimiento · cuenta · órdenes — una sola librería</text>
+      <line class="edge" x1="450" y1="404" x2="450" y2="422"/>
 
-  <!-- POLYMARKET -->
-  <h2>4 · Interacción con Polymarket — un gateway, una librería</h2>
-  <p>Antes: <b>dos clientes</b> (scraper <code>requests</code> a Gamma + SDK). Ahora: <b>un gateway</b> (<code>venue/</code>) sobre el <b>SDK oficial</b> (PublicClient + SecureClient). El scraper de Gamma fue retirado. Los Protocols (<code>MarketSource</code>, <code>AccountSource</code>) se conservan como interfaz; los adapters delegan en el gateway.</p>
-  <div class="grid3">
-    <div class="box"><h3>Descubrimiento</h3><small class="sub">PublicClient (sin auth)</small>
-      <ul><li><code>find_match_markets(home, away)</code> vía <code>list_events</code>/<code>search</code> + matching por nombre.</li><li><code>best_ask</code>, order book, precios, sports, tags.</li></ul></div>
-    <div class="box"><h3>Cuenta</h3><small class="sub">SecureClient (auth)</small>
-      <ul><li><code>balance</code>, <code>positions</code> (mark-to-market), <code>open_orders</code>, <code>closed_positions</code>.</li></ul></div>
-    <div class="box"><h3>Ejecución</h3><small class="sub">SecureClient (auth)</small>
-      <ul><li><code>place(TradeOrder)</code>, <code>cancel(order_id)</code> — dry-run por defecto, con los gates.</li></ul></div>
-  </div>
-  <div class="box" style="margin-top:14px;border-left:4px solid var(--core)">
-    <h3>Fábrica única del cliente + lección de naming</h3>
-    <p style="margin:0"><code>core/polymarket_client.build_secure_client()</code> es el único lugar que construye el <code>SecureClient</code>. El área se llama <b><code>venue/</code></b> a propósito: nombrarla <code>polymarket/</code> hacía <b>sombra</b> al import del SDK y rompía el path live (los tests pasaban por usar fakes) — regla: nunca nombrar un módulo propio igual que una dependencia.</p>
-  </div>
+      <!-- band 6: core + adapters -->
+      <rect class="band" x="20" y="424" width="860" height="62" rx="9"/>
+      <text class="lbl" x="34" y="444">CORE + ADAPTERS</text>
+      <rect class="box-core" x="240" y="436" width="150" height="38" rx="6"/><text class="t" x="315" y="456" text-anchor="middle">polymarket_client</text><text class="ts" x="315" y="468" text-anchor="middle">cache 1×/run</text>
+      <rect class="box-core" x="398" y="436" width="96" height="38" rx="6"/><text class="t" x="446" y="460" text-anchor="middle">strategy</text>
+      <rect class="box-core" x="502" y="436" width="110" height="38" rx="6"/><text class="t" x="557" y="460" text-anchor="middle">local_state</text>
+      <rect class="box-core" x="620" y="436" width="90" height="38" rx="6"/><text class="t" x="665" y="460" text-anchor="middle">signals</text>
+      <rect class="box-core" x="718" y="436" width="130" height="38" rx="6"/><text class="t" x="783" y="456" text-anchor="middle">adapters</text><text class="ts" x="783" y="468" text-anchor="middle">Elo·Bayes·TrueSkill</text>
+      <line class="edge" x1="450" y1="486" x2="450" y2="504"/>
 
-  <!-- 2 CAPAS -->
-  <h2>5 · Modelo de 2 capas del agente</h2>
-  <div class="grid2">
-    <div class="box" style="border-left:4px solid var(--tools)"><h3>Capa 1 · agent/tools/ (efectos)</h3><p>Lo único que invoca el agente. Borde con el mundo (red vía gateway, estado, SDK). Impura por diseño.</p></div>
-    <div class="box" style="border-left:4px solid var(--domain)"><h3>Capa 2 · functions/ + schemas/ (puro)</h3><p>Lógica sin I/O, determinística, testeable (156+ tests). Contratos Pydantic <b>frozen</b>.</p></div>
-  </div>
+      <!-- band 7: externo -->
+      <rect class="band" x="20" y="506" width="860" height="64" rx="9"/>
+      <text class="lbl" x="34" y="526">EXTERNO</text>
+      <rect class="box-ext" x="240" y="516" width="330" height="46" rx="8"/>
+      <text class="t" x="405" y="536" text-anchor="middle">SDK polymarket</text>
+      <text class="ts" x="405" y="552" text-anchor="middle">PublicClient + SecureClient · CLOB V2 · pUSD</text>
+      <rect class="box-ext" x="590" y="516" width="270" height="46" rx="8"/>
+      <text class="t" x="725" y="536" text-anchor="middle">SQLite por torneo</text>
+      <text class="ts" x="725" y="552" text-anchor="middle">datos deportivos (read-only)</text>
+    </svg>
+    <figcaption>El agente sólo invoca la capa de <b>tools</b>; ésta delega en el <b>dominio puro</b> (testeable). Toda la conexión con Polymarket pasa por <b>un</b> gateway.</figcaption>
+  </figure>
 
-  <!-- SEGURIDAD -->
-  <h2>6 · Subsistemas live y defensa en profundidad</h2>
-  <div class="grid2">
-    <div class="box"><h3>Cuenta · <code>scripts/account.py</code></h3><ul><li>saldo, posiciones (mark-to-market), órdenes, cerradas.</li><li><code>--reconcile</code>, <code>--event</code>, <code>--json</code>.</li></ul></div>
-    <div class="box"><h3>Órdenes · <code>scripts/orders.py</code></h3><ul><li><code>--list</code> · <code>--approve &lt;key&gt;</code> (reprecia live) · <code>--cancel &lt;id&gt;</code>.</li></ul></div>
-  </div>
-  <div class="step gate" style="margin-top:14px"><span class="n" style="background:var(--danger)">1</span><div><b>Gate 1 — env del broker</b><small>Envía sólo con <code>--live</code> + <code>POLYMARKET_LIVE=1</code> + key + kill-switch off. Si no → dry-run.</small></div></div>
-  <div class="step gate"><span class="n" style="background:var(--danger)">2</span><div><b>Gate 2 — confirmación tipeada</b><small>Muestra la orden EXACTA y exige teclear el monto. Valor incorrecto → aborta.</small></div></div>
-  <div class="step safe"><span class="n" style="background:var(--safe)">✓</span><div><b>Guardas del pipeline</b><small>repricing live, rechazo de eventos empezados, slippage, min size, tick, idempotencia, kill-switch.</small></div></div>
+  <!-- ============ FIG 2 — PIPELINE ============ -->
+  <h2>2 · Pipeline de decisión</h2>
+  <figure>
+    <svg viewBox="0 0 900 250" role="img" aria-label="Pipeline">
+      <defs>
+        <marker id="ah2" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#58a6ff"/></marker>
+        <marker id="ahr" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#f85149"/></marker>
+        <marker id="aha" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#d29922"/></marker>
+      </defs>
+      <style>.edge2{stroke:#58a6ff;stroke-width:2;fill:none;marker-end:url(#ah2)}</style>
 
-  <!-- REGLAS -->
-  <h2>7 · Dónde viven las reglas (Kelly, thresholds)</h2>
-  <table>
-    <tr><th>Qué</th><th>Dónde</th><th>Ejemplo</th></tr>
-    <tr><td>Reglas / parámetros</td><td><code>tournaments/&lt;t&gt;/strategies/&lt;s&gt;/STRATEGY.md</code></td><td><code>kelly_fraction: 0.25</code>, <code>edge_threshold_auto: 0.02</code></td></tr>
-    <tr><td>Parseo tipado</td><td><code>core/strategy.py</code></td><td><code>load_active_strategy()</code></td></tr>
-    <tr><td>La matemática</td><td><code>risk/functions/kelly.py</code>, <code>evaluate.py</code></td><td><code>raw_kelly = p − (1−p)/b</code></td></tr>
-  </table>
+      <!-- nodes -->
+      <g>
+        <rect class="box-dom" x="14" y="86" width="118" height="52" rx="8"/><text class="tb" x="73" y="116" text-anchor="middle">Research</text>
+        <rect class="box-dom" x="170" y="86" width="118" height="52" rx="8"/><text class="tb" x="229" y="116" text-anchor="middle">Risk</text>
+        <rect class="box-dom" x="326" y="86" width="118" height="52" rx="8"/><text class="tb" x="385" y="112" text-anchor="middle">Optim.</text><text class="ts" x="385" y="126" text-anchor="middle">sizing</text>
+        <rect class="box-dom" x="482" y="86" width="118" height="52" rx="8"/><text class="tb" x="541" y="116" text-anchor="middle">Execution</text>
+        <rect class="box-dom" x="638" y="86" width="118" height="52" rx="8"/><text class="tb" x="697" y="116" text-anchor="middle">Portfolio</text>
+        <rect class="box-dom" x="794" y="86" width="96" height="52" rx="8"/><text class="tb" x="842" y="116" text-anchor="middle">Editorial</text>
+      </g>
+      <!-- edges + contracts -->
+      <line class="edge2" x1="132" y1="112" x2="168" y2="112"/><text class="tc" x="150" y="102" text-anchor="middle">Opportunity</text>
+      <line class="edge2" x1="288" y1="112" x2="324" y2="112"/><text class="tc" x="306" y="102" text-anchor="middle">Verdict</text>
+      <line class="edge2" x1="444" y1="112" x2="480" y2="112"/><text class="tc" x="462" y="102" text-anchor="middle">Sizing</text>
+      <line class="edge2" x1="600" y1="112" x2="636" y2="112"/><text class="tc" x="618" y="102" text-anchor="middle">Order</text>
+      <line class="edge2" x1="756" y1="112" x2="792" y2="112"/><text class="tc" x="774" y="102" text-anchor="middle">State</text>
 
-  <!-- ROADMAP -->
-  <h2>8 · Refactor Polymarket-first — hoja de ruta</h2>
-  <div class="phase"><b class="h">Fase 1 — Gateway único + retirar Gamma</b> <span class="status done">hecho</span>
-    <p style="margin:6px 0 0"><code>venue/PolymarketGateway</code> sobre el SDK; adapters delegan; scraper Gamma retirado. Una sola librería.</p></div>
-  <div class="phase"><b class="h">Fase 2 — Un estado + consolidar scripts</b> <span class="status done">hecho</span>
-    <p style="margin:6px 0 0">Backend Django retirado (<code>django_client</code>, <code>django_sync_tools</code>, <code>DjangoAPIError</code>); solo <code>LocalState</code>. Quedan <code>place_bets</code>/<code>orders</code>/<code>account</code>/<code>wc_suggestions</code>.</p></div>
-  <div class="phase"><b class="h">Fase 3 — Deportes como plugins</b> <span class="status done">hecho</span>
-    <p style="margin:6px 0 0"><code>signals/</code>: <code>Signal</code> + <code>SignalProvider</code> + registro + <code>FootballSignalProvider</code>. Entrypoint <code>scripts/scan_market.py</code> (mercado → señal → edge). Pegar un deporte = registrar un provider. <b>Suite 157 verde.</b></p></div>
+      <!-- verdict badge on Risk -->
+      <text class="tg" x="229" y="70" text-anchor="middle">AUTO ↓ sigue</text>
+      <!-- REVIEW branch -->
+      <path class="edge-amber" d="M229,138 C229,175 150,175 150,195"/>
+      <rect class="box-warn" x="60" y="196" width="180" height="40" rx="7"/>
+      <text class="ty" x="150" y="214" text-anchor="middle">REVIEW → CIO</text>
+      <text class="ts" x="150" y="228" text-anchor="middle">espera aprobación</text>
+      <!-- DISCARD branch -->
+      <path class="edge-bad" d="M229,138 C229,168 300,168 300,195"/>
+      <rect class="box-bad" x="270" y="196" width="150" height="40" rx="7"/>
+      <text class="tr" x="345" y="219" text-anchor="middle">DISCARD · no opera</text>
 
-  <!-- REGLAS DE ORO -->
-  <h2>9 · Reglas de oro (anti-deuda)</h2>
-  <div class="grid2">
-    <div class="box"><ul>
-      <li><b>Schemas inmutables</b> (v2, no in-place).</li>
-      <li><b>Funciones puras</b>: estado/API en tools o core, no en functions.</li>
-      <li><b>STRATEGY.md</b> única fuente de reglas.</li>
-    </ul></div>
-    <div class="box"><ul>
-      <li><b>Idempotency key</b> en todo.</li>
-      <li>Todo lo generado lleva <code>generated_at</code>/<code>tournament_id</code>/<code>strategy_version</code>.</li>
-      <li><b>Estado siempre fresco</b>; <b>una sola librería</b> de venue.</li>
-    </ul></div>
-  </div>
+      <!-- editorial to CIO note -->
+      <path class="edge-amber" d="M842,86 C842,50 300,50 200,50 L155,50" style="marker-end:url(#aha)"/>
+      <text class="ts" x="500" y="44" text-anchor="middle">reporte REVIEW</text>
+    </svg>
+    <figcaption>Flujo unidireccional por contratos tipados. En <b>Risk</b> se ramifica: AUTO sigue al sizing; REVIEW va al CIO; DISCARD se detiene.</figcaption>
+  </figure>
 
-  <div class="foot">
-    Sports Quant Trading System · Polymarket‑first · dry-run por defecto — el dinero real exige opt-in explícito en múltiples capas.
-  </div>
+  <!-- ============ FIG 3 — GATEWAY HUB ============ -->
+  <h2>3 · El gateway de Polymarket (una sola librería)</h2>
+  <figure>
+    <svg viewBox="0 0 900 300" role="img" aria-label="Gateway hub">
+      <defs><marker id="ah3" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#58a6ff"/></marker></defs>
+      <style>.e3{stroke:#58a6ff;stroke-width:2;fill:none;marker-end:url(#ah3)}</style>
+
+      <!-- adapters -->
+      <rect class="box-dom" x="20" y="34" width="196" height="48" rx="8"/><text class="t" x="118" y="54" text-anchor="middle">PolymarketLiveSource</text><text class="ts" x="118" y="70" text-anchor="middle">mercados / precios</text>
+      <rect class="box-dom" x="20" y="126" width="196" height="48" rx="8"/><text class="t" x="118" y="146" text-anchor="middle">PolymarketAccountSource</text><text class="ts" x="118" y="162" text-anchor="middle">saldo / posiciones</text>
+      <rect class="box-dom" x="20" y="218" width="196" height="48" rx="8"/><text class="t" x="118" y="238" text-anchor="middle">PolymarketBroker</text><text class="ts" x="118" y="254" text-anchor="middle">place / cancel</text>
+
+      <!-- gateway (hub) -->
+      <rect class="box-gw" x="300" y="96" width="200" height="108" rx="10"/>
+      <text class="tb" x="400" y="132" text-anchor="middle">PolymarketGateway</text>
+      <text class="ts" x="400" y="152" text-anchor="middle">find_match_markets</text>
+      <text class="ts" x="400" y="167" text-anchor="middle">balance · positions · orders</text>
+      <text class="ts" x="400" y="182" text-anchor="middle">place · cancel · best_ask</text>
+
+      <line class="e3" x1="216" y1="58" x2="298" y2="120"/>
+      <line class="e3" x1="216" y1="150" x2="298" y2="150"/>
+      <line class="e3" x1="216" y1="242" x2="298" y2="180"/>
+
+      <!-- SDK -->
+      <rect class="box-ext" x="560" y="96" width="180" height="108" rx="10"/>
+      <text class="tb" x="650" y="128" text-anchor="middle">SDK polymarket</text>
+      <text class="ts" x="650" y="148" text-anchor="middle">PublicClient (read)</text>
+      <text class="ts" x="650" y="163" text-anchor="middle">SecureClient (auth)</text>
+      <text class="tc" x="650" y="185" text-anchor="middle">core.polymarket_client</text><text class="tc" x="650" y="197" text-anchor="middle">cache 1×/run</text>
+      <line class="e3" x1="500" y1="150" x2="558" y2="150"/>
+
+      <!-- polymarket cloud -->
+      <rect class="box-ext" x="784" y="112" width="104" height="76" rx="10"/>
+      <text class="t" x="836" y="140" text-anchor="middle">Polymarket</text>
+      <text class="ts" x="836" y="156" text-anchor="middle">CLOB V2</text>
+      <text class="ts" x="836" y="170" text-anchor="middle">+ Gamma · pUSD</text>
+      <line class="e3" x1="740" y1="150" x2="782" y2="150"/>
+    </svg>
+    <figcaption>Los 3 adapters <b>delegan</b> en un único gateway sobre el <b>SDK oficial</b>. (Antes: dos clientes — un scraper HTTP a Gamma + el SDK; el scraper fue retirado.)</figcaption>
+  </figure>
+
+  <!-- ============ FIG 4 — EJECUCIÓN SEGURA ============ -->
+  <h2>4 · Ejecución segura (defensa en profundidad)</h2>
+  <figure>
+    <svg viewBox="0 0 900 210" role="img" aria-label="Gates de ejecución">
+      <defs>
+        <marker id="ah4" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#3fb950"/></marker>
+        <marker id="ah4d" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#d29922"/></marker>
+      </defs>
+      <style>.e4{stroke:#3fb950;stroke-width:2.2;fill:none;marker-end:url(#ah4)} .e4d{stroke:#d29922;stroke-width:1.8;fill:none;marker-end:url(#ah4d)}</style>
+
+      <rect class="box" x="16" y="40" width="150" height="56" rx="9"/><text class="t" x="91" y="64" text-anchor="middle">Orden</text><text class="ts" x="91" y="80" text-anchor="middle">repreciada a best_ask</text>
+
+      <rect class="box-core" x="214" y="34" width="196" height="68" rx="9"/>
+      <text class="t" x="312" y="58" text-anchor="middle">Gate 1 · entorno</text>
+      <text class="ts" x="312" y="74" text-anchor="middle">--live · POLYMARKET_LIVE=1</text>
+      <text class="ts" x="312" y="88" text-anchor="middle">key · kill-switch off</text>
+
+      <rect class="box-core" x="458" y="34" width="196" height="68" rx="9"/>
+      <text class="t" x="556" y="58" text-anchor="middle">Gate 2 · humano</text>
+      <text class="ts" x="556" y="74" text-anchor="middle">teclear el monto</text>
+      <text class="ts" x="556" y="88" text-anchor="middle">exacto para confirmar</text>
+
+      <rect class="box-dom" x="704" y="40" width="180" height="56" rx="9"/><text class="tb" x="794" y="64" text-anchor="middle">place() → CLOB</text><text class="ts" x="794" y="80" text-anchor="middle">orden REAL</text>
+
+      <line class="e4" x1="166" y1="68" x2="212" y2="68"/>
+      <line class="e4" x1="410" y1="68" x2="456" y2="68"/>
+      <line class="e4" x1="654" y1="68" x2="702" y2="68"/>
+
+      <!-- dry-run fallback -->
+      <path class="e4d" d="M312,102 C312,140 450,140 450,158"/>
+      <path class="e4d" d="M556,102 C556,138 470,138 470,158"/>
+      <rect class="box-warn" x="300" y="160" width="320" height="40" rx="8"/>
+      <text class="ty" x="460" y="178" text-anchor="middle">Si falta cualquiera → DRY-RUN</text>
+      <text class="ts" x="460" y="192" text-anchor="middle">imprime la orden simulada · no envía nada</text>
+    </svg>
+    <figcaption>Dry-run por defecto. Enviar dinero real exige pasar <b>ambos</b> gates. Idempotencia y guardas de slippage/tick/tamaño mínimo aplican en todos los casos.</figcaption>
+  </figure>
+
+  <p class="sub" style="margin-top:34px">Ver <code style="background:#010409;border:1px solid var(--line);border-radius:5px;padding:1px 6px">docs/use-cases.html</code> para las capacidades con ejemplos reales.</p>
 
 </div>
 </body>
