@@ -21,6 +21,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from core.timez import fmt_local_et, to_local
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 from core.console import enable_utf8
 from core.env import load_env
 
@@ -106,7 +110,8 @@ def run(state_path: str, bankroll: float, event: str | None,
     def _tag(obj) -> str:
         return obj.title or obj.event_id or (obj.condition_id[:12] + "…")
 
-    print(f"\n=== Cuenta Polymarket (as_of {balance.as_of.isoformat(timespec='minutes')}) ===")
+    print(f"\n=== Cuenta Polymarket (as_of {fmt_local_et(balance.as_of)}) ===")
+    print("    (horas en PDC/UTC-5; Polymarket etiqueta sus mercados en ET = PDC+1h en verano)")
     print(f"    saldo pUSD: {_dec(balance.usdc_balance)}"
           + (f"  ·  wallet {balance.address}" if balance.address else ""))
 
@@ -133,9 +138,9 @@ def run(state_path: str, bankroll: float, event: str | None,
     def _date(obj, attr):
         d = getattr(obj, attr, None)
         if d is not None:
-            return d.isoformat()[:10]
+            return to_local(d).strftime("%Y-%m-%d")  # fecha local (PDC)
         m = re.search(r"\d{4}-\d{2}-\d{2}", getattr(obj, "title", "") or "")
-        return m.group(0) if m else "?"
+        return m.group(0) if m else "?"  # fallback: fecha del título (ET de Poly)
     resolved = [(_date(c, "closed_at"), _tag(c), c.outcome, c.avg_price, c.realized_pnl, True)
                 for c in closed]
     resolved += [(_date(p, "closed_at"), _tag(p), p.outcome, p.avg_entry_price,

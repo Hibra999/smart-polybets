@@ -19,6 +19,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core.console import enable_utf8
 from core.env import load_env
+from core.timez import fmt_local_et
 
 enable_utf8()
 load_env(Path(__file__).resolve().parent.parent / ".env")
@@ -59,7 +60,7 @@ def cmd_list(decisions: dict) -> None:
     for key, d in reviews:
         opp = d.get("opportunity_json") or {}
         print(f"  {key[:10]}  {opp.get('participant_home','?')} vs {opp.get('participant_away','?')}"
-              f"  reco={d.get('recommended_size')}  edge={d.get('edge')}  ki={opp.get('event_start_utc')}")
+              f"  reco={d.get('recommended_size')}  edge={d.get('edge')}  ki={fmt_local_et(opp.get('event_start_utc'))}")
     print("\n=== Órdenes abiertas (live) ===")
     try:
         orders = account_tools.get_open_orders(PolymarketAccountSource())
