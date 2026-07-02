@@ -156,6 +156,36 @@ def metrics(rows):
     out["bet"] = {"n_market": len(bet_rows), "n_bets": n_bets, "wins": wins,
                   "losses": losses, "staked": staked, "pnl": pnl,
                   "roi": (pnl / staked) if staked else 0}
+
+    # Comparación de estrategias: A = "pick GANA" (pierde en empate) vs
+    # B = "rival NO gana" (doble-oportunidad 1X: pick gana O empate a 90').
+    def _sim(rs, strategy):
+        n = w = 0; st = p = 0.0; dc = 0
+        for r in rs:
+            if not r["mkt"]:
+                continue
+            pick = r["blend_side"]; other = AWAY if pick == HOME else HOME
+            if strategy == "A":
+                price = r["mkt"][pick]; won = (r["winner"] == pick)
+                edge = r["blend_prob"] - price
+                if edge <= 0:  # A apuesta solo edge>0 (como el agente)
+                    continue
+            else:
+                price = 1 - r["mkt"][other]; won = (r["winner"] != other)
+            if not (0 < price < 1):
+                continue
+            n += 1; st += 1
+            if won:
+                w += 1; p += (1 - price) / price
+                if r["winner"] == "DRAW":
+                    dc += 1
+            else:
+                p -= 1
+        return {"n": n, "w": w, "l": n - w, "roi": (p / st) if st else 0, "draws": dc}
+    # B sobre los mismos partidos que A elegiría (edge>0), para comparar manzanas con manzanas
+    a_fids = {r["fid"] for r in rows if r["mkt"] and (r["blend_prob"] - r["mkt"][r["blend_side"]]) > 0}
+    out["compare"] = {"A": _sim(rows, "A"),
+                      "B": _sim([r for r in rows if r["fid"] in a_fids], "B")}
     return out
 
 
@@ -265,6 +295,10 @@ def main():
         print(f"\nAPUESTAS (blend pick, edge>0, al precio de mercado, flat 1u):")
         print(f"  {bet['n_bets']} apuestas de {bet['n_market']} con cuota · {bet['wins']}W-{bet['losses']}L · "
               f"PnL {bet['pnl']:+.2f}u · ROI {bet['roi']*100:+.1f}%")
+        cmp = mx["compare"]
+        print(f"\nESTRATEGIA A (pick GANA, pierde en empate)  vs  B (rival NO gana = 1X a 90'):")
+        print(f"  A: {cmp['A']['n']} apuestas · {cmp['A']['w']}-{cmp['A']['l']} · ROI {cmp['A']['roi']*100:+.1f}%")
+        print(f"  B: {cmp['B']['n']} apuestas · {cmp['B']['w']}-{cmp['B']['l']} · ROI {cmp['B']['roi']*100:+.1f}% · {cmp['B']['draws']} empates convertidos en ganancia")
         print("\nCROSS-CHECK con tu historial real:")
         if wc["available"]:
             print(f"  {wc['n']} apuestas tuyas mapeadas · modelo coincidió en {wc['agree']}/{wc['n']} · "

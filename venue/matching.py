@@ -30,6 +30,10 @@ ALIASES: dict[str, str] = {
     "korea": "korea republic",
     "united states": "usa",
     "united states of america": "usa",
+    # team_ids con guion-bajo donde iba un acento (bug de ingesta): mapearlos al
+    # canónico del mercado ("Curaçao"→curacao, "Türkiye"→turkiye).
+    "curaao": "curacao",
+    "trkiye": "turkiye",
 }
 
 _WILL_WIN_RE = re.compile(r"\s*will\s+(.+?)\s+win\b", re.I)

@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from decimal import Decimal
 from pathlib import Path
@@ -56,8 +57,10 @@ def run(state_path: str, bankroll: float, event: str | None,
     source = PolymarketAccountSource()
 
     try:
+        # Trae TODAS las cerradas (ganadas) para que el PnL neto de RESUELTAS sea real,
+        # no solo las últimas N (las perdidas -cur=0- ya vienen completas en positions).
         snap = account_tools.account_snapshot(
-            source, price_of=None, decisions=decisions, closed_limit=closed_n)
+            source, price_of=None, decisions=decisions, closed_limit=max(closed_n, 100))
     except AccountUnavailableError as exc:
         print(f"\n  Cuenta live no disponible: {exc}")
         print('  (instala el extra live: pip install --pre -e ".[live]" y define POLYMARKET_PRIVATE_KEY)\n')
@@ -107,10 +110,14 @@ def run(state_path: str, bankroll: float, event: str | None,
     print(f"    saldo pUSD: {_dec(balance.usdc_balance)}"
           + (f"  ·  wallet {balance.address}" if balance.address else ""))
 
-    upnl = sum((p.unrealized_pnl for p in positions if p.unrealized_pnl is not None), Decimal("0"))
-    print(f"\n  ── POSICIONES ABIERTAS ({len(positions)}) · uPnL {_pnl(upnl)} ──────────────")
+    # Posiciones VIVAS (precio > 0) vs RESUELTAS-PERDIDAS (precio 0, sin redimir).
+    live = [p for p in positions if p.current_price is None or p.current_price > 0]
+    lost = [p for p in positions if p.current_price is not None and p.current_price == 0]
+
+    upnl = sum((p.unrealized_pnl for p in live if p.unrealized_pnl is not None), Decimal("0"))
+    print(f"\n  ── POSICIONES ABIERTAS ({len(live)}) · uPnL {_pnl(upnl)} ──────────────")
     print(f"  {'MERCADO':<34}{'OUT':<5}{'SHARES':>10}{'ENTRY':>7}{'PRICE':>7}{'uPnL':>10}")
-    for p in positions:
+    for p in live:
         price = "  n/d" if p.current_price is None else f"{p.current_price:.2f}"
         print(f"  {_tag(p)[:33]:<34}{p.outcome[:4]:<5}{p.size_shares:>10,.2f}"
               f"{p.avg_entry_price:>7.2f}{price:>7}{_pnl(p.unrealized_pnl):>10}")
@@ -122,13 +129,26 @@ def run(state_path: str, bankroll: float, event: str | None,
             print(f"  {_tag(o)[:33]:<34}{o.side[:4]:<5}{o.price:>7.2f}"
                   f"{o.size_shares:>10,.2f}{o.size_matched:>10,.2f}")
 
-    rpnl = sum((c.realized_pnl for c in closed), Decimal("0"))
-    print(f"\n  ── ÚLTIMAS {len(closed)} CERRADAS · PnL realizado {_pnl(rpnl)} ──────────────")
-    print(f"  {'FECHA':<12}{'MERCADO':<34}{'OUT':<5}{'ENTRY':>7}{'PnL':>10}")
-    for c in closed:
-        when = c.closed_at.isoformat()[:10] if c.closed_at else "?"
-        print(f"  {when:<12}{_tag(c)[:33]:<34}{c.outcome[:4]:<5}"
-              f"{c.avg_price:>7.2f}{_pnl(c.realized_pnl):>10}")
+    # RESUELTAS: fusiona ganadas (cerradas, redimidas) + PERDIDAS (posiciones a 0).
+    def _date(obj, attr):
+        d = getattr(obj, attr, None)
+        if d is not None:
+            return d.isoformat()[:10]
+        m = re.search(r"\d{4}-\d{2}-\d{2}", getattr(obj, "title", "") or "")
+        return m.group(0) if m else "?"
+    resolved = [(_date(c, "closed_at"), _tag(c), c.outcome, c.avg_price, c.realized_pnl, True)
+                for c in closed]
+    resolved += [(_date(p, "closed_at"), _tag(p), p.outcome, p.avg_entry_price,
+                  -(p.size_shares * p.avg_entry_price), False) for p in lost]
+    resolved.sort(key=lambda x: x[0], reverse=True)
+    net = sum((r[4] for r in resolved), Decimal("0"))
+    wins = sum(1 for r in resolved if r[5])
+    losses = sum(1 for r in resolved if not r[5])
+    print(f"\n  ── RESUELTAS ({len(resolved)}: {wins}W-{losses}L) · PnL neto {_pnl(net)} ──────────────")
+    print(f"  {'FECHA':<12}{'MERCADO':<34}{'RES':<8}{'ENTRY':>7}{'PnL':>10}")
+    for d, tag, outc, entry, pnl, won in resolved:
+        print(f"  {d:<12}{str(tag)[:33]:<34}{'GANÓ' if won else 'PERDIÓ':<8}"
+              f"{Decimal(str(entry)):>7.2f}{_pnl(pnl):>10}")
     print()
 
 

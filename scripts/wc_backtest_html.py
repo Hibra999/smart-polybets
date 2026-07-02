@@ -158,7 +158,18 @@ def render(rows, mx, wc, checks, strat) -> str:
     <div class="stat" style="border-color:#238636"><b style="color:var(--green)">{bet['roi']*100:+.1f}%</b><small>ROI (flat 1u al precio de mercado)</small></div>
   </div>
 
-  <h2>4 · Cross-check con tu historial real</h2>
+  <h2>4 · Estrategia: "pick gana" vs "rival no gana" (doble oportunidad)</h2>
+  <div class="panel">
+    <p>Hoy apostamos "mi pick (favorito) GANA" — pierde en empate. Alternativa: "el rival NO gana" = <b>doble oportunidad 1X</b> (mi pick gana <b>o</b> empata a 90'), que captura los empates. Polymarket resuelve los "Will X win?" a <b>90 minutos incluso en eliminatorias</b> (confirmado con el partido Netherlands–Morocco, empate en 90' → penales → tu apuesta a Holanda resolvió NO), así que esto aplica a <b>todo el torneo</b>.</p>
+    <table>
+      <tr><th>Estrategia</th><th>Apuestas</th><th>W-L</th><th>ROI</th><th>empates ganados</th></tr>
+      <tr><td>A · pick GANA (actual, edge&gt;0)</td><td>{mx['compare']['A']['n']}</td><td>{mx['compare']['A']['w']}-{mx['compare']['A']['l']}</td><td style="color:{'#3fb950' if mx['compare']['A']['roi']>=0 else '#f85149'}">{mx['compare']['A']['roi']*100:+.1f}%</td><td>0</td></tr>
+      <tr><td><b>B · rival NO gana (1X, mismos partidos)</b></td><td>{mx['compare']['B']['n']}</td><td><b>{mx['compare']['B']['w']}-{mx['compare']['B']['l']}</b></td><td style="color:#3fb950"><b>{mx['compare']['B']['roi']*100:+.1f}%</b></td><td><b>{mx['compare']['B']['draws']}</b></td></tr>
+    </table>
+    <p class="muted" style="margin:8px 0 0">El 1X convierte {mx['compare']['B']['draws']} empates de derrota en victoria; pierde solo en los upsets. Aunque cada acierto paga menos, el salto de hit-rate más que compensa. <b style="color:#c9d1d9">Mejora natural: regla 1X a 90' en todo el torneo.</b></p>
+  </div>
+
+  <h2>5 · Cross-check con tu historial real</h2>
   {cc}
   <p class="muted">Cada apuesta real de tu wallet, mapeada a su partido y contrastada con lo que el modelo predijo. <b style="color:var(--green)">Toda apuesta que fue contra el modelo perdió.</b></p>
   {cc_table}
