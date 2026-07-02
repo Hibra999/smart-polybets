@@ -2,7 +2,7 @@
 
 Status: approved
 Trigger: cada 30 min durante un torneo activo (H-002)
-Input: ninguno (detecta torneos activos desde el Django App)
+Input: ninguno (detecta torneos activos desde LocalState)
 Output: lista de MarketOpportunity ordenadas por edge desc
 
 Para testear sin red/DB se puede inyectar `active_tournaments`,
@@ -12,10 +12,14 @@ from __future__ import annotations
 
 from typing import Callable
 
-from core.django_client import DjangoClient
-from agent.tools import django_sync_tools, research_tools
+from core.local_state import LocalStateClient
+from agent.tools import research_tools
 from research.schemas.market_opportunity import MarketOpportunity
 from tournaments.registry import get_adapter, load_active_strategy
+
+
+def _client(c: LocalStateClient | None) -> LocalStateClient:
+    return c or LocalStateClient()
 
 
 def _upcoming_event_ids(tournament_id: str, hours_ahead: int) -> list[str]:
@@ -35,7 +39,7 @@ def _upcoming_event_ids(tournament_id: str, hours_ahead: int) -> list[str]:
 
 def run(
     *,
-    client: DjangoClient | None = None,
+    client: LocalStateClient | None = None,
     active_tournaments: list[dict] | None = None,
     event_ids_by_tournament: dict[str, list[str]] | None = None,
     market_source: Callable | None = None,
@@ -43,7 +47,7 @@ def run(
 ) -> list[MarketOpportunity]:
     tournaments = active_tournaments
     if tournaments is None:
-        tournaments = django_sync_tools.get_active_tournaments(client)
+        tournaments = _client(client).get_active_tournaments()
 
     all_opps: list[MarketOpportunity] = []
     for t in tournaments:

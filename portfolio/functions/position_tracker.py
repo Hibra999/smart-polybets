@@ -1,8 +1,8 @@
-"""Puente con el Django App para estado e idempotencia.
+"""Puente con el estado local para idempotencia y persistencia de decisiones.
 
 Estas funciones NO son puras: son el rol explícito de portfolio/ como puente al
-Django App (única fuente de estado). Reciben un DjangoClient por inyección para
-mantenerse testeables (mock del cliente).
+backend de estado (LocalState). Reciben un LocalStateClient por inyección para
+mantenerse testeables.
 
 Regla: NUNCA cachear PortfolioState entre steps — siempre GET fresco.
 """
@@ -10,42 +10,42 @@ from __future__ import annotations
 
 from typing import Any
 
-from core.django_client import DjangoClient
+from core.local_state import LocalStateClient
 from execution.schemas.execution_decision import ExecutionDecision
 from execution.schemas.order_result import OrderResult
 from portfolio.schemas.portfolio_state import PortfolioState
 
 
-def get_state(client: DjangoClient) -> PortfolioState:
-    """Lee el estado completo del portafolio (fresco) desde el Django App."""
+def get_state(client: LocalStateClient) -> PortfolioState:
+    """Lee el estado completo del portafolio (fresco) desde LocalState."""
     return PortfolioState.from_api(client.get_portfolio_state())
 
 
-def get_exposure(client: DjangoClient, tournament_id: str) -> dict[str, Any]:
+def get_exposure(client: LocalStateClient, tournament_id: str) -> dict[str, Any]:
     """Exposición por participante del torneo (para el constraint de risk)."""
     return client.get_exposure_by_participant(tournament_id)
 
 
-def check_idempotency(client: DjangoClient, idempotency_key: str) -> dict | None:
+def check_idempotency(client: LocalStateClient, idempotency_key: str) -> dict | None:
     """Retorna el DecisionLog existente o None. OBLIGATORIO antes de save_decision."""
     return client.check_idempotency(idempotency_key)
 
 
-def save_decision(client: DjangoClient, decision: ExecutionDecision) -> dict:
-    """Persiste un AgentDecisionLog. El Django valida la idempotency_key."""
+def save_decision(client: LocalStateClient, decision: ExecutionDecision) -> dict:
+    """Persiste un AgentDecisionLog."""
     payload = _decision_payload(decision)
     return client.save_decision(payload)
 
 
 def mark_executed(
-    client: DjangoClient, idempotency_key: str, order_result: OrderResult
+    client: LocalStateClient, idempotency_key: str, order_result: OrderResult
 ) -> dict:
     """Marca un DecisionLog como ejecutado y linkea el trade."""
     return client.mark_executed(idempotency_key, order_result.model_dump(mode="json"))
 
 
 def _decision_payload(decision: ExecutionDecision) -> dict[str, Any]:
-    """Serializa ExecutionDecision al contrato que espera POST /decisions/."""
+    """Serializa ExecutionDecision al contrato que espera save_decision."""
     verdict = decision.verdict
     opp = verdict.opportunity
     # Equipo al que apunta la apuesta (para asentar PnL sin ambigüedad en el ledger).

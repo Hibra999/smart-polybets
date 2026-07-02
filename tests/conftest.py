@@ -1,7 +1,7 @@
 """Fixtures compartidos de tests.
 
 Seeds una DB de fútbol in-memory desde el DDL canónico y provee factories de
-schemas y un DjangoClient falso para testear workflows sin red.
+schemas y un LocalStateClient falso para testear workflows sin red.
 """
 from __future__ import annotations
 
@@ -168,8 +168,8 @@ def opportunity_factory():
     return make_opportunity
 
 
-class FakeDjangoClient:
-    """DjangoClient falso para workflows: idempotencia siempre nueva, saves no-op."""
+class FakeLocalStateClient:
+    """LocalStateClient falso para workflows: idempotencia siempre nueva, saves no-op."""
 
     def __init__(self):
         self.saved = []
@@ -178,6 +178,9 @@ class FakeDjangoClient:
     def get_portfolio_state(self):
         return {"bankroll_usdc": "1000", "drawdown_7d": "0", "open_positions": [],
                 "exposure_by_participant": {}}
+
+    def get_exposure_by_participant(self, tournament_id: str) -> dict:
+        return {}
 
     def check_idempotency(self, key):
         return None
@@ -195,5 +198,5 @@ class FakeDjangoClient:
 
 
 @pytest.fixture
-def fake_client() -> FakeDjangoClient:
-    return FakeDjangoClient()
+def fake_client() -> FakeLocalStateClient:
+    return FakeLocalStateClient()
