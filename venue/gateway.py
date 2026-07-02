@@ -15,8 +15,8 @@ import hashlib
 import os
 from decimal import ROUND_DOWN, ROUND_HALF_UP, Decimal
 
-from core.exceptions import AccountUnavailableError
-from core.polymarket_client import build_secure_client
+from core.exceptions import AccountUnavailableError, PolymarketClientError
+from core.polymarket_client import build_public_client, build_secure_client
 from core.utils import to_decimal, utcnow
 from execution.schemas.order_result import OrderResult
 from execution.schemas.trade_order import TradeOrder
@@ -257,16 +257,18 @@ class PolymarketGateway:
     # ── descubrimiento de mercados (PublicClient — read-only) ─────────────────
 
     def _ensure_pub_client(self):
-        """Lazy-init del PublicClient del SDK (descubrimiento, read-only, sin auth)."""
+        """Lazy-init del PublicClient del SDK (descubrimiento, read-only, sin auth).
+
+        Delega en `build_public_client()` (caché por proceso) en lugar de construir
+        una instancia nueva cada vez. `self._pub_client` se mantiene para inyección
+        en tests.
+        """
         if self._pub_client is not None:
             return self._pub_client
         try:
-            from polymarket.clients.public import PublicClient
-        except ImportError as exc:
-            raise AccountUnavailableError(
-                "SDK polymarket-client no instalado. Instalar: pip install --pre polymarket-client"
-            ) from exc
-        self._pub_client = PublicClient()
+            self._pub_client = build_public_client()
+        except PolymarketClientError as exc:
+            raise AccountUnavailableError(str(exc)) from exc
         return self._pub_client
 
     def find_match_markets(
