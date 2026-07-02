@@ -107,7 +107,7 @@ def _extract_yes_token(market) -> dict | None:
     # Slot NO real (inverso del YES). Si el YES estaba en outcomes.yes, el NO está
     # en outcomes.no, y viceversa (orden invertido).
     no_out = no_out if yes_label == "yes" else yes_out
-    no_token_id = str(getattr(no_out, "token_id", "") or "")
+    no_token_id = str(getattr(no_out, "token_id", "") or "") or None
     no_price = getattr(no_out, "price", None)
     no_price = Decimal(str(no_price)) if no_price is not None else (Decimal("1") - Decimal(str(yes_price)))
     # NO best_ask = 1 - (YES best_bid): comprar NO = alguien vende YES al bid.
