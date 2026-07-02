@@ -23,8 +23,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core.console import enable_utf8
-from core.polymarket_client import build_public_client
 from core.utils import utcnow
+from venue.discovery import list_events
 from venue.matching import canon as _canon
 
 enable_utf8()
@@ -34,16 +34,6 @@ TID = "fifa_world_cup_2026"
 REPO = Path(__file__).resolve().parent.parent
 DB = REPO / "data" / TID / f"{TID}.sqlite"
 _MORE = re.compile(r"^(.+?)\s+vs\.?\s+(.+?)\s*-\s*More\s+Markets", re.I)
-
-
-def _events(closed: bool) -> list:
-    """Eventos WC vía el PublicClient del SDK (sin scraper Gamma)."""
-    out: list = []
-    for page in build_public_client().list_events(tag_ids=TAG, closed=closed, page_size=100):
-        out.extend(page.items)
-        if len(out) >= 1400:
-            break
-    return out
 
 
 def _resolved(mk) -> str | None:
@@ -113,7 +103,7 @@ def _goals_from_event(ev: dict, home_disp: str, away_disp: str) -> tuple[int | N
 
 def run(apply: bool) -> None:
     events = {}
-    for e in _events(True) + _events(False):
+    for e in list_events(closed=True) + list_events(closed=False):
         m = _MORE.match(e.title or "")
         if m:
             events.setdefault(frozenset((_canon(m.group(1)), _canon(m.group(2)))), e)
