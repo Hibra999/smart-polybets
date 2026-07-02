@@ -1,9 +1,10 @@
 from decimal import Decimal
 
 import pytest
+from pydantic import ValidationError
 
 from core.exceptions import StrategyParseError
-from core.strategy import parse_strategy_md
+from core.strategy import StrategyConfig, parse_strategy_md
 from tournaments.registry import load_active_strategy, load_strategy_file
 
 
@@ -71,3 +72,36 @@ min_hours_to_event: 1
 """
     s = parse_strategy_md(text)
     assert s.edge_threshold_auto == Decimal("0.08")
+
+
+# ── bet_type tests ───────────────────────────────────────────────────────────
+
+def _base(**over):
+    d = dict(
+        version="1",
+        status="approved",
+        tournament_id="t",
+        sport="football",
+        market_type="match_winner",
+        edge_threshold_auto=Decimal("0.08"),
+        edge_threshold_review=Decimal("0.04"),
+        edge_threshold_discard=Decimal("0.02"),
+        min_market_volume_usdc=Decimal("5000"),
+        max_hours_to_event=24.0,
+        min_hours_to_event=1.0,
+    )
+    d.update(over)
+    return d
+
+
+def test_bet_type_defaults_to_win():
+    assert StrategyConfig(**_base()).bet_type == "win"
+
+
+def test_bet_type_accepts_double_chance():
+    assert StrategyConfig(**_base(bet_type="double_chance")).bet_type == "double_chance"
+
+
+def test_bet_type_rejects_unknown():
+    with pytest.raises(ValidationError):
+        StrategyConfig(**_base(bet_type="parlay"))
