@@ -15,53 +15,46 @@ defecto; --apply para escribir.
 from __future__ import annotations
 
 import argparse
-import json
 import re
 import sqlite3
 import sys
 from pathlib import Path
 
-import requests
-
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from core.console import enable_utf8
+from core.polymarket_client import build_public_client
 from core.utils import utcnow
-from research.functions.polymarket_live import _canon
+from venue.matching import canon as _canon
 
-GAMMA = "https://gamma-api.polymarket.com"
+enable_utf8()
+
 TAG = 102232
-UA = {"User-Agent": "Mozilla/5.0 (sports-quant-trading)"}
 TID = "fifa_world_cup_2026"
 REPO = Path(__file__).resolve().parent.parent
 DB = REPO / "data" / TID / f"{TID}.sqlite"
 _MORE = re.compile(r"^(.+?)\s+vs\.?\s+(.+?)\s*-\s*More\s+Markets", re.I)
 
 
-def _fetch(closed: str) -> list[dict]:
-    out: list[dict] = []
-    off = 0
-    while len(out) < 1400:
-        r = requests.get(f"{GAMMA}/events",
-                         params={"tag_id": TAG, "limit": 100, "offset": off, "closed": closed},
-                         headers=UA, timeout=20)
-        r.raise_for_status()
-        b = r.json()
-        if not b:
+def _events(closed: bool) -> list:
+    """Eventos WC vía el PublicClient del SDK (sin scraper Gamma)."""
+    out: list = []
+    for page in build_public_client().list_events(tag_ids=TAG, closed=closed, page_size=100):
+        out.extend(page.items)
+        if len(out) >= 1400:
             break
-        out += b
-        if len(b) < 100:
-            break
-        off += 100
     return out
 
 
-def _resolved(mk: dict) -> str | None:
-    try:
-        outs = json.loads(mk["outcomes"])
-        pr = [float(x) for x in json.loads(mk["outcomePrices"])]
-    except (KeyError, ValueError, TypeError):
+def _resolved(mk) -> str | None:
+    """Label del outcome resuelto (precio ~1) de un Market del SDK, o None."""
+    outs = getattr(mk, "outcomes", None)
+    if outs is None:
         return None
-    return outs[pr.index(max(pr))] if max(pr) > 0.98 else None
+    for oc in (getattr(outs, "yes", None), getattr(outs, "no", None)):
+        if oc is not None and oc.price is not None and float(oc.price) > 0.98:
+            return oc.label
+    return None
 
 
 def _bracket(over_lines: list[float], under_lines: list[float]) -> tuple[int, int]:
@@ -76,8 +69,8 @@ def _goals_from_event(ev: dict, home_disp: str, away_disp: str) -> tuple[int | N
     team_under: dict[str, list[float]] = {}
     tot_over: list[float] = []
     tot_under: list[float] = []
-    for mk in (ev.get("markets") or []):
-        q = mk.get("question", "")
+    for mk in (ev.markets or []):
+        q = mk.question or ""
         if "Half" in q:
             continue
         lab = _resolved(mk)
@@ -120,8 +113,8 @@ def _goals_from_event(ev: dict, home_disp: str, away_disp: str) -> tuple[int | N
 
 def run(apply: bool) -> None:
     events = {}
-    for e in _fetch("true") + _fetch("false"):
-        m = _MORE.match(e.get("title") or "")
+    for e in _events(True) + _events(False):
+        m = _MORE.match(e.title or "")
         if m:
             events.setdefault(frozenset((_canon(m.group(1)), _canon(m.group(2)))), e)
 
