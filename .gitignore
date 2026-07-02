@@ -21,3 +21,6 @@ editorial/reports/**/*.md
 
 # Entorno
 .env
+
+# SDD scratch (progreso de refactor, no versionar)
+.superpowers/
