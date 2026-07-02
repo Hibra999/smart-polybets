@@ -38,8 +38,8 @@ MIN_BET = Decimal("5")
 
 
 def _sdk():
-    import polymarket as P
-    return P.SecureClient.create(private_key=os.environ["POLYMARKET_PRIVATE_KEY"])
+    from core.polymarket_client import build_secure_client
+    return build_secure_client()
 
 
 def _read_bankroll(client) -> Decimal:

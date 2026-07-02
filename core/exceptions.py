@@ -52,3 +52,7 @@ class PriceMovedError(AgentError):
 
 class AccountUnavailableError(RuntimeError):
     """La cuenta live de Polymarket no está disponible (SDK no instalado o falta key)."""
+
+
+class PolymarketClientError(RuntimeError):
+    """No se pudo construir el cliente del SDK V2 (falta key o SDK no instalado)."""

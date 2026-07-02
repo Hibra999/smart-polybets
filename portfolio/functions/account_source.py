@@ -13,6 +13,7 @@ from decimal import Decimal
 from typing import Protocol
 
 from core.exceptions import AccountUnavailableError
+from core.polymarket_client import build_secure_client
 from core.utils import to_decimal, utcnow
 from portfolio.schemas.account import (
     AccountBalance,
@@ -47,23 +48,13 @@ class PolymarketAccountSource:
     def _ensure_client(self):
         if self._client is not None:
             return self._client
-        if not self._private_key:
-            raise AccountUnavailableError(
-                "Falta POLYMARKET_PRIVATE_KEY para leer la cuenta live."
-            )
-        try:
-            import polymarket as pm
-        except ImportError as exc:
-            raise AccountUnavailableError(
-                'SDK live no instalado. Corre: pip install --pre -e ".[live]"'
-            ) from exc
-        key = self._private_key if self._private_key.startswith("0x") else "0x" + self._private_key
         try:
             # create() deriva credenciales (handshake firmado, no mueve fondos).
-            self._client = pm.SecureClient.create(private_key=key)
-        except Exception as exc:  # UserInputError, RequestRejectedError, red, etc.
+            self._client = build_secure_client(
+                private_key=self._private_key or None, funder=self._funder)
+        except Exception as exc:  # PolymarketClientError, UserInputError, red, etc.
             raise AccountUnavailableError(
-                f"No se pudo autenticar con la wallet live: {type(exc).__name__}: {exc}"
+                f"No se pudo conectar la cuenta live: {type(exc).__name__}: {exc}"
             ) from exc
         return self._client
 

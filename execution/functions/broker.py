@@ -21,6 +21,7 @@ import hashlib
 import os
 from decimal import ROUND_DOWN, ROUND_HALF_UP, Decimal
 
+from core.polymarket_client import build_secure_client
 from core.utils import to_decimal, utcnow
 from execution.schemas.order_result import OrderResult
 from execution.schemas.trade_order import TradeOrder
@@ -66,12 +67,8 @@ class PolymarketBroker:
 
     def _get_client(self):
         if self._client is None:
-            from polymarket import SecureClient
-
-            kwargs = {"private_key": self.private_key}
-            if self.funder:
-                kwargs["wallet"] = self.funder
-            self._client = SecureClient.create(**kwargs)
+            self._client = build_secure_client(
+                private_key=self.private_key, funder=self.funder)
         return self._client
 
     # ── colocación ───────────────────────────────────────────────────────────

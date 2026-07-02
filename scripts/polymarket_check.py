@@ -21,23 +21,14 @@ enable_utf8()  # consola Windows: stdout/stderr en UTF-8
 
 
 def main() -> None:
-    key = os.getenv("POLYMARKET_PRIVATE_KEY")
-    funder = os.getenv("POLYMARKET_FUNDER")
-    if not key:
-        print("[FALTA] POLYMARKET_PRIVATE_KEY no está en el entorno (.env).")
-        return
+    from core.polymarket_client import build_secure_client
+    from core.exceptions import PolymarketClientError
 
     try:
-        import polymarket as P
-    except ImportError:
-        print("[FALTA] SDK. Instalá: pip install --pre polymarket-client")
+        client = build_secure_client()
+    except PolymarketClientError as exc:
+        print(f"[FALTA] {exc}")
         return
-
-    try:
-        kwargs = {"private_key": key}
-        if funder:
-            kwargs["wallet"] = funder
-        client = P.SecureClient.create(**kwargs)
     except Exception as exc:  # noqa: BLE001
         print(f"[ERROR] No se pudo crear el cliente: {type(exc).__name__}: {exc}")
         return
