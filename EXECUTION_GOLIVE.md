@@ -21,6 +21,8 @@ Sólo los **AUTO** se colocan. REVIEW espera aprobación humana; DISCARD/SKIP no
 ## Correr (dry-run, sin riesgo)
 
 ```bash
+python scripts/scan_market.py --hours 72                  # edge modelo-Polymarket, próximas 72h (sports-as-plugins seam)
+python scripts/scan_market.py --json                      # misma salida en JSON
 python scripts/place_bets.py --date 2026-06-20            # qué se colocaría hoy
 python scripts/wc_suggestions.py --date 2026-06-20        # tabla de sugerencias
 python scripts/portfolio.py                               # portafolio + trades (abiertos/cerrados/pendientes)
