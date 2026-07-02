@@ -320,5 +320,8 @@ class PolymarketGateway:
                     tick_size=info["tick_size"],
                     min_order_size=info["min_order_size"],
                     accepting_orders=info["accepting_orders"],
+                    no_token_id=info.get("no_token_id"),
+                    no_best_ask=info.get("no_best_ask"),
+                    no_probability=info.get("no_price"),
                 ))
         return results

@@ -104,6 +104,15 @@ def _extract_yes_token(market) -> dict | None:
     best_ask = getattr(prices, "best_ask", None)
     best_bid = getattr(prices, "best_bid", None)
 
+    # Slot NO real (inverso del YES). Si el YES estaba en outcomes.yes, el NO está
+    # en outcomes.no, y viceversa (orden invertido).
+    no_out = no_out if yes_label == "yes" else yes_out
+    no_token_id = str(getattr(no_out, "token_id", "") or "")
+    no_price = getattr(no_out, "price", None)
+    no_price = Decimal(str(no_price)) if no_price is not None else (Decimal("1") - Decimal(str(yes_price)))
+    # NO best_ask = 1 - (YES best_bid): comprar NO = alguien vende YES al bid.
+    no_best_ask = (Decimal("1") - Decimal(str(best_bid))) if best_bid is not None else None
+
     # volume: preferir volume_num (USDC float), caer a volume si no
     volume_raw = getattr(metrics, "volume_num", None) or getattr(metrics, "volume", None)
     liquidity_raw = (
@@ -130,6 +139,9 @@ def _extract_yes_token(market) -> dict | None:
         "tick_size": tick_size,
         "min_order_size": min_order_size,
         "accepting_orders": accepting_orders,
+        "no_token_id": no_token_id,
+        "no_best_ask": no_best_ask,
+        "no_price": no_price,
     }
 
 
