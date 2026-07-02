@@ -19,57 +19,34 @@ import argparse
 import re
 import sqlite3
 import sys
+from datetime import timezone
 from pathlib import Path
-
-import requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from research.functions.polymarket_live import _canon
+from core.console import enable_utf8
+from venue.discovery import match_events
+from venue.matching import canon as _canon
 
-GAMMA = "https://gamma-api.polymarket.com"
-TAG = 102232
-UA = {"User-Agent": "Mozilla/5.0 (sports-quant-trading)"}
+enable_utf8()
+
 TID = "fifa_world_cup_2026"
 REPO = Path(__file__).resolve().parent.parent
 DB = REPO / "data" / TID / f"{TID}.sqlite"
-_TITLE = re.compile(r"^(.+?)\s+vs\.?\s+(.+?)\??$", re.I)
-
-
-def _fetch(closed: str) -> list[dict]:
-    out: list[dict] = []
-    off = 0
-    while len(out) < 1200:
-        r = requests.get(f"{GAMMA}/events",
-                         params={"tag_id": TAG, "limit": 100, "offset": off, "closed": closed},
-                         headers=UA, timeout=20)
-        r.raise_for_status()
-        batch = r.json()
-        if not batch:
-            break
-        out += batch
-        if len(batch) < 100:
-            break
-        off += 100
-    return out
 
 
 def _pm_times() -> dict[frozenset, str]:
-    """frozenset(home_key, away_key) -> kickoff ISO (startTime real)."""
+    """frozenset(home_canon, away_canon) -> kickoff ISO (schedule.start_time real).
+
+    Vía el helper unificado `venue.discovery.match_events` (SDK, sin scraper Gamma).
+    """
     index: dict[frozenset, str] = {}
-    for e in _fetch("false") + _fetch("true"):
-        title = (e.get("title") or "")
-        if "More Markets" in title:
+    for me in match_events(closed=False) + match_events(closed=True):
+        if me.kickoff is None:
             continue
-        m = _TITLE.match(title.split(" - ")[0].strip())
-        if not m:
-            continue
-        st = e.get("startTime") or e.get("endDate")
-        if not st:
-            continue
-        key = frozenset((_canon(m.group(1)), _canon(m.group(2))))
-        # si hay duplicados, preferimos el primero (evento principal)
-        index.setdefault(key, st)
+        # si hay duplicados (ej. evento "More Markets"), preferimos el primero
+        index.setdefault(frozenset((me.home_canon, me.away_canon)),
+                         me.kickoff.astimezone(timezone.utc).isoformat())
     return index
 
 

@@ -29,75 +29,37 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-import requests
-
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from research.functions.polymarket_live import _canon
+from core.console import enable_utf8
+from venue.discovery import match_events
+from venue.matching import canon as _canon
 
-GAMMA = "https://gamma-api.polymarket.com"
-TAG = 102232
-UA = {"User-Agent": "Mozilla/5.0 (sports-quant-trading)"}
+enable_utf8()
+
 TID = "fifa_world_cup_2026"
 REPO = Path(__file__).resolve().parent.parent
 DB = REPO / "data" / TID / f"{TID}.sqlite"
-_WILL = re.compile(r"\s*will\s+(.+?)\s+win\b", re.I)
-_VS = re.compile(r"^(.+?)\s+vs\.?\s+(.+?)\??$", re.I)
 # placeholder de bracket basado en posición de grupo (fase de 32)
 _GROUP_PH = re.compile(r"^group_[a-l]_(winner|2nd_place)$|^third_place_group", re.I)
 
 
 def fetch_polymarket_matches() -> list[dict]:
-    """Devuelve [{home_canon, away_canon, home_disp, away_disp, kickoff}] ordenado por kickoff."""
-    events: list[dict] = []
-    off = 0
-    while len(events) < 800:
-        r = requests.get(f"{GAMMA}/events",
-                         params={"tag_id": TAG, "limit": 100, "offset": off, "closed": "false"},
-                         headers=UA, timeout=20)
-        r.raise_for_status()
-        b = r.json()
-        if not b:
-            break
-        events += b
-        if len(b) < 100:
-            break
-        off += 100
+    """[{home_canon, away_canon, home_disp, away_disp, kickoff}] ordenado por kickoff.
 
+    Vía el helper unificado `venue.discovery.match_events` (SDK, sin scraper Gamma).
+    """
     out = []
-    for e in events:
-        title = (e.get("title") or "").split(" - ")[0]
-        m = _VS.match(title)
-        if not m:
+    for me in match_events(closed=False):
+        if not me.has_winner_market or me.kickoff is None:
             continue
-        mks = [mk for mk in (e.get("markets") or []) if _WILL.match(mk.get("question") or "")]
-        if not mks:
-            continue  # no es un mercado de ganador de partido (ej. novelty)
-        gst = next((mk.get("gameStartTime") or mk.get("endDate")
-                    for mk in mks if mk.get("gameStartTime") or mk.get("endDate")), None)
-        if not gst:
-            continue
-        kickoff = _norm_kickoff(str(gst))
         out.append({
-            "home_disp": m.group(1).strip(), "away_disp": m.group(2).strip(),
-            "home_canon": _canon(m.group(1)), "away_canon": _canon(m.group(2)),
-            "kickoff": kickoff,
+            "home_disp": me.home_disp, "away_disp": me.away_disp,
+            "home_canon": me.home_canon, "away_canon": me.away_canon,
+            "kickoff": me.kickoff.astimezone(timezone.utc).isoformat(),
         })
     out.sort(key=lambda x: x["kickoff"])
     return out
-
-
-def _norm_kickoff(s: str) -> str:
-    """'2026-06-29 17:00:00+00' | '2026-06-29T17:00:00Z' -> ISO 'YYYY-MM-DDTHH:MM:SS+00:00'."""
-    s = s.strip().replace(" ", "T")
-    if s.endswith("Z"):
-        s = s[:-1] + "+00:00"
-    if re.search(r"\+00$", s):
-        s = s + ":00"
-    try:
-        return datetime.fromisoformat(s).astimezone(timezone.utc).isoformat()
-    except ValueError:
-        return s
 
 
 def run(apply: bool) -> None:
