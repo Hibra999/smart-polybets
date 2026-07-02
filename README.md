@@ -18,8 +18,9 @@ Flujo unidireccional:
 Research → Risk → Optimization → Execution → Portfolio → Editorial
 ```
 
-El estado vive **únicamente** en el Django App (consumido vía HTTP). El repo no
-tiene base de datos propia ni cachea estado.
+El estado (decisiones, órdenes, PnL) vive en `LocalState` (estado local del repo);
+Django fue retirado. Polymarket se lee live vía `venue/gateway` sobre el SDK oficial —
+**una sola librería**, sin scrapers.
 
 ## Instalación
 
@@ -60,10 +61,11 @@ pytest
 | Áreas, schemas, adapters, agent, workflows | implementado |
 | Modelos Elo + Bayes + TrueSkill (football) | **migrados de `pypro_worldcup_betting`** (reales, puros) |
 | Estrategia blend+Kelly (FIFA WC 2026) | migrada → `match_winner_wc_v1` (activa) |
-| Cuotas reales (Polymarket/Codere) | migradas → `SqliteOddsSource` (CLOB live pendiente) |
+| Cuotas / mercados Polymarket | live vía `venue/gateway` sobre el SDK (descubrimiento en `venue/discovery`) |
 | Modelo Elo (NFL) | implementado (real) |
-| Polymarket CLOB V2 `submit_order` | stub (TODO: wire `polymarket-client`, el SDK oficial V2; reemplaza a `py-clob-client`) |
-| Django App `/api/agent/` | cliente HTTP listo; los endpoints viven en el repo Django |
+| Estrategia doble-oportunidad | `bet_type: double_chance` (rival no gana / 1X a 90', preciado por Poisson) |
+| Polymarket CLOB V2 (órdenes) | cableado vía `venue/gateway` (SDK oficial `polymarket-client`); dry-run por defecto, live gateado |
+| Estado | `LocalState` local (Django retirado) |
 | Datos `.sqlite` | DDL + builder + `migrate_worldcup_data.py` (datos reales WC 2026) |
 
 ## Agregar un torneo nuevo
