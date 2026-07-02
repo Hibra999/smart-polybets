@@ -166,7 +166,7 @@
   <div class="layer" style="border-left-color:var(--core)">
     <div class="lbl">core/ · utilidades compartidas</div>
     <div class="cards">
-      <div class="card"><b>polymarket_client</b><small>fábrica única del SecureClient V2 (SDK).</small></div>
+      <div class="card"><b>polymarket_client</b><small>fábrica + <b>cache por proceso</b> del cliente SDK (autentica 1×/run, ~6–12 s más rápido).</small></div>
       <div class="card"><b>strategy</b><small>STRATEGY.md → StrategyConfig.</small></div>
       <div class="card"><b>local_state</b><small>único backend de estado (JSON). <span class="status done">✓ Django retirado</span></small></div>
       <div class="card"><b>types · utils · exceptions · env · console</b><small>enums · Decimal · idempotencia · .env · UTF‑8.</small></div>
