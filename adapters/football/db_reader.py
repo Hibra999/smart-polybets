@@ -34,19 +34,20 @@ class FootballDBReader(SQLiteReader):
 
     def get_upcoming_fixtures(self, hours_ahead: int = 24, *, now: Any = None) -> list[dict]:
         """Partidos programados en las próximas N horas."""
-        ref = (now or utcnow())
-        lo = ref.isoformat()
-        hi = (ref.replace(microsecond=0)).isoformat()
-        # Comparación lexicográfica sobre ISO-8601 (kickoff_utc almacenado como ISO).
+        ref_iso = (now or utcnow()).isoformat()
+        # Normalizar AMBOS lados con datetime() de SQLite: así la comparación es sobre el
+        # formato canónico ('YYYY-MM-DD HH:MM:SS' en UTC) y no una comparación de strings
+        # frágil entre ISO-con-'T'+tz y la salida-con-espacio de datetime() (que fallaba
+        # según la hora del día cuando compartían fecha).
         return self.query(
             """
             SELECT * FROM fixture
             WHERE status = 'scheduled'
-              AND kickoff_utc >= ?
-              AND kickoff_utc <= datetime(?, ?)
+              AND datetime(kickoff_utc) >= datetime(?)
+              AND datetime(kickoff_utc) <= datetime(?, ?)
             ORDER BY kickoff_utc ASC
             """,
-            (lo, hi, f"+{int(hours_ahead)} hours"),
+            (ref_iso, ref_iso, f"+{int(hours_ahead)} hours"),
         )
 
     def get_team(self, team_id: str) -> dict[str, Any] | None:
