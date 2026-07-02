@@ -3,19 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sports Quant Trading System — Arquitectura</title>
+<title>Sports Quant Trading System — Arquitectura (Polymarket-first)</title>
 <style>
   :root{
     --bg:#0d1117; --panel:#161b22; --panel2:#1c2333; --ink:#e6edf3; --muted:#8b949e;
     --line:#30363d; --accent:#58a6ff;
-    --edge:#f778ba; --adapter:#d29922; --domain:#3fb950; --tools:#a371f7;
+    --gw:#f778ba; --adapter:#d29922; --domain:#3fb950; --tools:#a371f7;
     --flow:#58a6ff; --core:#39c5cf; --ext:#e6683c; --safe:#2ea043; --danger:#f85149;
+    --plan:#7d8590;
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--ink);
     font:15px/1.55 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
   .wrap{max-width:1180px;margin:0 auto;padding:32px 22px 80px}
-  h1{font-size:30px;margin:0 0 4px;letter-spacing:.2px}
+  h1{font-size:30px;margin:0 0 4px}
   h2{font-size:20px;margin:44px 0 6px;padding-bottom:8px;border-bottom:1px solid var(--line)}
   h3{font-size:15px;margin:18px 0 8px;color:var(--accent)}
   .sub{color:var(--muted);margin:0 0 8px}
@@ -26,7 +27,6 @@
   .legend{display:flex;flex-wrap:wrap;gap:10px 18px;margin:14px 0 0;font-size:13px;color:var(--muted)}
   .legend span{display:inline-flex;align-items:center;gap:7px}
   .dot{width:12px;height:12px;border-radius:3px;display:inline-block}
-  /* layered stack */
   .layer{border:1px solid var(--line);border-left-width:5px;border-radius:10px;
     background:var(--panel);margin:10px 0;padding:12px 14px}
   .layer .lbl{font-size:11px;letter-spacing:1.3px;text-transform:uppercase;color:var(--muted);margin-bottom:9px;font-weight:600}
@@ -35,35 +35,37 @@
   .card b{display:block;font-size:13.5px}
   .card small{color:var(--muted);font-size:11.5px;line-height:1.4;display:block;margin-top:3px}
   .arrow{text-align:center;color:var(--muted);font-size:20px;line-height:1;margin:-2px 0}
-  /* pipeline */
+  .gwband{border:2px solid var(--gw);border-radius:12px;background:linear-gradient(180deg,rgba(247,120,186,.08),rgba(247,120,186,.02));
+    margin:10px 0;padding:14px}
+  .gwband .lbl{color:var(--gw)}
   .pipe{display:flex;flex-wrap:wrap;align-items:stretch;gap:0;margin-top:12px}
   .stage{flex:1;min-width:140px;background:var(--panel);border:1px solid var(--line);
-    border-top:3px solid var(--flow);border-radius:8px;padding:11px 12px;position:relative}
-  .stage b{font-size:14px}
-  .stage small{display:block;color:var(--muted);font-size:11.5px;margin-top:4px}
+    border-top:3px solid var(--flow);border-radius:8px;padding:11px 12px}
+  .stage b{font-size:14px}.stage small{display:block;color:var(--muted);font-size:11.5px;margin-top:4px}
   .chev{display:flex;align-items:center;color:var(--flow);font-size:22px;padding:0 4px}
   .contract{font-size:11px;color:var(--core);margin-top:7px;border-top:1px dashed var(--line);padding-top:6px}
-  /* generic grid */
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px}
   .grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:12px}
   .box{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
   .box h3{margin-top:0}
   ul{margin:6px 0;padding-left:20px}li{margin:3px 0;color:#c9d1d9}
-  .tag{display:inline-block;font-size:10.5px;padding:2px 7px;border-radius:20px;font-weight:600;letter-spacing:.3px}
+  .tag{display:inline-block;font-size:10.5px;padding:2px 7px;border-radius:20px;font-weight:600}
   .t-auto{background:rgba(46,160,67,.18);color:#3fb950;border:1px solid #238636}
   .t-review{background:rgba(210,153,34,.18);color:#d29922;border:1px solid #9e6a03}
   .t-discard{background:rgba(248,81,73,.16);color:#f85149;border:1px solid #b62324}
-  .flowsteps{counter-reset:s;margin-top:12px}
+  .flowsteps{margin-top:12px}
   .step{display:flex;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:10px 14px;margin:8px 0}
-  .step::before{counter-increment:s;content:counter(s);flex:0 0 26px;height:26px;border-radius:50%;
-    background:var(--accent);color:#0d1117;font-weight:700;display:grid;place-items:center;font-size:13px}
+  .step .n{flex:0 0 26px;height:26px;border-radius:50%;background:var(--accent);color:#0d1117;font-weight:700;display:grid;place-items:center;font-size:13px}
   .step div b{font-size:13.5px}.step div small{color:var(--muted);display:block;font-size:12px}
-  .gate{border-left:4px solid var(--danger)}
-  .safe{border-left:4px solid var(--safe)}
+  .gate{border-left:4px solid var(--danger)}.safe{border-left:4px solid var(--safe)}
   table{width:100%;border-collapse:collapse;margin-top:12px;font-size:13.5px}
   th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
-  th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.5px}
-  td code{font-size:12px}
+  th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase}
+  .phase{border:1px dashed var(--plan);border-radius:10px;padding:12px 14px;margin:10px 0;background:rgba(125,133,144,.06)}
+  .phase b.h{color:var(--accent)}
+  .status{font-size:10.5px;padding:2px 8px;border-radius:20px;font-weight:700;margin-left:8px}
+  .done{background:rgba(46,160,67,.18);color:#3fb950;border:1px solid #238636}
+  .next{background:rgba(125,133,144,.15);color:#adbac7;border:1px solid #444c56}
   .foot{margin-top:40px;color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);padding-top:14px}
   .pill{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:20px;padding:2px 9px}
 </style>
@@ -72,223 +74,209 @@
 <div class="wrap">
 
   <h1>Sports Quant Trading System</h1>
-  <p class="sub">Hedge fund sintético asistido por Claude para mercados de predicción deportivos en Polymarket · <span class="pill">repo: pypro_polymarket_agent</span></p>
+  <p class="sub">Hedge fund sintético asistido por Claude · <b>Polymarket‑first</b>, deportes como plugins · <span class="pill">repo: pypro_polymarket_agent</span></p>
 
   <div class="lead">
     <b>Idea central.</b> Claude opera como <b>analista cuantitativo, gestor de riesgo y operador</b>;
     el humano es el <b>CIO</b> que aprueba lo ambiguo y delega lo obvio. Principio rector:
-    <b>reproducibilidad hacia adelante</b> — cada decisión es el resultado determinístico de inputs
-    documentados procesados por funciones puras versionadas con contratos explícitos (schemas Pydantic).
-    <i>Mismos inputs → misma decisión.</i> El sistema es <b>agnóstico al venue y al deporte</b>:
-    lo específico de Polymarket vive aislado en adapters de borde detrás de interfaces.
+    <b>reproducibilidad hacia adelante</b> — cada decisión es determinística: inputs documentados →
+    funciones puras versionadas con contratos Pydantic. <b>Polymarket es el mercado principal</b> y
+    se accede por <b>un único gateway sobre una sola librería</b> (el SDK oficial); los deportes se
+    “pegan” encima como proveedores de señal.
   </div>
 
   <div class="legend">
-    <span><i class="dot" style="background:var(--tools)"></i>Capa de agente / tools (efectos)</span>
-    <span><i class="dot" style="background:var(--domain)"></i>Dominio puro (functions + schemas)</span>
+    <span><i class="dot" style="background:var(--tools)"></i>Agente / tools (efectos)</span>
+    <span><i class="dot" style="background:var(--domain)"></i>Dominio puro</span>
+    <span><i class="dot" style="background:var(--gw)"></i>Gateway Polymarket (venue/)</span>
     <span><i class="dot" style="background:var(--adapter)"></i>Adapters / modelos</span>
-    <span><i class="dot" style="background:var(--edge)"></i>Bordes Polymarket</span>
-    <span><i class="dot" style="background:var(--core)"></i>Core (utilidades)</span>
-    <span><i class="dot" style="background:var(--ext)"></i>Sistemas externos</span>
+    <span><i class="dot" style="background:var(--core)"></i>Core</span>
+    <span><i class="dot" style="background:var(--ext)"></i>Externos</span>
   </div>
 
-  <!-- ============ STACK EN CAPAS ============ -->
+  <!-- STACK -->
   <h2>1 · Arquitectura en capas</h2>
-  <p>De arriba (quién decide) hacia abajo (dónde vive el dato). El agente <b>sólo</b> toca la capa de tools; nada salta directo al dominio o al SDK.</p>
+  <p>El agente sólo toca la capa de tools. Toda la interacción con Polymarket pasa por <b>un</b> gateway.</p>
 
   <div class="layer" style="border-left-color:var(--accent)">
     <div class="lbl">Gobernanza</div>
     <div class="cards">
       <div class="card"><b>CIO (humano)</b><small>Aprueba/rechaza REVIEW, aprueba STRATEGY.md, activa el kill-switch.</small></div>
-      <div class="card"><b>Claude — agente</b><small>Analista + riesgo + operador. Briefing en <code>agent/CLAUDE.md</code>.</small></div>
+      <div class="card"><b>Claude — agente</b><small>Analista + riesgo + operador (<code>agent/CLAUDE.md</code>).</small></div>
     </div>
   </div>
   <div class="arrow">▼</div>
-
   <div class="layer" style="border-left-color:var(--flow)">
     <div class="lbl">Orquestación · agent/workflows/</div>
     <div class="cards">
-      <div class="card"><b>full_analysis</b><small>Pipeline de punta a punta por evento (research→…→portfolio).</small></div>
-      <div class="card"><b>daily_suggestions</b><small>Sugerencias del día (mismo cómputo que HTML/tweet).</small></div>
-      <div class="card"><b>nfl_* / poisson_*</b><small>Backtests y variantes por deporte.</small></div>
+      <div class="card"><b>full_analysis</b><small>Pipeline por evento de punta a punta.</small></div>
+      <div class="card"><b>daily_suggestions</b><small>Sugerencias del día.</small></div>
+      <div class="card"><b>scan_market <span class="status next">Fase 3</span></b><small>Entrypoint Polymarket‑first (mercado→señal).</small></div>
     </div>
   </div>
   <div class="arrow">▼</div>
-
   <div class="layer" style="border-left-color:var(--tools)">
-    <div class="lbl">Capa 1 — agent/tools/ · efectos: I/O, estado, red, SDK</div>
+    <div class="lbl">Capa 1 — agent/tools/ · efectos (I/O, estado, red vía gateway)</div>
     <div class="cards">
-      <div class="card"><b>research_tools</b><small>predicción, mercados, edge.</small></div>
-      <div class="card"><b>risk_tools</b><small>evaluate → AUTO/REVIEW/DISCARD.</small></div>
-      <div class="card"><b>execution_tools</b><small>build_order, classify, submit.</small></div>
-      <div class="card"><b>portfolio_tools</b><small>estado, idempotencia, mark_executed.</small></div>
-      <div class="card"><b>account_tools</b><small>saldo/posiciones/órdenes/cerradas (A).</small></div>
-      <div class="card"><b>publish_tools · django_sync_tools</b><small>editorial + sync Django.</small></div>
+      <div class="card"><b>research_tools</b><small>predicción · mercados · edge.</small></div>
+      <div class="card"><b>risk_tools</b><small>AUTO / REVIEW / DISCARD.</small></div>
+      <div class="card"><b>execution_tools</b><small>build_order · classify · submit.</small></div>
+      <div class="card"><b>portfolio_tools</b><small>estado · idempotencia · mark_executed.</small></div>
+      <div class="card"><b>account_tools</b><small>saldo · posiciones · cerradas.</small></div>
+      <div class="card"><b>publish_tools</b><small>editorial.</small></div>
+    </div>
+  </div>
+  <div class="arrow">▼</div>
+  <div class="layer" style="border-left-color:var(--domain)">
+    <div class="lbl">Capa 2 — dominio puro · functions/ + schemas/ (testeable, sin I/O)</div>
+    <div class="cards">
+      <div class="card"><b>research/</b><small>MarketOpportunity (edge = señal − precio).</small></div>
+      <div class="card"><b>risk/</b><small>RiskVerdict + Kelly.</small></div>
+      <div class="card"><b>optimization/</b><small>size_single (cvxpy → Kelly).</small></div>
+      <div class="card"><b>execution/</b><small>order_builder · review_order · price_validator.</small></div>
+      <div class="card"><b>portfolio/</b><small>trade_ledger · account_reconcile · pnl.</small></div>
+      <div class="card"><b>editorial/</b><small>reportes MD/HTML.</small></div>
     </div>
   </div>
   <div class="arrow">▼</div>
 
-  <div class="layer" style="border-left-color:var(--domain)">
-    <div class="lbl">Capa 2 — dominio puro · cada área = functions/ + schemas/ + SKILL.md</div>
+  <!-- GATEWAY BAND -->
+  <div class="gwband">
+    <div class="lbl" style="font-size:11px;letter-spacing:1.3px;text-transform:uppercase;font-weight:600;margin-bottom:9px">
+      Gateway único de Polymarket · venue/ <span class="status done">Fase 1</span>
+    </div>
+    <p style="margin:0 0 10px;color:#c9d1d9">Los adapters ya no tienen cliente propio: <b>delegan todos en <code>venue.PolymarketGateway</code></b>, el único objeto que habla con Polymarket (descubrimiento + cuenta + órdenes).</p>
     <div class="cards">
-      <div class="card"><b>research/</b><small>MarketOpportunity con edge (modelo vs mercado).</small></div>
-      <div class="card"><b>risk/</b><small>RiskVerdict + Kelly (fórmula pura).</small></div>
-      <div class="card"><b>optimization/</b><small>size_single (cvxpy opcional → fallback Kelly).</small></div>
-      <div class="card"><b>execution/</b><small>order_builder, review_order, price_validator.</small></div>
-      <div class="card"><b>portfolio/</b><small>trade_ledger, account_reconcile, pnl, performance.</small></div>
-      <div class="card"><b>editorial/</b><small>reportes Markdown/HTML (no publica).</small></div>
+      <div class="card" style="border-color:var(--gw)"><b>venue/gateway.py</b><small>PolymarketGateway: <code>find_match_markets</code>, <code>balance/positions/open_orders/closed_positions</code>, <code>place/cancel/best_ask</code>.</small></div>
+      <div class="card" style="border-color:var(--gw)"><b>venue/matching.py</b><small>canon/alias + matching partido→mercado (puro).</small></div>
+      <div class="card"><b>adapters que delegan</b><small>PolymarketLiveSource · PolymarketAccountSource · PolymarketBroker → finos wrappers del gateway.</small></div>
     </div>
   </div>
   <div class="arrow">▼</div>
 
   <div class="layer" style="border-left-color:var(--adapter)">
-    <div class="lbl">Adapters · única capa que lee datos + modelos</div>
+    <div class="lbl">Adapters de datos + modelos deportivos</div>
     <div class="cards">
       <div class="card"><b>adapters/football</b><small>db_reader (SQLite RO) + Elo/Bayes/TrueSkill/Poisson.</small></div>
       <div class="card"><b>adapters/american_football</b><small>NFL: reader + Elo.</small></div>
-      <div class="card" style="border-color:var(--edge)"><b>research sources</b><small>PolymarketLiveSource (Gamma), SqliteOddsSource.</small></div>
-      <div class="card" style="border-color:var(--edge)"><b>PolymarketBroker</b><small>place/cancel/best_ask (CLOB V2).</small></div>
-      <div class="card" style="border-color:var(--edge)"><b>PolymarketAccountSource</b><small>saldo/posiciones/órdenes (SDK V2).</small></div>
+      <div class="card"><b>signals/ <span class="status next">Fase 3</span></b><small>SignalProvider por deporte (fútbol/NFL).</small></div>
     </div>
   </div>
   <div class="arrow">▼</div>
-
   <div class="layer" style="border-left-color:var(--core)">
-    <div class="lbl">core/ · utilidades compartidas sin lógica de negocio</div>
+    <div class="lbl">core/ · utilidades compartidas</div>
     <div class="cards">
-      <div class="card"><b>polymarket_client</b><small>fábrica única del SecureClient V2.</small></div>
-      <div class="card"><b>strategy</b><small>parsea STRATEGY.md → StrategyConfig.</small></div>
-      <div class="card"><b>local_state · django_client</b><small>backends de estado (JSON local / HTTP).</small></div>
-      <div class="card"><b>types · utils · exceptions · env · console</b><small>enums, Decimal, idempotencia, .env, UTF-8.</small></div>
+      <div class="card"><b>polymarket_client</b><small>fábrica única del SecureClient V2 (SDK).</small></div>
+      <div class="card"><b>strategy</b><small>STRATEGY.md → StrategyConfig.</small></div>
+      <div class="card"><b>local_state</b><small>único backend de estado (JSON). <span class="status next">Fase 2: retira Django</span></small></div>
+      <div class="card"><b>types · utils · exceptions · env · console</b><small>enums · Decimal · idempotencia · .env · UTF‑8.</small></div>
     </div>
   </div>
   <div class="arrow">▼</div>
-
   <div class="layer" style="border-left-color:var(--ext)">
-    <div class="lbl">Sistemas externos</div>
+    <div class="lbl">Externos — UNA sola librería</div>
     <div class="cards">
-      <div class="card"><b>Polymarket CLOB V2 + Gamma</b><small>SDK <code>polymarket</code> · colateral pUSD · wallet derivado.</small></div>
-      <div class="card"><b>SQLite por torneo</b><small><code>data/&lt;torneo&gt;.sqlite</code> desde DDL canónico.</small></div>
-      <div class="card"><b>Django App</b><small>fuente de verdad del estado (opcional; hoy LocalState).</small></div>
+      <div class="card"><b>SDK oficial <code>polymarket</code></b><small>PublicClient (descubrimiento) + SecureClient (cuenta/órdenes) · CLOB V2 · pUSD · wallet derivado.</small></div>
+      <div class="card"><b>SQLite por torneo</b><small><code>data/&lt;t&gt;.sqlite</code> desde DDL canónico.</small></div>
     </div>
   </div>
 
-  <!-- ============ PIPELINE ============ -->
-  <h2>2 · El pipeline unidireccional</h2>
-  <p>Flujo de datos por contratos tipados. Cada área consume el output de la anterior; nada retrocede.</p>
+  <!-- PIPELINE -->
+  <h2>2 · Pipeline unidireccional (por contratos)</h2>
   <div class="pipe">
-    <div class="stage"><b>Research</b><small>Modelo (Elo+Bayes+TrueSkill) vs precio de mercado.</small><div class="contract">→ MarketOpportunity</div></div>
+    <div class="stage"><b>Research</b><small>Modelo/señal vs precio de mercado.</small><div class="contract">→ MarketOpportunity</div></div>
     <div class="chev">›</div>
-    <div class="stage"><b>Risk</b><small>Guardián: thresholds del STRATEGY.md + Kelly + límites.</small><div class="contract">→ RiskVerdict</div></div>
+    <div class="stage"><b>Risk</b><small>Reglas del STRATEGY.md + Kelly + límites.</small><div class="contract">→ RiskVerdict</div></div>
     <div class="chev">›</div>
-    <div class="stage"><b>Optimization</b><small>Refina el sizing (cvxpy / Kelly fraccional).</small><div class="contract">→ SizingOutput</div></div>
+    <div class="stage"><b>Optimization</b><small>Refina sizing (Kelly ¼).</small><div class="contract">→ SizingOutput</div></div>
     <div class="chev">›</div>
-    <div class="stage"><b>Execution</b><small>Construye orden al best_ask live + slippage/tick.</small><div class="contract">→ TradeOrder → OrderResult</div></div>
+    <div class="stage"><b>Execution</b><small>Orden al best_ask live + slippage/tick (vía gateway).</small><div class="contract">→ TradeOrder → OrderResult</div></div>
     <div class="chev">›</div>
     <div class="stage"><b>Portfolio</b><small>Estado, idempotencia, PnL, reconciliación.</small><div class="contract">→ PortfolioState</div></div>
     <div class="chev">›</div>
-    <div class="stage"><b>Editorial</b><small>Reportes REVIEW / resúmenes (no publica solo).</small><div class="contract">→ Markdown/HTML</div></div>
+    <div class="stage"><b>Editorial</b><small>Reportes REVIEW / resúmenes.</small><div class="contract">→ MD/HTML</div></div>
   </div>
 
-  <!-- ============ CICLO DE DECISIÓN ============ -->
-  <h2>3 · Ciclo de vida de una decisión (full_analysis)</h2>
+  <!-- DECISIÓN -->
+  <h2>3 · Ciclo de vida de una decisión</h2>
   <div class="flowsteps">
-    <div class="step"><div><b>Estado fresco + idempotencia</b><small>GET del portafolio; <code>check_idempotency(key)</code>. Si ya existe → SKIP (nunca doble-apostar). <code>key = hash(condition_id+outcome+strategy_id+version+date)</code>.</small></div></div>
-    <div class="step"><div><b>Research → oportunidades</b><small>scan del evento con la estrategia activa; el modelo elige lado (blend elo/bayes/trueskill) y calcula el edge vs Polymarket.</small></div></div>
-    <div class="step"><div><b>Risk evaluate</b><small>Aplica el STRATEGY.md: edge thresholds, exposición, drawdown, Kelly. Emite el veredicto:</small>
-      <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">
-        <span class="tag t-auto">AUTO · ejecuta solo</span>
-        <span class="tag t-review">REVIEW · espera al CIO</span>
-        <span class="tag t-discard">DISCARD · descarta</span>
-      </div></div></div>
-    <div class="step"><div><b>Optimization</b><small>Sólo si no es DISCARD: refina el tamaño (Kelly fraccional ¼, topes max_bet / max_kelly_fraction).</small></div></div>
-    <div class="step"><div><b>Execution</b><small>build_order al best_ask live; guarda de slippage vs la señal; redondeo al tick; tamaño mínimo; flag neg-risk.</small></div></div>
-    <div class="step"><div><b>Portfolio</b><small>save_decision; si AUTO y pasa slippage → submit vía broker → mark_executed. Si REVIEW → reporte estructurado y espera.</small></div></div>
+    <div class="step"><span class="n">1</span><div><b>Idempotencia</b><small><code>check_idempotency(key)</code>; si existe → SKIP. <code>key = hash(condition_id+outcome+strategy_id+version+date)</code>.</small></div></div>
+    <div class="step"><span class="n">2</span><div><b>Research → oportunidad</b><small>señal (modelo/plugin) + edge vs Polymarket.</small></div></div>
+    <div class="step"><span class="n">3</span><div><b>Risk evaluate</b><small>Aplica STRATEGY.md →
+      <span class="tag t-auto">AUTO</span> <span class="tag t-review">REVIEW</span> <span class="tag t-discard">DISCARD</span></small></div></div>
+    <div class="step"><span class="n">4</span><div><b>Optimization</b><small>Kelly fraccional, topes max_bet / max_kelly_fraction.</small></div></div>
+    <div class="step"><span class="n">5</span><div><b>Execution</b><small>best_ask live + slippage + tick + min + neg-risk (gateway).</small></div></div>
+    <div class="step"><span class="n">6</span><div><b>Portfolio</b><small>AUTO → submit → mark_executed; REVIEW → reporte y espera al CIO.</small></div></div>
   </div>
 
-  <!-- ============ POLYMARKET EDGES ============ -->
-  <h2>4 · Integración Polymarket — 3 bordes detrás de interfaces</h2>
-  <p>Todo lo específico del venue está aislado. El pipeline habla contratos abstractos; para otro venue/deporte se escriben nuevos adapters implementando los mismos <b>Protocols</b>, sin tocar la lógica.</p>
+  <!-- POLYMARKET -->
+  <h2>4 · Interacción con Polymarket — un gateway, una librería</h2>
+  <p>Antes: <b>dos clientes</b> (scraper <code>requests</code> a Gamma + SDK). Ahora: <b>un gateway</b> (<code>venue/</code>) sobre el <b>SDK oficial</b> (PublicClient + SecureClient). El scraper de Gamma fue retirado. Los Protocols (<code>MarketSource</code>, <code>AccountSource</code>) se conservan como interfaz; los adapters delegan en el gateway.</p>
   <div class="grid3">
-    <div class="box"><h3>① Datos de mercado</h3>
-      <small class="sub">Protocol <code>MarketSource</code></small>
-      <ul><li><code>research/functions/polymarket_live.py</code> — Gamma API (cuotas live, token_id, neg_risk, tick).</li><li><code>odds_source.py</code> — cuotas guardadas (SQLite).</li><li>Stub por defecto → inyectable.</li></ul></div>
-    <div class="box"><h3>② Lectura de cuenta (A)</h3>
-      <small class="sub">Protocol <code>AccountSource</code></small>
-      <ul><li><code>portfolio/functions/account_source.py</code></li><li>saldo pUSD, posiciones (mark-to-market), órdenes abiertas, cerradas.</li><li>Read-only; sin key/SDK → <code>AccountUnavailableError</code>.</li></ul></div>
-    <div class="box"><h3>③ Ejecución (B)</h3>
-      <small class="sub"><code>PolymarketBroker</code></small>
-      <ul><li><code>execution/functions/broker.py</code></li><li><code>place</code> / <code>cancel</code> / <code>best_ask</code>.</li><li>Dry-run por defecto; envía sólo con todos los gates.</li></ul></div>
+    <div class="box"><h3>Descubrimiento</h3><small class="sub">PublicClient (sin auth)</small>
+      <ul><li><code>find_match_markets(home, away)</code> vía <code>list_events</code>/<code>search</code> + matching por nombre.</li><li><code>best_ask</code>, order book, precios, sports, tags.</li></ul></div>
+    <div class="box"><h3>Cuenta</h3><small class="sub">SecureClient (auth)</small>
+      <ul><li><code>balance</code>, <code>positions</code> (mark-to-market), <code>open_orders</code>, <code>closed_positions</code>.</li></ul></div>
+    <div class="box"><h3>Ejecución</h3><small class="sub">SecureClient (auth)</small>
+      <ul><li><code>place(TradeOrder)</code>, <code>cancel(order_id)</code> — dry-run por defecto, con los gates.</li></ul></div>
   </div>
   <div class="box" style="margin-top:14px;border-left:4px solid var(--core)">
-    <h3>Fábrica única del cliente SDK</h3>
-    <p style="margin:0"><code>core/polymarket_client.build_secure_client()</code> es el <b>único</b> lugar que construye el <code>SecureClient</code> V2 (lee key/funder de env, normaliza <code>0x</code>, deriva el proxy wallet y los contratos pUSD). Antes estaba duplicado en 5 sitios; hoy broker, account_source y los scripts la reusan.</p>
+    <h3>Fábrica única del cliente + lección de naming</h3>
+    <p style="margin:0"><code>core/polymarket_client.build_secure_client()</code> es el único lugar que construye el <code>SecureClient</code>. El área se llama <b><code>venue/</code></b> a propósito: nombrarla <code>polymarket/</code> hacía <b>sombra</b> al import del SDK y rompía el path live (los tests pasaban por usar fakes) — regla: nunca nombrar un módulo propio igual que una dependencia.</p>
   </div>
 
-  <!-- ============ 2 CAPAS ============ -->
-  <h2>5 · El modelo de 2 capas del agente</h2>
+  <!-- 2 CAPAS -->
+  <h2>5 · Modelo de 2 capas del agente</h2>
   <div class="grid2">
-    <div class="box" style="border-left:4px solid var(--tools)">
-      <h3>Capa 1 · agent/tools/ (efectos)</h3>
-      <p>Lo único que el agente invoca. Es el borde con el mundo: red, estado (Django/LocalState), SDK. Impura por diseño.</p>
-      <small class="sub">Regla: “no usar funciones de un área sin pasar por <code>agent/tools/</code>”.</small>
-    </div>
-    <div class="box" style="border-left:4px solid var(--domain)">
-      <h3>Capa 2 · */functions/ + */schemas/ (puro)</h3>
-      <p>Lógica sin I/O, determinística, testeable. Es la que tiene la suite (~139 tests). Podés cambiar su interior sin romper al agente.</p>
-      <small class="sub">Contratos Pydantic <b>frozen</b> e inmutables (versioná v2, no edites in-place).</small>
-    </div>
+    <div class="box" style="border-left:4px solid var(--tools)"><h3>Capa 1 · agent/tools/ (efectos)</h3><p>Lo único que invoca el agente. Borde con el mundo (red vía gateway, estado, SDK). Impura por diseño.</p></div>
+    <div class="box" style="border-left:4px solid var(--domain)"><h3>Capa 2 · functions/ + schemas/ (puro)</h3><p>Lógica sin I/O, determinística, testeable (156+ tests). Contratos Pydantic <b>frozen</b>.</p></div>
   </div>
 
-  <!-- ============ A y B + seguridad ============ -->
+  <!-- SEGURIDAD -->
   <h2>6 · Subsistemas live y defensa en profundidad</h2>
   <div class="grid2">
-    <div class="box"><h3>A — Cuenta live · <code>scripts/account.py</code></h3>
-      <ul><li>saldo pUSD, posiciones con mark-to-market, órdenes, últimas cerradas.</li><li><code>--reconcile</code>: drift vs ledger local + ajusta bankroll.</li><li><code>--event</code>/<code>--tournament</code>/<code>--json</code>.</li></ul></div>
-    <div class="box"><h3>B — Órdenes · <code>scripts/orders.py</code></h3>
-      <ul><li><code>--list</code>: REVIEWs pendientes + órdenes abiertas.</li><li><code>--approve &lt;key&gt;</code>: reprecia live → orden exacta → coloca.</li><li><code>--cancel &lt;id&gt;</code>: cancela una orden abierta.</li></ul></div>
+    <div class="box"><h3>Cuenta · <code>scripts/account.py</code></h3><ul><li>saldo, posiciones (mark-to-market), órdenes, cerradas.</li><li><code>--reconcile</code>, <code>--event</code>, <code>--json</code>.</li></ul></div>
+    <div class="box"><h3>Órdenes · <code>scripts/orders.py</code></h3><ul><li><code>--list</code> · <code>--approve &lt;key&gt;</code> (reprecia live) · <code>--cancel &lt;id&gt;</code>.</li></ul></div>
   </div>
-  <h3 style="margin-top:20px">Guardas antes de mover dinero real</h3>
-  <div class="step gate"><div><b>Gate 1 — env del broker</b><small>Envía sólo si <code>--live</code> <b>y</b> <code>POLYMARKET_LIVE=1</code> <b>y</b> hay private key <b>y</b> el kill-switch está apagado. Si falta cualquiera → dry-run (imprime la orden simulada).</small></div></div>
-  <div class="step gate"><div><b>Gate 2 — confirmación tipeada</b><small>El CLI muestra la orden EXACTA y exige teclear el monto para confirmar. Valor incorrecto → aborta sin llamar al broker.</small></div></div>
-  <div class="step safe"><div><b>Guardas del pipeline</b><small>Repricing live obligatorio, rechazo de eventos ya empezados, slippage &gt; tolerancia, tamaño mínimo, redondeo a tick, idempotencia, kill-switch de emergencia.</small></div></div>
+  <div class="step gate" style="margin-top:14px"><span class="n" style="background:var(--danger)">1</span><div><b>Gate 1 — env del broker</b><small>Envía sólo con <code>--live</code> + <code>POLYMARKET_LIVE=1</code> + key + kill-switch off. Si no → dry-run.</small></div></div>
+  <div class="step gate"><span class="n" style="background:var(--danger)">2</span><div><b>Gate 2 — confirmación tipeada</b><small>Muestra la orden EXACTA y exige teclear el monto. Valor incorrecto → aborta.</small></div></div>
+  <div class="step safe"><span class="n" style="background:var(--safe)">✓</span><div><b>Guardas del pipeline</b><small>repricing live, rechazo de eventos empezados, slippage, min size, tick, idempotencia, kill-switch.</small></div></div>
 
-  <!-- ============ REGLAS ============ -->
-  <h2>7 · Dónde viven las reglas (Kelly, thresholds…)</h2>
+  <!-- REGLAS -->
+  <h2>7 · Dónde viven las reglas (Kelly, thresholds)</h2>
   <table>
     <tr><th>Qué</th><th>Dónde</th><th>Ejemplo</th></tr>
-    <tr><td><b>Reglas / parámetros</b> (declarativos, versionados)</td><td><code>tournaments/&lt;t&gt;/strategies/&lt;s&gt;/STRATEGY.md</code></td><td><code>kelly_fraction: 0.25</code>, <code>edge_threshold_auto: 0.02</code>, <code>max_exposure_per_participant: 0.15</code>, reglas QR-00x</td></tr>
-    <tr><td>Parseo a objeto tipado</td><td><code>core/strategy.py</code> (<code>StrategyConfig</code>)</td><td><code>load_active_strategy(tournament_id)</code></td></tr>
-    <tr><td><b>La matemática</b> (el “cómo”)</td><td><code>risk/functions/kelly.py</code>, <code>evaluate.py</code>, <code>research/functions/wc_strategy.py</code></td><td>fórmula <code>raw_kelly = p − (1−p)/b</code></td></tr>
+    <tr><td>Reglas / parámetros</td><td><code>tournaments/&lt;t&gt;/strategies/&lt;s&gt;/STRATEGY.md</code></td><td><code>kelly_fraction: 0.25</code>, <code>edge_threshold_auto: 0.02</code></td></tr>
+    <tr><td>Parseo tipado</td><td><code>core/strategy.py</code></td><td><code>load_active_strategy()</code></td></tr>
+    <tr><td>La matemática</td><td><code>risk/functions/kelly.py</code>, <code>evaluate.py</code></td><td><code>raw_kelly = p − (1−p)/b</code></td></tr>
   </table>
-  <p style="margin-top:8px">Regla de oro: <b>ningún threshold hardcodeado en Python</b> — el número (¼ de Kelly) es una regla en el STRATEGY.md; la fórmula es código. Cambiás cómo apuesta editando el <code>.md</code> (y re-aprobándolo), sin tocar Python.</p>
 
-  <!-- ============ ESTADO ============ -->
-  <h2>8 · Estado, datos y contratos</h2>
-  <div class="grid3">
-    <div class="box"><h3>Datos deportivos</h3><small>Un <b>SQLite por torneo</b> (<code>data/&lt;t&gt;.sqlite</code>) construido desde el DDL canónico por deporte. Read-only vía adapters. No se versiona (se reconstruye).</small></div>
-    <div class="box"><h3>Estado de trading</h3><small><code>LocalStateClient</code> (<code>agent_state.json</code>) o el <b>Django App</b> (fuente de verdad del whitepaper). Guarda decisiones, idempotencia, bankroll reconciliado.</small></div>
-    <div class="box"><h3>Contratos (schemas)</h3><small><code>MatchPrediction</code>, <code>MarketOpportunity</code>, <code>RiskVerdict</code>, <code>TradeOrder</code>, <code>OrderResult</code>, <code>Position</code>. Pydantic frozen — el lenguaje común entre capas.</small></div>
-  </div>
+  <!-- ROADMAP -->
+  <h2>8 · Refactor Polymarket-first — hoja de ruta</h2>
+  <div class="phase"><b class="h">Fase 1 — Gateway único + retirar Gamma</b> <span class="status done">en curso/hecho</span>
+    <p style="margin:6px 0 0">Crear <code>venue/PolymarketGateway</code> sobre el SDK; adapters delegan; se retira el scraper Gamma. Una sola librería.</p></div>
+  <div class="phase"><b class="h">Fase 2 — Un estado + consolidar scripts</b> <span class="status next">planeado</span>
+    <p style="margin:6px 0 0">Retirar el backend Django (<code>django_client</code>, <code>django_sync_tools</code>); quedan <code>place_bets</code>/<code>orders</code>/<code>account</code>/<code>suggestions</code>.</p></div>
+  <div class="phase"><b class="h">Fase 3 — Deportes como plugins</b> <span class="status next">planeado</span>
+    <p style="margin:6px 0 0"><code>SignalProvider</code> por deporte: dado un mercado de Polymarket → probabilidad/edge. Pegar un deporte = registrar un provider, no un pipeline. Entrypoint <code>mercado → señal → decidir → ejecutar</code>.</p></div>
 
-  <!-- ============ REGLAS DE ORO ============ -->
-  <h2>9 · Reglas de oro (anti-deuda técnica)</h2>
+  <!-- REGLAS DE ORO -->
+  <h2>9 · Reglas de oro (anti-deuda)</h2>
   <div class="grid2">
     <div class="box"><ul>
-      <li><b>Schemas inmutables</b>: no edites in-place uno usado por workflows aprobados; creá v2 y migrá.</li>
-      <li><b>Funciones puras</b>: si necesita estado/API va en <code>agent/tools/</code> o <code>core/</code>, no en <code>functions/</code>.</li>
-      <li><b>STRATEGY.md es la única fuente de reglas.</b></li>
+      <li><b>Schemas inmutables</b> (v2, no in-place).</li>
+      <li><b>Funciones puras</b>: estado/API en tools o core, no en functions.</li>
+      <li><b>STRATEGY.md</b> única fuente de reglas.</li>
     </ul></div>
     <div class="box"><ul>
-      <li><b>Idempotency key en todo</b> (no doble-apostar).</li>
-      <li>Todo lo generado lleva <code>generated_at</code>, <code>tournament_id</code>, <code>strategy_version</code>.</li>
-      <li><b>Estado siempre fresco</b>: nunca cachear el portafolio entre pasos.</li>
+      <li><b>Idempotency key</b> en todo.</li>
+      <li>Todo lo generado lleva <code>generated_at</code>/<code>tournament_id</code>/<code>strategy_version</code>.</li>
+      <li><b>Estado siempre fresco</b>; <b>una sola librería</b> de venue.</li>
     </ul></div>
   </div>
 
   <div class="foot">
-    Sports Quant Trading System · diagrama de arquitectura · generado 2026-07-01 ·
-    dry-run por defecto — el dinero real requiere opt-in explícito en múltiples capas.
+    Sports Quant Trading System · Polymarket‑first · dry-run por defecto — el dinero real exige opt-in explícito en múltiples capas.
   </div>
 
 </div>
