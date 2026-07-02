@@ -1,6 +1,6 @@
 # tests/unit/test_gateway_account.py
 from decimal import Decimal
-from polymarket.gateway import PolymarketGateway
+from venue.gateway import PolymarketGateway
 
 class _Book:  # asks: lista de niveles con .price
     def __init__(self, asks): self.asks = asks

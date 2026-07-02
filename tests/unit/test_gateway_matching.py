@@ -10,8 +10,8 @@ from decimal import Decimal
 
 import pytest
 
-from polymarket.matching import canon, match_event
-from polymarket.gateway import PolymarketGateway
+from venue.matching import canon, match_event
+from venue.gateway import PolymarketGateway
 from research.functions.market_scanner import PolymarketMarket
 
 

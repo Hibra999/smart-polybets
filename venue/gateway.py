@@ -13,8 +13,6 @@ from __future__ import annotations
 
 import hashlib
 import os
-import pathlib
-import sys
 from decimal import ROUND_DOWN, ROUND_HALF_UP, Decimal
 
 from core.exceptions import AccountUnavailableError
@@ -22,7 +20,7 @@ from core.polymarket_client import build_secure_client
 from core.utils import to_decimal, utcnow
 from execution.schemas.order_result import OrderResult
 from execution.schemas.trade_order import TradeOrder
-from polymarket.matching import match_event
+from venue.matching import match_event
 from portfolio.schemas.account import (
     AccountBalance,
     ClosedPositionLive,
@@ -259,55 +257,16 @@ class PolymarketGateway:
     # ── descubrimiento de mercados (PublicClient — read-only) ─────────────────
 
     def _ensure_pub_client(self):
-        """Lazy-init del PublicClient del SDK.
-
-        Usa un truco de sys.path/sys.modules para importar PublicClient desde el
-        SDK (polymarket-client en site-packages) sin que el paquete local
-        `polymarket/` lo enmascare. El resultado se cachea en self._pub_client.
-        """
+        """Lazy-init del PublicClient del SDK (descubrimiento, read-only, sin auth)."""
         if self._pub_client is not None:
             return self._pub_client
-
-        # Buscar el SDK en site-packages (directorio distinto al paquete local)
-        _here = pathlib.Path(__file__).parent
-        site = next(
-            (
-                p for p in sys.path
-                if "site-packages" in p.lower()
-                and (pathlib.Path(p) / "polymarket" / "__init__.py").exists()
-                and pathlib.Path(p) / "polymarket" != _here
-            ),
-            None,
-        )
-        if site is None:
-            raise AccountUnavailableError(
-                "SDK polymarket-client no encontrado en site-packages. "
-                "Instalar: pip install --pre polymarket-client"
-            )
-
-        # Guardar entradas del paquete local para restaurar después
-        _stash = {
-            k: sys.modules.pop(k)
-            for k in list(sys.modules.keys())
-            if k == "polymarket" or k.startswith("polymarket.")
-        }
-        # Poner site-packages al frente para que 'import polymarket' encuentre el SDK
-        _orig_idx = sys.path.index(site)
-        sys.path.insert(0, sys.path.pop(_orig_idx))
-
         try:
-            from polymarket.clients.public import PublicClient  # SDK — no paquete local
-            self._pub_client = PublicClient()
+            from polymarket.clients.public import PublicClient
         except ImportError as exc:
             raise AccountUnavailableError(
-                f"No se pudo importar PublicClient del SDK: {exc}"
+                "SDK polymarket-client no instalado. Instalar: pip install --pre polymarket-client"
             ) from exc
-        finally:
-            # Restaurar posición original de site-packages en sys.path
-            sys.path.insert(_orig_idx, sys.path.pop(0))
-            # Restaurar nuestro paquete local como entrada 'polymarket'
-            sys.modules.update(_stash)
-
+        self._pub_client = PublicClient()
         return self._pub_client
 
     def find_match_markets(
