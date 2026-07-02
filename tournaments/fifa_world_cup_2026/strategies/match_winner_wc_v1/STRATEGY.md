@@ -41,6 +41,7 @@ max_drawdown_7d: 0.20
 review_event_phases: [knockout, final]
 
 ## SELECCIÓN DE LADO (migrado de betting.BetParams)
+bet_type: win                      # win = apostar el pick a ganar | double_chance = apostar a que el rival NO gana (1X a 90', preciado por Poisson)
 side_criterion: blend              # elo | bayes | blend | trueskill
 blend_weight: 0.5                  # peso de Elo en 'blend' (1-w para Bayes)
 warmup_match_no: 2                 # start_match_no: arranca en la 2ª aparición del lado

@@ -40,6 +40,11 @@ class PolymarketMarket(BaseModel):
     min_order_size: Decimal | None = None  # orderMinSize (ej: 5)
     accepting_orders: bool = True
 
+    # Lado NO del mismo mercado (para apuestas doble-oportunidad).
+    no_token_id: str | None = None
+    no_best_ask: Decimal | None = None
+    no_probability: Decimal | None = None
+
 
 class MarketSource(Protocol):
     def __call__(self, prediction: MatchPrediction) -> list[PolymarketMarket]: ...

@@ -92,6 +92,9 @@ class StrategyConfig(BaseModel):
     use_bayes_filter: bool = False
     bayes_threshold: Decimal = Decimal("0.5")
 
+    # BET TYPE
+    bet_type: str = "win"          # win | double_chance (rival no gana = 1X a 90')
+
     # PERFORMANCE TARGETS
     win_rate_target: float | None = None
     roi_target: float | None = None
@@ -111,6 +114,14 @@ class StrategyConfig(BaseModel):
         allowed = {"draft", "under_review", "approved", "deprecated"}
         if v not in allowed:
             raise ValueError(f"status inválido: {v!r} (permitidos: {sorted(allowed)})")
+        return v
+
+    @field_validator("bet_type")
+    @classmethod
+    def _bet_type_known(cls, v: str) -> str:
+        allowed = {"win", "double_chance"}
+        if v not in allowed:
+            raise ValueError(f"bet_type inválido: {v!r} (permitidos: {sorted(allowed)})")
         return v
 
     @property
@@ -157,6 +168,7 @@ _STR_KEYS = {
     "sizing_method",
     "evaluation_period",
     "side_criterion",
+    "bet_type",
 }
 
 _KNOWN = _DECIMAL_KEYS | _FLOAT_KEYS | _INT_KEYS | _BOOL_KEYS | _LIST_KEYS | _STR_KEYS

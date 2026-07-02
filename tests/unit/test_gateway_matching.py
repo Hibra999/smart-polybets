@@ -7,10 +7,11 @@ TDD:
 from __future__ import annotations
 
 from decimal import Decimal
+from types import SimpleNamespace
 
 import pytest
 
-from venue.matching import canon, match_event
+from venue.matching import canon, match_event, _extract_yes_token
 from venue.gateway import PolymarketGateway
 from research.functions.market_scanner import PolymarketMarket
 
@@ -127,6 +128,57 @@ def test_canon_simple():
 
 def test_canon_alias_usa():
     assert canon("United States") == "usa"
+
+
+# ── tests: _extract_yes_token() with NO-side ───────────────────────────────
+
+
+def test_extract_includes_no_side():
+    """_extract_yes_token returns NO-side fields: no_token_id, no_price, no_best_ask."""
+    market = SimpleNamespace(
+        outcomes=SimpleNamespace(
+            yes=SimpleNamespace(label="Yes", token_id="Y", price=Decimal("0.60")),
+            no=SimpleNamespace(label="No", token_id="N", price=Decimal("0.40")),
+        ),
+        prices=SimpleNamespace(best_ask=Decimal("0.61"), best_bid=Decimal("0.59")),
+        metrics=SimpleNamespace(volume_num=100, liquidity_num=50),
+        state=SimpleNamespace(neg_risk=False, accepting_orders=True),
+        trading=SimpleNamespace(minimum_tick_size=Decimal("0.001"), minimum_order_size=Decimal("5")),
+        condition_id="c1",
+    )
+
+    info = _extract_yes_token(market)
+    assert info is not None
+    assert info["no_token_id"] == "N"
+    assert info["no_price"] == Decimal("0.40")
+    # NO ask = 1 - YES best_bid
+    assert info["no_best_ask"] == Decimal("0.41")
+
+
+def test_extract_yes_token_inverted_labels():
+    """SDK slot inversion: outcomes.yes has label='No', outcomes.no has label='Yes'."""
+    market = SimpleNamespace(
+        outcomes=SimpleNamespace(
+            yes=SimpleNamespace(label="No", token_id="token-no", price=Decimal("0.35")),
+            no=SimpleNamespace(label="Yes", token_id="token-yes", price=Decimal("0.65")),
+        ),
+        prices=SimpleNamespace(best_ask=Decimal("0.66"), best_bid=Decimal("0.64")),
+        metrics=SimpleNamespace(volume_num=200, liquidity_num=100),
+        state=SimpleNamespace(neg_risk=False, accepting_orders=True),
+        trading=SimpleNamespace(minimum_tick_size=Decimal("0.001"), minimum_order_size=Decimal("5")),
+        condition_id="c2",
+    )
+
+    info = _extract_yes_token(market)
+    assert info is not None
+    # Real YES token is in outcomes.no slot
+    assert info["token_id"] == "token-yes"
+    assert info["yes_price"] == Decimal("0.65")
+    # Real NO token is in outcomes.yes slot
+    assert info["no_token_id"] == "token-no"
+    assert info["no_price"] == Decimal("0.35")
+    # NO best_ask = 1 - YES best_bid
+    assert info["no_best_ask"] == Decimal("0.36")
 
 
 # ── tests: match_event() ────────────────────────────────────────────────────
