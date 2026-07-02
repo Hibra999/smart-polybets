@@ -54,6 +54,7 @@ packages = [
     "agent",
     "agent.tools",
     "agent.workflows",
+    "polymarket",
 ]
 
 [tool.pytest.ini_options]
