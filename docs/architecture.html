@@ -111,7 +111,7 @@
     <div class="cards">
       <div class="card"><b>full_analysis</b><small>Pipeline por evento de punta a punta.</small></div>
       <div class="card"><b>daily_suggestions</b><small>Sugerencias del día.</small></div>
-      <div class="card"><b>scan_market <span class="status next">Fase 3</span></b><small>Entrypoint Polymarket‑first (mercado→señal).</small></div>
+      <div class="card"><b>scan_market <span class="status done">✓</span></b><small>Entrypoint Polymarket‑first (mercado→señal→edge).</small></div>
     </div>
   </div>
   <div class="arrow">▼</div>
@@ -159,7 +159,7 @@
     <div class="cards">
       <div class="card"><b>adapters/football</b><small>db_reader (SQLite RO) + Elo/Bayes/TrueSkill/Poisson.</small></div>
       <div class="card"><b>adapters/american_football</b><small>NFL: reader + Elo.</small></div>
-      <div class="card"><b>signals/ <span class="status next">Fase 3</span></b><small>SignalProvider por deporte (fútbol/NFL).</small></div>
+      <div class="card"><b>signals/ <span class="status done">✓</span></b><small>SignalProvider por deporte (fútbol; NFL a futuro).</small></div>
     </div>
   </div>
   <div class="arrow">▼</div>
@@ -168,7 +168,7 @@
     <div class="cards">
       <div class="card"><b>polymarket_client</b><small>fábrica única del SecureClient V2 (SDK).</small></div>
       <div class="card"><b>strategy</b><small>STRATEGY.md → StrategyConfig.</small></div>
-      <div class="card"><b>local_state</b><small>único backend de estado (JSON). <span class="status next">Fase 2: retira Django</span></small></div>
+      <div class="card"><b>local_state</b><small>único backend de estado (JSON). <span class="status done">✓ Django retirado</span></small></div>
       <div class="card"><b>types · utils · exceptions · env · console</b><small>enums · Decimal · idempotencia · .env · UTF‑8.</small></div>
     </div>
   </div>
@@ -253,12 +253,12 @@
 
   <!-- ROADMAP -->
   <h2>8 · Refactor Polymarket-first — hoja de ruta</h2>
-  <div class="phase"><b class="h">Fase 1 — Gateway único + retirar Gamma</b> <span class="status done">en curso/hecho</span>
-    <p style="margin:6px 0 0">Crear <code>venue/PolymarketGateway</code> sobre el SDK; adapters delegan; se retira el scraper Gamma. Una sola librería.</p></div>
-  <div class="phase"><b class="h">Fase 2 — Un estado + consolidar scripts</b> <span class="status next">planeado</span>
-    <p style="margin:6px 0 0">Retirar el backend Django (<code>django_client</code>, <code>django_sync_tools</code>); quedan <code>place_bets</code>/<code>orders</code>/<code>account</code>/<code>suggestions</code>.</p></div>
-  <div class="phase"><b class="h">Fase 3 — Deportes como plugins</b> <span class="status next">planeado</span>
-    <p style="margin:6px 0 0"><code>SignalProvider</code> por deporte: dado un mercado de Polymarket → probabilidad/edge. Pegar un deporte = registrar un provider, no un pipeline. Entrypoint <code>mercado → señal → decidir → ejecutar</code>.</p></div>
+  <div class="phase"><b class="h">Fase 1 — Gateway único + retirar Gamma</b> <span class="status done">hecho</span>
+    <p style="margin:6px 0 0"><code>venue/PolymarketGateway</code> sobre el SDK; adapters delegan; scraper Gamma retirado. Una sola librería.</p></div>
+  <div class="phase"><b class="h">Fase 2 — Un estado + consolidar scripts</b> <span class="status done">hecho</span>
+    <p style="margin:6px 0 0">Backend Django retirado (<code>django_client</code>, <code>django_sync_tools</code>, <code>DjangoAPIError</code>); solo <code>LocalState</code>. Quedan <code>place_bets</code>/<code>orders</code>/<code>account</code>/<code>wc_suggestions</code>.</p></div>
+  <div class="phase"><b class="h">Fase 3 — Deportes como plugins</b> <span class="status done">hecho</span>
+    <p style="margin:6px 0 0"><code>signals/</code>: <code>Signal</code> + <code>SignalProvider</code> + registro + <code>FootballSignalProvider</code>. Entrypoint <code>scripts/scan_market.py</code> (mercado → señal → edge). Pegar un deporte = registrar un provider. <b>Suite 157 verde.</b></p></div>
 
   <!-- REGLAS DE ORO -->
   <h2>9 · Reglas de oro (anti-deuda)</h2>
