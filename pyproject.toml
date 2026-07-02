@@ -55,6 +55,7 @@ packages = [
     "agent.tools",
     "agent.workflows",
     "venue",
+    "signals",
 ]
 
 [tool.pytest.ini_options]
