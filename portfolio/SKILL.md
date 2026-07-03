@@ -10,6 +10,11 @@ y calcula métricas de performance. Es el área más conectada al Django App.
 - Para verificar idempotencia antes de procesar cualquier oportunidad
 - Para persistir el resultado de cada etapa del pipeline
 - El humano pregunta "¿cómo voy?" o "¿cuál es mi PnL?"
+  → **Fuente de verdad = cuenta LIVE, no el ledger local** (suele estar desincronizado en 0).
+    Correr `python scripts/account.py --closed 300 --json` y reportar **equity total = cash +
+    Σ(shares × current_price de abiertas)** (el balance es solo cash, no suma posiciones), las
+    posiciones abiertas y el histórico ganado/perdido con record W-L y neto. Ver `CLAUDE.md` §
+    "Reportar PnL / cuenta".
 
 ## CUÁNDO NO INVOCAR
 - Para construir órdenes (eso es execution/)

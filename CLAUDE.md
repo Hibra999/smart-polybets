@@ -37,11 +37,41 @@ explícitos (schemas Pydantic). Mismos inputs → misma decisión.
 7. **Una sola librería para Polymarket**: todo va por el SDK oficial a través de `venue/` (cero scrapers HTTP a Gamma).
 8. **Almacenar en UTC, mostrar en local**: los tiempos se guardan en UTC; `core/timez` convierte para display (usuario en PDC/UTC-5; Polymarket etiqueta sus mercados en ET).
 
+## Convención de documentación (hallazgos y mejoras) — para el futuro
+**Todo hallazgo, gotcha, decisión o mejora de este proyecto se documenta EN ESTE MISMO REPO**
+— nunca en memorias personales del agente ni en wikis externas. Dónde:
+- Regla o comportamiento global → una sección en este `CLAUDE.md`.
+- Algo específico de un área → el `SKILL.md`/`STRATEGY.md` de esa carpeta.
+- Notas más largas → `docs/`.
+Así el conocimiento viaja con el código y cualquier sesión/agente lo aplica al leer el repo.
+
+**El proyecto debe ser idempotente.** Reejecutar un workflow con las mismas entradas no duplica
+ni corrompe estado: misma entrada → misma decisión (principio rector) y misma escritura. Esto se
+apoya en la idempotency key (Regla de oro #4), `generated_at`/`strategy_version` en todo lo generado,
+y `check_idempotency()` antes de persistir. Cualquier mejora nueva debe preservar esta propiedad.
+
 ## Flujo
 ```
 Research → Risk → Optimization → Execution → Portfolio → Editorial
 ```
 (Los SKILL.md ubican Optimization después de Risk; ese es el orden de los workflows.)
+
+## Reportar PnL / cuenta (¿cómo voy? / ¿cuál es mi PnL?)
+La **fuente de verdad es la cuenta LIVE de Polymarket, NO el ledger local**. El estado local
+(`data/agent_state.json`, vía `scripts/portfolio.py`) suele estar desincronizado — muestra 0
+trades / PnL +0.00 porque las apuestas se ejecutaron fuera del agente.
+```bash
+python scripts/account.py --closed 300 --json     # solo lectura; requiere .[live] + POLYMARKET_PRIVATE_KEY
+```
+Al reportar, mostrar **siempre**:
+1. **Equity total = cash + Σ(shares × current_price de posiciones abiertas)**. `balance.usdc_balance`
+   es SOLO cash (colateral pUSD) — **no** suma las posiciones abiertas; hay que sumarlas a mano
+   (no hay campo de equity directo).
+2. Posiciones abiertas (mark-to-market + uPnL).
+3. Histórico resuelto: lista ganados/perdidos, record W-L y PnL neto.
+
+Una sola wallet: `POLYMARKET_FUNDER` (proxy, sig type 2). `scripts/account.py --reconcile` solo ajusta
+el bankroll local al cash real; **no** importa las posiciones al ledger.
 
 ## Setup rápido
 ```bash
