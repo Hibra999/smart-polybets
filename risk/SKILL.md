@@ -27,7 +27,7 @@ Es el guardián — nada llega a Execution sin pasar por aquí.
 
 ## SCHEMAS QUE CONSUME
 - `research/schemas/market_opportunity.MarketOpportunity`
-- `portfolio/schemas/portfolio_state.PortfolioState` (vía django_client)
+- `portfolio/schemas/portfolio_state.PortfolioState` (vía LocalStateClient)
 - `core/strategy.StrategyConfig` (STRATEGY.md parseado)
 
 ## SCHEMAS QUE PRODUCE
@@ -36,7 +36,8 @@ Es el guardián — nada llega a Execution sin pasar por aquí.
 
 ## CONSTRAINTS
 - NUNCA emitir AUTO si alguna regla DISCARD aplica, aunque sea una sola
-- NUNCA calcular Kelly sin leer primero el portfolio_state live del Django App
+- NUNCA calcular Kelly sin leer primero el portfolio_state fresco del LocalState
+  (y para bankroll real, la cuenta live vía `venue/gateway` — el ledger local deriva)
 - NUNCA hardcodear thresholds — siempre leerlos del STRATEGY.md activo
 - NUNCA emitir RiskVerdict sin listar las razones en el campo `reasons`
 - Si hay flags cualitativos (QR-XXX), SIEMPRE incluirlos en `qualitative_flags`

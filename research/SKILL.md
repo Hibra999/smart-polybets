@@ -14,7 +14,7 @@ Es la primera área del pipeline — nada se ejecuta sin pasar por aquí.
 - Para verificar el estado del portafolio (eso es portfolio/)
 - Para construir una orden (eso es execution/)
 - Para calcular PnL de trades ya ejecutados (eso es portfolio/)
-- Si no hay torneo activo registrado en el Django App
+- Si no hay torneo activo registrado en `tournaments/registry`
 
 ## FUNCIONES DISPONIBLES
 
@@ -27,7 +27,8 @@ Es la primera área del pipeline — nada se ejecuta sin pasar por aquí.
 
 ## SCHEMAS QUE CONSUME
 - `adapters/base.SportAdapter` (vía model_loader → tournaments/registry)
-- CLOB API response (vía market_scanner; fuente inyectable, stub por defecto)
+- Cuotas LIVE de Polymarket vía `PolymarketLiveSource` (SDK, `venue/`); `SqliteOddsSource`
+  para backtests (fuente inyectable)
 
 ## SCHEMAS QUE PRODUCE
 - `research/schemas/match_prediction.MatchPrediction`

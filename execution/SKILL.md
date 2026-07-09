@@ -8,7 +8,7 @@ y clasifica si la orden procede en AUTO o necesita REVIEW final.
 ## CUÁNDO INVOCAR
 - Después de optimization/, cuando hay un SizingOutput válido
 - El humano dice "ejecuta" o "procede con la apuesta"
-- Un trade REVIEW fue aprobado por el humano en el Django App
+- Un trade REVIEW fue aprobado por el humano (`scripts/orders.py --approve <key> --live`)
 
 ## CUÁNDO NO INVOCAR
 - Sin pasar por risk/ y optimization/ primero (sin excepciones)
@@ -23,7 +23,7 @@ y clasifica si la orden procede en AUTO o necesita REVIEW final.
 | `slippage_estimator.estimate()` | Estima slippage dado el orderbook | token_id, size_usdc, orderbook | SlippageEstimate |
 | `order_builder.build()` | Construye el payload para el CLOB API | RiskVerdict, SizingOutput, live_price | TradeOrder |
 | `order_classifier.classify()` | Decide AUTO vs REVIEW para la ejecución final | TradeOrder, RiskVerdict | ExecutionDecision |
-| `submit_order()` | Envía la orden al CLOB API (STUB hasta wiring) | TradeOrder | OrderResult |
+| `submit_order()` | Envía la orden REAL al CLOB V2 vía `venue/gateway` (LIMIT al tick; dry-run salvo gates live) | TradeOrder | OrderResult |
 
 ## SCHEMAS QUE CONSUME
 - `optimization/schemas/sizing_output.SizingOutput`
@@ -38,8 +38,12 @@ y clasifica si la orden procede en AUTO o necesita REVIEW final.
 - NUNCA llamar submit_order() si ExecutionDecision.requires_approval == True
 - NUNCA hardcodear credenciales de Polymarket — siempre de variables de entorno
 - Si price_validator falla, NO re-intentar automáticamente — reportar al humano
-- SIEMPRE guardar el OrderResult en el Django App antes de retornar (via django_client)
-- La idempotency_key DEBE verificarse contra el Django App antes de submit_order()
+- SIEMPRE guardar el OrderResult en el LocalState antes de retornar (via LocalStateClient);
+  solo un fill `live` marca ejecutado — un dry_run NO (gotcha verificado, ver CLAUDE.md)
+- La idempotency_key DEBE verificarse contra el LocalState antes de submit_order()
+- Totales (O/U, BTTS, spread): NO hay ruta de estrategia — orden manual de bajo nivel
+  (ver CLAUDE.md § "Apostar markets de goles / totales" y `scripts/place_totals_qf.py`);
+  requiere `polymarket-client >= 0.1.0b12` (tick 0.0025)
 
 ## ERRORES COMUNES
 - Llamar submit_order() en modo REVIEW (el error más costoso del sistema)

@@ -13,7 +13,7 @@ accede directamente a los datos crudos.
 
 ## CUÁNDO NO INVOCAR
 - Para datos de Polymarket (eso es CLOB API vía research/)
-- Para estado del portafolio (eso es portfolio/ vía django_client)
+- Para estado del portafolio (eso es portfolio/ vía LocalState)
 - Para escribir resultados de trading (los adapters son read-only)
 
 ## READERS DISPONIBLES
@@ -29,8 +29,8 @@ accede directamente a los datos crudos.
 | Clase | Modelo | Estado |
 |---|---|---|
 | `FootballEloAdapter` | Elo 1X2 | implementado (modelo Elo real) |
-| `FootballBayesAdapter` | Bayes jerárquico | stub → degrada a Elo (TODO: wire pypro_worldcup_betting) |
-| `FootballTrueSkillAdapter` | TrueSkill | stub → degrada a Elo (TODO: wire) |
+| `FootballBayesAdapter` | Bayes jerárquico | loader legacy: degrada a Elo. Los modelos WC REALES (Elo+Bayes+TrueSkill migrados) viven en `wc_models.py`/`wc_pipeline.py` (+ Poisson en `wc_poisson.py`) y son los que usa `match_winner_wc_v1` |
+| `FootballTrueSkillAdapter` | TrueSkill | loader legacy: degrada a Elo (ídem: el real está en `wc_trueskill.py`) |
 | `AmericanFootballEloAdapter` | Elo binario NFL | implementado |
 
 ## INSTANCIACIÓN
