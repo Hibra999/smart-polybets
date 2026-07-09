@@ -14,7 +14,9 @@ dependencies = [
 optimize = ["cvxpy>=1.4"]
 # live: ejecución real en Polymarket CLOB V2 (SDK oficial, colateral pUSD).
 # Sin esto, execution/ corre en dry-run. Instalar: pip install --pre polymarket-client
-live = ["polymarket-client>=0.1.0b8"]
+# >=0.1.0b12: soporte de tick 0.0025 (mercados de totales WC) — ver
+# docs/findings/2026-07-09-totals-live-sdk-tick.md
+live = ["polymarket-client>=0.1.0b12"]
 dev = [
     "pytest>=8.0",
     "pytest-cov>=5.0",

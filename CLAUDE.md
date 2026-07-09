@@ -88,6 +88,27 @@ Gotchas:
 - ⚠️ **Bypassa el motor de riesgo, la idempotencia y el `LocalState`**: la apuesta NO queda
   registrada en el ledger local (consistente con que el PnL se lee de la cuenta LIVE, ver
   sección de PnL). Anotar la operación a mano si se necesita traza en el repo.
+- ⚠️ **Tick 0.0025 requiere `polymarket-client >= 0.1.0b12`** — VERIFICADO 2026-07-09. Los
+  mercados de totales del WC usan tick `0.0025`; con el SDK `0.1.0b11` **todos** los paths de
+  orden (limit Y market, incluso `estimate_market_price`) fallan con `UnexpectedResponseError:
+  Unsupported tick size received: 0.0025` (el mapa `_ROUNDING_BY_TICK` interno no lo incluye).
+  Las apuestas de ganador no lo sufren (tick 0.01). Fix: `pip install --pre -U polymarket-client`
+  (b12+ añade 0.005 y 0.0025, ver changelog). Tras actualizar, revalidar `scripts/account.py`.
+  Script de referencia usado: `scripts/place_totals_qf.py`; detalle y traza de la operación en
+  `docs/findings/2026-07-09-totals-live-sdk-tick.md`.
+
+## Mercados knockout "Will X win": resuelven a 90 minutos → usar Poisson, NO el blend
+VERIFICADO 2026-07-09 en la descripción del mercado (France vs Morocco, QF): *"This market
+refers only to the outcome within the first 90 minutes of regular play plus stoppage time."*
+Un empate al 90' resuelve **No** aunque el equipo avance por penales (el mercado de draw
+resuelve Yes). Implicaciones:
+- El **blend Elo/Bayes/TrueSkill NO modela el empate** → sobreestima sistemáticamente
+  P(gana) en knockout y puede inflar edges fantasma (ej. 2026-07-09: blend France 71.5% vs
+  mercado 61%; el Poisson 1X2 daba 56% → la apuesta estaba CARA, no barata).
+- Para mercados a 90' (win, draw, totales, BTTS), el yardstick correcto es el **Poisson 1X2 /
+  goles** (`wc_poisson_suggestions.py`), que sí descuenta el empate.
+- El blend sigue siendo válido para mercados de **avance/progresión** (si existieran) o como
+  señal de fuerza relativa — no para precio de "win a 90'" en eliminatorias.
 
 ## Sincronizar eliminatorias (placeholders de bracket → equipos reales)
 La DB modela el knockout con **placeholders de bracket** (`group_c_winner`,
