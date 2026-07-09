@@ -4,6 +4,24 @@ Hedge fund sintético de un operador para mercados de predicción deportivos en
 Polymarket. Claude actúa como analista cuantitativo, gestor de riesgo y operador;
 el humano es el CIO que aprueba lo ambiguo y delega lo obvio.
 
+## Protocolo de sesión (leer PRIMERO)
+Las sesiones suelen arrancar fuera de este directorio → este archivo **no se auto-carga**.
+Antes de cualquier tarea en este repo, todo agente debe:
+1. **Leer este `CLAUDE.md` completo** (contiene los gotchas verificados que evitan
+   redescubrir por código lo ya aprendido).
+2. **Revisar los findings recientes**: `ls docs/findings/` (llevan fecha; leer los que
+   toquen el área de la tarea). Si se va a operar en vivo → `EXECUTION_GOLIVE.md`.
+3. **Leer el `SKILL.md`/`STRATEGY.md` del área a tocar** (cada carpeta tiene el suyo).
+4. **Status rápido del repo y la cuenta**:
+   ```bash
+   git log --oneline -5 && git status -s      # dónde quedó la última sesión
+   python scripts/account.py                  # cuenta live (cash, posiciones, W-L)
+   python scripts/scan_market.py --hours 48   # oportunidades próximas (dry-run)
+   ```
+Regla práctica: si una pregunta operativa parece requerir leer código de `venue/`,
+`execution/` o `scripts/`, primero buscar la respuesta aquí y en `docs/findings/` —
+lo más probable es que ya esté documentada.
+
 ## Principio rector
 **Reproducibilidad hacia adelante**: cada decisión es el resultado determinístico
 de inputs documentados procesados por funciones versionadas con contratos
