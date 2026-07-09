@@ -30,6 +30,9 @@ ALIASES: dict[str, str] = {
     "korea": "korea republic",
     "united states": "usa",
     "united states of america": "usa",
+    # Polymarket usa "IR Iran" (nombre FIFA); el team_id del proyecto es "iran".
+    "ir iran": "iran",
+    "iriran": "iran",
     # team_ids con guion-bajo donde iba un acento (bug de ingesta): mapearlos al
     # canónico del mercado ("Curaçao"→curacao, "Türkiye"→turkiye).
     "curaao": "curacao",

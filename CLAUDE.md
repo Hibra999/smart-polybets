@@ -18,6 +18,15 @@ Antes de cualquier tarea en este repo, todo agente debe:
    python scripts/account.py                  # cuenta live (cash, posiciones, W-L)
    python scripts/scan_market.py --hours 48   # oportunidades próximas (dry-run)
    ```
+5. **Antes de CUALQUIER sugerencia o apuesta: refrescar datos** (los modelos reproducen
+   los fixtures jugados en runtime → DB desactualizada = edges falsos):
+   ```bash
+   python scripts/update_results.py --apply          # finaliza jugados (marcador de PM)
+   python scripts/sync_upcoming_fixtures.py --apply  # placeholders -> equipos reales
+   ```
+   Verificar que quede limpio: 0 fixtures con kickoff pasado en status `scheduled`
+   (salvo partidos EN JUEGO ahora). El 2026-07-09 se apostó con los 8 octavos sin
+   ingestar — ver `docs/findings/2026-07-09-data-freshness-gaps.md`.
 Regla práctica: si una pregunta operativa parece requerir leer código de `venue/`,
 `execution/` o `scripts/`, primero buscar la respuesta aquí y en `docs/findings/` —
 lo más probable es que ya esté documentada.
@@ -144,6 +153,16 @@ por orden de kickoff. **Es idempotente**: descarta los partidos de PM que ya exi
 fixture con equipos reales, así un re-run NO duplica en los slots sobrantes. Después,
 `scripts/update_results.py --apply` finaliza los ya jugados (marcador desde los mercados
 More Markets de PM). Ver [[project-wc2026-knockout-phase]].
+
+⚠️ **Gotcha (VERIFICADO 2026-07-09): el sync solo ve mercados ABIERTOS.** Si un partido de
+knockout se juega (su mercado cierra) entre dos corridas del sync, su placeholder queda
+huérfano para siempre: `update_results` tampoco lo encuentra (matchea por nombres de equipos
+y el placeholder no tiene). Así se perdieron `wc_121` (South Africa–Canada, R32) y `wc_144`
+(Canada–Morocco, R16). Detección: fixtures con kickoff pasado en `scheduled` cuyo home/away
+sea placeholder. Recuperación: identificar el partido real en `match_events(closed=True)`
+(par de equipos sin fixture en DB), escribir equipos+kickoff a mano (con backup del .sqlite)
+y re-correr `update_results.py --apply`. Prevención: correr el sync a diario durante rondas
+de eliminación. Detalle: `docs/findings/2026-07-09-data-freshness-gaps.md`.
 
 ## Reportar PnL / cuenta (¿cómo voy? / ¿cuál es mi PnL?)
 La **fuente de verdad es la cuenta LIVE de Polymarket, NO el ledger local**. El estado local
