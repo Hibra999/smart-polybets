@@ -56,6 +56,56 @@ Research → Risk → Optimization → Execution → Portfolio → Editorial
 ```
 (Los SKILL.md ubican Optimization después de Risk; ese es el orden de los workflows.)
 
+## Gotchas de ejecución en vivo (place_bets / orders) — VERIFICADO
+Al colocar una apuesta de ganador en vivo aparecieron dos bugs reales:
+1. **`scripts/place_bets.py` NO llama `load_env()`** (a diferencia de `orders.py`/`scan_market.py`).
+   Con `--live` pero sin la key en el entorno, el broker se degrada **silenciosamente a
+   dry-run** (banner "DRY-RUN (sin POLYMARKET_PRIVATE_KEY)") y **no coloca nada**. Workaround:
+   exportar `POLYMARKET_PRIVATE_KEY` (+ `POLYMARKET_LIVE=1`) inline, **o** usar `orders.py`.
+2. **Un dry-run de `place_bets.py` marca la decisión `status=executed`** con un `order_result`
+   `dry_run`, y luego la **bloquea por idempotencia** ("ya procesada") en el siguiente run.
+   Rompe el diseño (un dry-run NO debería marcar ejecutado). **Recuperación**: `orders.py
+   --approve <key> --live` la coloca igual — `validate_placeable` ignora el `status`, repreciar
+   con `best_ask` live, y `mark_executed` sólo escribe cuando el fill es `live` (no en dry_run).
+   Al terminar, `order_result.status` pasa a `live` y `filled_size_usdc` al monto real.
+Ruta confiable para colocar en vivo hoy: **`orders.py --approve <key> --live --confirm <monto>`**
+(carga env, gate `POLYMARKET_LIVE=1` + key + kill-switch, y confirmación tipeada del USDC).
+
+## Apostar markets de goles / totales (O/U, BTTS, spread): NO hay ruta de estrategia
+La estrategia activa (`match_winner_wc_v1`) **solo apuesta el ganador** (win/double_chance).
+Los markets O/U, BTTS y spread (evento "`{H} vs. {A} - More Markets`") el sistema los usa
+**solo para reconstruir marcadores** (`update_results.py`), **no para apostar**. El pipeline
+(`place_bets.py`/`orders.py`) no puede colocar una apuesta de totales.
+
+Para apostar un total hoy → **orden manual de bajo nivel** con `execution.functions.broker.
+PolymarketBroker`, construyendo un `TradeOrder` directo al token del outcome (p.ej. "Over").
+Gotchas:
+- **`gateway.best_ask(token)` devuelve None sin `private_key`.** Construir el gateway con la
+  key (`PolymarketGateway(live=True, private_key=..., funder=...)`) para leer el ask real.
+- `broker.place()` manda un **LIMIT** (`place_limit_order`) y redondea el precio al tick.
+- Gate live: `--live` **y** `POLYMARKET_LIVE=1` **y** key **y** kill-switch off. `load_env`
+  usa `setdefault` → un `export POLYMARKET_LIVE=1` inline gana sin tocar `.env`.
+- ⚠️ **Bypassa el motor de riesgo, la idempotencia y el `LocalState`**: la apuesta NO queda
+  registrada en el ledger local (consistente con que el PnL se lee de la cuenta LIVE, ver
+  sección de PnL). Anotar la operación a mano si se necesita traza en el repo.
+
+## Sincronizar eliminatorias (placeholders de bracket → equipos reales)
+La DB modela el knockout con **placeholders de bracket** (`group_c_winner`,
+`round_of_32_4_winner`, `round_of_16_1_winner`, …). Gotcha: esos placeholders **existen
+como filas en la tabla `team`** (56 filas), así que "¿es real?" NO se decide por
+pertenencia a `team`. **Un equipo real tiene `elo_rating` no-NULL; un placeholder lo tiene
+NULL** — ese es el discriminador robusto (los 48 equipos vs 56 placeholders).
+```bash
+python scripts/sync_upcoming_fixtures.py            # dry-run
+python scripts/sync_upcoming_fixtures.py --apply    # backup .sqlite + reescribe
+```
+Trae los partidos abiertos de Polymarket (SDK, `venue.discovery`) y reescribe
+`home_team_id`/`away_team_id`/`kickoff_utc` de los placeholders pendientes, mapeando 1:1
+por orden de kickoff. **Es idempotente**: descarta los partidos de PM que ya existen como
+fixture con equipos reales, así un re-run NO duplica en los slots sobrantes. Después,
+`scripts/update_results.py --apply` finaliza los ya jugados (marcador desde los mercados
+More Markets de PM). Ver [[project-wc2026-knockout-phase]].
+
 ## Reportar PnL / cuenta (¿cómo voy? / ¿cuál es mi PnL?)
 La **fuente de verdad es la cuenta LIVE de Polymarket, NO el ledger local**. El estado local
 (`data/agent_state.json`, vía `scripts/portfolio.py`) suele estar desincronizado — muestra 0
