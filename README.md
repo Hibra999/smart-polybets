@@ -32,14 +32,25 @@ pip install -e ".[optimize]"     # cvxpy
 
 ## Construir la base de datos de un torneo
 
-Los `.sqlite` no se versionan: se construyen desde el DDL canónico.
+Los `.sqlite` no se versionan (se construyen desde el DDL canónico), con UNA
+excepción: los exports de mercado por evento (`data/<torneo>/events/*/ticks.sqlite`)
+sí — son datasets finitos y cerrados para análisis.
 
 ```bash
 python scripts/build_db.py --tournament fifa_world_cup_2026 --sport football
+python scripts/build_db.py --tournament liga_mx_2026 --sport football
 python scripts/build_db.py --tournament nfl_2026 --sport american_football
 ```
 
 Luego se pueblan con los scripts de `data/{tournament_id}/ingest/`.
+
+## Torneos registrados
+
+| tournament_id | Estado | Estrategias |
+|---|---|---|
+| `fifa_world_cup_2026` | activo hasta 2026-07-19 | `match_winner_wc_v1` (approved) |
+| `liga_mx_2026` (Apertura) | activo desde 2026-07-16, **modo observación** | `match_winner_ligamx_v1` (draft), `theta_lay_v1` (draft, trading — `docs/theta-trade-manual.md`) |
+| `nfl_2026` | arranca 2026-09-06 | `game_winner_v1` |
 
 ## Tests
 
@@ -65,8 +76,10 @@ pytest
 | Modelo Elo (NFL) | implementado (real) |
 | Estrategia doble-oportunidad | `bet_type: double_chance` (rival no gana / 1X a 90', preciado por Poisson) |
 | Polymarket CLOB V2 (órdenes) | cableado vía `venue/gateway` (SDK oficial `polymarket-client`); dry-run por defecto, live gateado |
-| Estado | `LocalState` local (Django retirado) |
-| Datos `.sqlite` | DDL + builder + `migrate_worldcup_data.py` (datos reales WC 2026) |
+| Estado | `LocalState` local (Django retirado); apuestas manuales por carril **CIO override** (`propose_bet.py`) con riesgo + ledger |
+| Datos `.sqlite` | DDL + builder + `migrate_worldcup_data.py` (WC) + ingest Polymarket/football-data (Liga MX) |
+| Datos de mercado en tiempo real | `record_market_ticks.py` (1 snapshot/min: precios + book depth + score live) |
+| Trading intra-partido | theta trade (`theta_lay_v1` draft): monitor CLI con regla de salida + hard stop (`theta_monitor.py`) |
 
 ## Agregar un torneo nuevo
 

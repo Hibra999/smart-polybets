@@ -33,6 +33,23 @@ python scripts/orders.py --approve <key> [--live]        # coloca la orden de un
 python scripts/orders.py --cancel <order_id> [--live]    # cancela una orden abierta
 ```
 
+### Carril CIO override (apuestas manuales, 2026-07-14)
+Toda apuesta que la estrategia activa no genera va por acá — NUNCA por broker directo:
+```bash
+python scripts/propose_bet.py --market "Will X win…" --stake 12 \
+    --model-prob 0.55 --reason "…" [--outcome no] [--dry-run]   # Decision REVIEW en el ledger
+python scripts/orders.py --approve <key> --live --confirm 12.00 # colocación con gates
+python scripts/backfill_manual_trades.py --apply                # asentar trades hechos por fuera
+```
+
+### Trading intra-partido (theta trade, 2026-07-14 — draft, ver docs/theta-trade-manual.md)
+```bash
+python scripts/record_market_ticks.py                    # recorder 1/min (correr en jornadas)
+python scripts/theta_monitor.py --list [filtro]          # descubrir mercados/tokens
+python scripts/theta_monitor.py --market "…" --entry P --shares N [--live]
+#   comandos en vivo: v = HARD STOP (vende YA) · p = PnL · q = salir sin vender
+```
+
 `portfolio.py` lee el estado local (`data/agent_state.json`) y asienta el PnL de los
 trades cerrados contra los resultados de los fixtures. Estados: ABIERTA (ejecutada,
 partido sin terminar), CERRADA (ejecutada, terminada → PnL WON/LOST), PENDIENTE

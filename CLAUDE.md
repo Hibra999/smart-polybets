@@ -16,13 +16,20 @@ Antes de cualquier tarea en este repo, todo agente debe:
    ```bash
    git log --oneline -5 && git status -s      # dónde quedó la última sesión
    python scripts/account.py                  # cuenta live (cash, posiciones, W-L)
-   python scripts/scan_market.py --hours 48   # oportunidades próximas (dry-run)
+   python scripts/scan_market.py --hours 48   # oportunidades próximas (dry-run; WC)
    ```
 5. **Antes de CUALQUIER sugerencia o apuesta: refrescar datos** (los modelos reproducen
-   los fixtures jugados en runtime → DB desactualizada = edges falsos):
+   los fixtures jugados en runtime → DB desactualizada = edges falsos). POR TORNEO:
    ```bash
-   python scripts/update_results.py --apply          # finaliza jugados (marcador de PM)
-   python scripts/sync_upcoming_fixtures.py --apply  # placeholders -> equipos reales
+   # FIFA World Cup 2026 (hasta 2026-07-19; quedan semis/3er puesto/final):
+   python scripts/update_results.py --apply            # finaliza jugados (Exact Score/escalera)
+   python scripts/sync_upcoming_fixtures.py --apply    # placeholders -> equipos reales
+   #   ⚠️ el bracket de la DB terminaba en QF: final y 3er puesto se insertan A MANO
+   #   cuando PM los abra (ver gotcha del bracket + finding 2026-07-13).
+   # Liga MX Apertura 2026 (arrancó 2026-07-16):
+   python data/liga_mx_2026/ingest/fetch_fixtures_pm.py --apply       # jornadas nuevas
+   python scripts/update_results.py --tournament liga_mx_2026 --apply # finaliza jugados
+   #   en DÍAS DE JORNADA además: python scripts/record_market_ticks.py  (recorder 1/min)
    ```
    Verificar que quede limpio: 0 fixtures con kickoff pasado en status `scheduled`
    (salvo partidos EN JUEGO ahora). El 2026-07-09 se apostó con los 8 octavos sin
@@ -42,7 +49,7 @@ explícitos (schemas Pydantic). Mismos inputs → misma decisión.
 | `core/` | utilidades compartidas, sin lógica de negocio (tipos, excepciones, strategy parser, `local_state`, `polymarket_client`, `timez`) |
 | `data/` | un SQLite por torneo + DDL canónico por deporte (`_schema/`) |
 | `adapters/` | única capa que lee los SQLite (read-only) + adapters de modelo (Elo, Bayes, TrueSkill, Poisson) |
-| `venue/` | **única interfaz con Polymarket**: `gateway` (saldos/posiciones/órdenes/best_ask sobre el SDK), `discovery` (eventos vía SDK), `matching` (mapeo mercado↔partido) |
+| `venue/` | **única interfaz con Polymarket**: `gateway` (saldos/posiciones/órdenes/best_ask sobre el SDK), `discovery` (eventos vía SDK), `books` (order books + price history públicos), `ticks` (extracción pura de snapshots), `matching` (mapeo mercado↔partido), `results` (marcadores desde mercados resueltos). **Ningún script llama al SDK/cliente directo** — siempre a través de venue/. |
 | `tournaments/` | config por torneo + `registry.py` + `STRATEGY.md` por estrategia |
 | `signals/` | seam `SignalProvider` (modelo→señal), desacopla la estrategia del deporte |
 | `research/` | produce `MarketOpportunity` con edge; `resolve_bet_market` elige lado/mercado (win / double_chance) |
@@ -83,20 +90,34 @@ Research → Risk → Optimization → Execution → Portfolio → Editorial
 ```
 (Los SKILL.md ubican Optimization después de Risk; ese es el orden de los workflows.)
 
-## Gotchas de ejecución en vivo (place_bets / orders) — VERIFICADO
-Al colocar una apuesta de ganador en vivo aparecieron dos bugs reales:
-1. **`scripts/place_bets.py` NO llama `load_env()`** (a diferencia de `orders.py`/`scan_market.py`).
-   Con `--live` pero sin la key en el entorno, el broker se degrada **silenciosamente a
-   dry-run** (banner "DRY-RUN (sin POLYMARKET_PRIVATE_KEY)") y **no coloca nada**. Workaround:
-   exportar `POLYMARKET_PRIVATE_KEY` (+ `POLYMARKET_LIVE=1`) inline, **o** usar `orders.py`.
-2. **Un dry-run de `place_bets.py` marca la decisión `status=executed`** con un `order_result`
-   `dry_run`, y luego la **bloquea por idempotencia** ("ya procesada") en el siguiente run.
-   Rompe el diseño (un dry-run NO debería marcar ejecutado). **Recuperación**: `orders.py
-   --approve <key> --live` la coloca igual — `validate_placeable` ignora el `status`, repreciar
-   con `best_ask` live, y `mark_executed` sólo escribe cuando el fill es `live` (no en dry_run).
-   Al terminar, `order_result.status` pasa a `live` y `filled_size_usdc` al monto real.
-Ruta confiable para colocar en vivo hoy: **`orders.py --approve <key> --live --confirm <monto>`**
+## Gotchas de ejecución en vivo (place_bets / orders) — FIXED 2026-07-14
+Los dos bugs verificados el 2026-07-09 quedaron corregidos:
+1. `place_bets.py` ya llama `load_env()` (antes, con `--live` sin key en el entorno,
+   degradaba **silenciosamente a dry-run** y no colocaba nada).
+2. Un dry-run ya **NO** marca `status=executed`: queda **`simulated`** (nuevo status,
+   `LocalStateClient.mark_simulated`), que **no bloquea la idempotencia** — el run live
+   siguiente reprocesa la decisión. Sólo un fill `live` marca `executed` (paridad con
+   `orders.py`). Tests: `test_full_analysis_auto`.
+Ruta confiable para colocar en vivo: **`orders.py --approve <key> --live --confirm <monto>`**
 (carga env, gate `POLYMARKET_LIVE=1` + key + kill-switch, y confirmación tipeada del USDC).
+
+## Apuestas manuales (CIO override) — SIEMPRE por el pipeline
+Toda apuesta que la estrategia activa no genera (lado Poisson en mercados a 90', totales
+O/U, sizing decidido por el CIO) va por el **carril override** — NO por broker directo:
+```bash
+# 1. proponer: riesgo real (edge/volumen/drawdown/horas/exposure) puede DISCARDear;
+#    si pasa, queda como Decision REVIEW en el ledger (strategy_id=cio_override)
+python scripts/propose_bet.py --market "Will Spain win on 2026-07-14?" \
+    --stake 12 --model-prob 0.379 --reason "Poisson corregido vs ask"  # [--outcome no] [--dry-run]
+# 2. colocar: gates live + confirmación tipeada; mark_executed sólo si el fill es live
+python scripts/orders.py --approve <key> --live --confirm 12.00
+```
+Un override **nunca es AUTO** (REVIEW forzado) y `--reason` es obligatoria (queda en el
+ledger). Key idempotente estándar → no se puede proponer dos veces el mismo día. El broker
+directo (`place_totals_qf.py`/`place_winner_sf.py`) queda como escape hatch de emergencia;
+si se usa, asentar después con `scripts/backfill_manual_trades.py` (idempotente — ya
+retro-registró las 7 operaciones pre-carril del 2026-07-05..13).
+Diseño: `docs/superpowers/specs/2026-07-14-cio-override-lane-design.md`.
 
 ## Apostar markets de goles / totales (O/U, BTTS, spread): NO hay ruta de estrategia
 La estrategia activa (`match_winner_wc_v1`) **solo apuesta el ganador** (win/double_chance).
@@ -104,9 +125,10 @@ Los markets O/U, BTTS y spread (evento "`{H} vs. {A} - More Markets`") el sistem
 **solo para reconstruir marcadores** (`update_results.py`), **no para apostar**. El pipeline
 (`place_bets.py`/`orders.py`) no puede colocar una apuesta de totales.
 
-Para apostar un total hoy → **orden manual de bajo nivel** con `execution.functions.broker.
-PolymarketBroker`, construyendo un `TradeOrder` directo al token del outcome (p.ej. "Over").
-Gotchas:
+Para apostar un total hoy → **carril CIO override** (`propose_bet.py`, ver sección de
+apuestas manuales): el outcome `yes` es Over y `no` es Under en los mercados O/U. La orden
+manual de bajo nivel con `execution.functions.broker.PolymarketBroker` (TradeOrder directo
+al token) queda solo como escape hatch. Gotchas del path de bajo nivel:
 - **`gateway.best_ask(token)` devuelve None sin `private_key`.** Construir el gateway con la
   key (`PolymarketGateway(live=True, private_key=..., funder=...)`) para leer el ask real.
 - `broker.place()` manda un **LIMIT** (`place_limit_order`) y redondea el precio al tick.
@@ -153,6 +175,13 @@ por orden de kickoff. **Es idempotente**: descarta los partidos de PM que ya exi
 fixture con equipos reales, así un re-run NO duplica en los slots sobrantes. Después,
 `scripts/update_results.py --apply` finaliza los ya jugados (marcador desde los mercados
 More Markets de PM). Ver [[project-wc2026-knockout-phase]].
+
+⚠️ **Gotcha (VERIFICADO 2026-07-13): el bracket de la DB termina en CUARTOS.** La DB tiene
+100 fixtures y el torneo 104: no hay placeholders para semis/3er puesto/final, así que el sync
+reporta "N partidos PM vs 0 placeholders" y no escribe nada. Fix: insertar el fixture a mano
+(backup → INSERT copiando convenciones de los QF: `phase_id='group_stage'`, `neutral_venue=1`,
+id consecutivo). Hecho para las semis (`wc_149`/`wc_150`); **falta repetirlo para 3er puesto y
+final** cuando PM los abra. Ver `docs/findings/2026-07-13-bracket-sin-semifinales.md`.
 
 ⚠️ **Gotcha (VERIFICADO 2026-07-09): el sync solo ve mercados ABIERTOS.** Si un partido de
 knockout se juega (su mercado cierra) entre dos corridas del sync, su placeholder queda
@@ -207,3 +236,46 @@ pytest
 - **Cuotas reales**: `scripts/migrate_worldcup_data.py` migra datos + 404 cuotas (Polymarket/Codere);
   `research.SqliteOddsSource` las expone como mercados. CLOB API live = mismo interfaz (pendiente).
 - **Datos**: `scripts/migrate_worldcup_data.py` puebla el SQLite del Mundial 2026 desde `worldcup.db`.
+- **Liga MX Apertura 2026** (2026-07-16 → 2026-12-13): registrado en `tournaments/registry.py`
+  con estrategia en **draft (NO opera)**. Equipos (18, incluye **Atlante**, no Mazatlán) y
+  calendario se ingieren de Polymarket (tag **102448**, ventana rodante ~2 jornadas →
+  **correr a diario** `data/liga_mx_2026/ingest/fetch_fixtures_pm.py --apply` +
+  `scripts/update_results.py --tournament liga_mx_2026 --apply`). **Localía cableada**
+  (2026-07-14): `TournamentConfig.{home_adv_elo=65, neutral_venue=False}` → Elo con
+  `home_adv` y Poisson `neutral=False`. **Historia y calibración cargadas (2026-07-14)**:
+  football-data MEX.csv → `historical_match` (336 partidos 2025/26, Poisson home_factor
+  1.40) + seeds Elo reales (Cruz Azul 1695…Puebla 1310; Atlante=1500 sin historia) +
+  `home_adv_elo=80` calibrado. ⚠️ **Backtest 2025/26: SIN edge vs cuotas de cierre**
+  (ROI negativo) → estrategia sigue draft; plan = observar J1-J3 si Polymarket precia
+  peor que el cierre (finding `2026-07-14-ligamx-backtest.md`). **Minutos de gol + rojas**
+  (fuente ESPN, tabla `match_timeline_event`): EDA en finding `2026-07-14-ligamx-goles-eda.md`
+  + reporte `docs/ligamx-goles-eda.html` — Liga MX es más hostil que el WC para el theta
+  (favorito ya anotó al min 30 en 37%; bin 76-90 el más denso; rojas en 34% de partidos).
+  Ver `tournaments/liga_mx_2026/TOURNAMENT.md` y `data/liga_mx_2026/DATA_SOURCES.md`.
+- **`update_results.py` es multi-torneo** (2026-07-14): `--tournament <id>` usa el
+  `polymarket_tag_id` del registry; marcador vía mercado **Exact Score** (Liga MX) con
+  fallback a la escalera O/U (Mundial). Lógica pura en `venue/results.py`.
+- **Recorder de ticks** (2026-07-14): `scripts/record_market_ticks.py` guarda 1
+  snapshot/min de los mercados winner/draw abiertos (bid/ask/spread/vol + score live +
+  book depth en ventana kickoff±) en `data/<tid>/market_ticks.sqlite` (gitignored,
+  buffer rodante). **Post-evento**: `scripts/export_event_ticks.py` exporta cada
+  partido a su carpeta versionable `data/<tid>/events/<fecha>-<evento>/ticks.sqlite`
+  (ticks + capturas finas del monitor + sesiones + meta; idempotente) — la data de
+  mercado queda POR TORNEO Y POR EVENTO para análisis posterior.
+  **Correr en días de jornada de Liga MX** — es el insumo para validar el theta trade
+  (lay del favorito con salida anticipada, finding `2026-07-14-theta-trade-lay-favorito.md`:
+  +7 a +21% bruto en los 26 KO del WC con price history de PM; pendiente validar
+  ejecutabilidad con spread/depth reales de Liga MX).
+- **Theta monitor (CLI)** (2026-07-14): `scripts/theta_monitor.py` cierra el ciclo del
+  theta trade — lee el book cada 5s (~460ms/lectura), imprime lecturas+PnL, y vende
+  AUTOMÁTICO al disparo de la regla pura de `execution/functions/theta_exit.py` (TP
+  configurable desde min X + salida dura min Y + stop opcional). **Comandos en vivo**:
+  `v`+Enter = HARD STOP manual (vende YA, con 3 reintentos a bid fresco), `p` = PnL,
+  `q`/Ctrl+C = salir sin vender. **Persiste TODO** (cada lectura, PnL, intentos de venta,
+  errores) en `theta_session`/`theta_tick` de `market_ticks.sqlite` — si la venta falla,
+  imprime el resumen, deja instrucciones y los datos quedan. Dry-run default; live =
+  gates + confirmación tipeada al inicio. La venta bypassea el ledger → asentar con
+  `backfill_manual_trades.py`. **Estrategia formal**: `tournaments/liga_mx_2026/strategies/
+  theta_lay_v1/STRATEGY.md` (draft) · **manual de operación con todos los parámetros y
+  cómo obtener el id de mercado (`--list`)**: `docs/theta-trade-manual.md`. Flexible a
+  cualquier torneo registrado (`--tournament`) o cualquier mercado de PM (`--token`).
