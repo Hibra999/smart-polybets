@@ -27,3 +27,10 @@ editorial/reports/**/*.md
 
 # Backups locales (ingesta/sync) — nunca versionar
 data/**/*.bak-*
+
+# Ticks de mercado (recorder por minuto — crece sin límite, no se versiona)
+data/*/market_ticks.sqlite*
+
+# EXCEPCIÓN: los exports por evento SÍ se versionan (dataset finito y cerrado;
+# acordado 2026-07-14: la data de mercado queda por torneo y por evento)
+!data/*/events/**/*.sqlite
