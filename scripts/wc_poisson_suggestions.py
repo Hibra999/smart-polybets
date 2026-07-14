@@ -24,6 +24,7 @@ enable_utf8()  # consola Windows: stdout/stderr en UTF-8
 
 from adapters.football.db_reader import FootballDBReader
 from adapters.football.wc_poisson_pipeline import WorldCupPoissonPipeline
+from tournaments.registry import get_config
 
 TID = "fifa_world_cup_2026"
 
@@ -32,16 +33,19 @@ def _pct(x: float) -> str:
     return f"{x * 100:4.1f}%"
 
 
-def run(date: str, line: float) -> None:
-    reader = FootballDBReader(TID)
+def run(date: str, line: float, tid: str = TID) -> None:
+    cfg = get_config(tid)
+    reader = FootballDBReader(tid)
     fixtures = reader.query(
         "SELECT id, home_team_id, away_team_id FROM fixture "
         "WHERE status='scheduled' AND kickoff_utc LIKE ? ORDER BY kickoff_utc",
         (f"{date}%",),
     )
-    pipe = WorldCupPoissonPipeline(TID).fit()
+    # neutral según el torneo: el Mundial no tiene localía; una liga sí.
+    pipe = WorldCupPoissonPipeline(tid, neutral=cfg.neutral_venue).fit()
     n_fit = len(pipe.model.rates)
-    print(f"\n=== Poisson de goles, WC {date} ===")
+    print(f"\n=== Poisson de goles, {cfg.display_name} {date} "
+          f"({'sede neutral' if cfg.neutral_venue else 'con localía'}) ===")
     print(f"    base={pipe.model.base:.2f} goles/equipo  home_factor={pipe.model.home_factor:.2f}  "
           f"{n_fit} equipos ajustados\n")
     if not fixtures:
@@ -69,8 +73,9 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--date", default=datetime.now(timezone.utc).strftime("%Y-%m-%d"))
     ap.add_argument("--line", type=float, default=2.5, help="línea Over/Under")
+    ap.add_argument("--tournament", default=TID)
     a = ap.parse_args()
-    run(a.date, a.line)
+    run(a.date, a.line, a.tournament)
 
 
 if __name__ == "__main__":

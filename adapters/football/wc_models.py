@@ -49,6 +49,10 @@ def margin_multiplier(goals_a: int, goals_b: int, rating_a: float, rating_b: flo
 class EloSystem:
     k: float = 40.0  # K alto: el Mundial son pocos partidos
     use_margin: bool = True
+    # Ventaja de localía en puntos Elo. 0 = sede neutral (Mundial). Para ligas
+    # con localía real (ej. Liga MX) se setea >0 y team_a se asume LOCAL tanto
+    # en update_match como en expected_home. Calibrar por liga.
+    home_adv: float = 0.0
     ratings: dict[str, float] = field(default_factory=dict)
 
     def seed(self, initial: dict[str, float]) -> None:
@@ -57,9 +61,14 @@ class EloSystem:
     def get(self, team: str) -> float:
         return self.ratings.get(team, 1500.0)
 
+    def expected_home(self, home: str, away: str) -> float:
+        """P(local gana) con la ventaja de localía aplicada al rating del local."""
+        return expected_score(self.get(home) + self.home_adv, self.get(away))
+
     def update_match(self, team_a: str, team_b: str, goals_a: int, goals_b: int) -> None:
+        """team_a es el LOCAL (recibe home_adv en la expectativa)."""
         ra, rb = self.get(team_a), self.get(team_b)
-        ea = expected_score(ra, rb)
+        ea = expected_score(ra + self.home_adv, rb)
         eb = 1.0 - ea
         sa, sb = match_scores(goals_a, goals_b)
         k_eff = self.k

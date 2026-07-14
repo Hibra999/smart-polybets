@@ -1,16 +1,17 @@
 #!/usr/bin/env python
 """Marca como finished los partidos ya jugados, con marcador real de Polymarket.
 
-Los resultados del Mundial 2026 no vienen de una API externa (datos simulados); la
-fuente de verdad es la resolución de los mercados de Polymarket. Este script
-reconstruye el marcador exacto de cada partido con kickoff pasado que sigue
-'scheduled':
-  - goles por equipo: ladder per-team "{H} vs. {A}: {Team} O/U N.5" resuelto.
-  - si un equipo marcó 3+ (la ladder per-team llega a 2.5), se fija con el total
-    del partido "{H} vs. {A}: O/U N.5" (llega a 8.5) menos los goles del rival.
+GENERALIZADO (2026-07-14): funciona para cualquier torneo registrado con
+`polymarket_tag_id` en tournaments/registry.py (Mundial, Liga MX, ...). La fuente
+de verdad del marcador es la resolución de los mercados de Polymarket:
+  1. mercado "Exact Score" resuelto (Liga MX y ligas nuevas), o
+  2. escalera O/U per-team + total (formato del Mundial 2026).
+La lógica pura vive en `venue/results.py` (unit-testeable).
 
-Actualiza home_goals, away_goals, winner_team_id, status='finished'. Dry-run por
-defecto; --apply para escribir.
+Actualiza home_goals, away_goals, winner_team_id, status='finished'.
+
+    python scripts/update_results.py                                # WC, dry-run
+    python scripts/update_results.py --tournament liga_mx_2026 --apply
 """
 from __future__ import annotations
 
@@ -24,116 +25,79 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core.console import enable_utf8
 from core.utils import utcnow
+from tournaments.registry import get_config
 from venue.discovery import list_events
 from venue.matching import canon as _canon
+from venue.results import reconstruct_score
 
 enable_utf8()
 
-TAG = 102232
-TID = "fifa_world_cup_2026"
 REPO = Path(__file__).resolve().parent.parent
-DB = REPO / "data" / TID / f"{TID}.sqlite"
-_MORE = re.compile(r"^(.+?)\s+vs\.?\s+(.+?)\s*-\s*More\s+Markets", re.I)
+_VS = re.compile(r"^(.+?)\s+vs\.?\s+(.+?)$", re.I)
 
 
-def _resolved(mk) -> str | None:
-    """Label del outcome resuelto (precio ~1) de un Market del SDK, o None."""
-    outs = getattr(mk, "outcomes", None)
-    if outs is None:
+def _pair_key(title: str) -> frozenset | None:
+    """frozenset(canon(home), canon(away)) del título 'X vs. Y[ - Sufijo]'."""
+    base = (title or "").split(" - ")[0]
+    m = _VS.match(base.strip())
+    if not m:
         return None
-    for oc in (getattr(outs, "yes", None), getattr(outs, "no", None)):
-        if oc is not None and oc.price is not None and float(oc.price) > 0.98:
-            return oc.label
-    return None
+    return frozenset((_canon(m.group(1)), _canon(m.group(2))))
 
 
-def _bracket(over_lines: list[float], under_lines: list[float]) -> tuple[int, int]:
-    lo = (max([int(x) + 1 for x in over_lines], default=0))
-    hi = (min([int(x) for x in under_lines], default=99))
-    return lo, hi
-
-
-def _goals_from_event(ev: dict, home_disp: str, away_disp: str) -> tuple[int | None, int | None]:
-    """Reconstruye (home_goals, away_goals) del More Markets resuelto."""
-    team_over: dict[str, list[float]] = {}
-    team_under: dict[str, list[float]] = {}
-    tot_over: list[float] = []
-    tot_under: list[float] = []
-    for mk in (ev.markets or []):
-        q = mk.question or ""
-        if "Half" in q:
+def collect_match_markets(tag_id: int) -> dict[frozenset, list]:
+    """Todos los markets de PM agrupados por par de equipos (mezcla los eventos
+    del partido: principal, Exact Score, More Markets, etc.)."""
+    grouped: dict[frozenset, list] = {}
+    for e in list_events(tag_id=tag_id, closed=True) + list_events(tag_id=tag_id, closed=False):
+        key = _pair_key(e.title or "")
+        if key is None or len(key) != 2:
             continue
-        lab = _resolved(mk)
-        if lab is None:
-            continue
-        over = lab.lower() == "over"
-        mteam = re.search(r":\s*(.+?)\s+O/U\s+(\d\.5)$", q)
-        mtot = re.search(r":\s*O/U\s+(\d\.5)$", q)
-        if mteam:
-            team, line = mteam.group(1), float(mteam.group(2))
-            target = team_over if over else team_under
-            target.setdefault(team, []).append(line)
-        elif mtot:
-            line = float(mtot.group(1))
-            (tot_over if over else tot_under).append(line)
-
-    def team_goals(disp: str) -> int | None:
-        # match el nombre del equipo dentro de las keys per-team
-        key = next((t for t in set(team_over) | set(team_under) if _canon(t) == _canon(disp)), None)
-        if key is None:
-            return None
-        lo, hi = _bracket(team_over.get(key, []), team_under.get(key, []))
-        return lo if lo == hi else (lo, hi)  # type: ignore
-
-    hg = team_goals(home_disp)
-    ag = team_goals(away_disp)
-    tlo, thi = _bracket(tot_over, tot_under)
-    total = tlo if tlo == thi else None
-
-    def pin(val, other):
-        if isinstance(val, tuple):  # rango (ej. 3+): fijar con total - rival
-            if total is not None and isinstance(other, int):
-                return total - other
-            return val[0]  # piso (3) como fallback
-        return val
-    hg2 = pin(hg, ag if isinstance(ag, int) else None)
-    ag2 = pin(ag, hg if isinstance(hg, int) else None)
-    return hg2, ag2
+        grouped.setdefault(key, []).extend(e.markets or [])
+    return grouped
 
 
-def run(apply: bool) -> None:
-    events = {}
-    for e in list_events(closed=True) + list_events(closed=False):
-        m = _MORE.match(e.title or "")
-        if m:
-            events.setdefault(frozenset((_canon(m.group(1)), _canon(m.group(2)))), e)
+def run(tid: str, apply: bool) -> None:
+    cfg = get_config(tid)
+    if cfg.polymarket_tag_id is None:
+        print(f"El torneo {tid} no tiene polymarket_tag_id en el registry.")
+        return
+    db = REPO / "data" / tid / f"{tid}.sqlite"
+    markets_by_pair = collect_match_markets(cfg.polymarket_tag_id)
 
-    con = sqlite3.connect(DB)
+    con = sqlite3.connect(db)
     con.row_factory = sqlite3.Row
     now = utcnow().isoformat()
     past = con.execute(
-        "SELECT id, home_team_id, away_team_id, kickoff_utc FROM fixture "
-        "WHERE status='scheduled' AND kickoff_utc < ? ORDER BY kickoff_utc",
+        "SELECT f.id, f.home_team_id, f.away_team_id, "
+        "       h.name AS home_name, a.name AS away_name "
+        "FROM fixture f JOIN team h ON h.id = f.home_team_id "
+        "JOIN team a ON a.id = f.away_team_id "
+        "WHERE f.status='scheduled' AND f.kickoff_utc < ? ORDER BY f.kickoff_utc",
         (now,),
     ).fetchall()
 
     updates = []
     for f in past:
-        ev = events.get(frozenset((_canon(f["home_team_id"].replace("_", " ")),
-                                   _canon(f["away_team_id"].replace("_", " ")))))
-        if not ev:
+        # display: nombre real de la tabla team (con aliases de venue/matching);
+        # fallback al id sin guiones (compat WC, cuyos ids son los nombres).
+        home_disp = f["home_name"] or f["home_team_id"].replace("_", " ")
+        away_disp = f["away_name"] or f["away_team_id"].replace("_", " ")
+        mkts = (markets_by_pair.get(frozenset((_canon(home_disp), _canon(away_disp))))
+                or markets_by_pair.get(frozenset((_canon(f["home_team_id"].replace("_", " ")),
+                                                  _canon(f["away_team_id"].replace("_", " "))))))
+        if not mkts:
             continue
-        hg, ag = _goals_from_event(ev, f["home_team_id"].replace("_", " "),
-                                   f["away_team_id"].replace("_", " "))
+        hg, ag = reconstruct_score(mkts, home_disp, away_disp)
         if not isinstance(hg, int) or not isinstance(ag, int):
             continue
         winner = f["home_team_id"] if hg > ag else (f["away_team_id"] if ag > hg else None)
         updates.append((f["id"], f["home_team_id"], f["away_team_id"], hg, ag, winner))
 
-    print(f"Partidos a finalizar: {len(updates)}\n")
+    print(f"[{cfg.display_name}] Partidos a finalizar: {len(updates)}\n")
     for fid, h, a, hg, ag, w in updates:
         res = "empate" if w is None else f"gana {w}"
-        print(f"  {fid:>6}  {h:>14} {hg}-{ag} {a:<14}  ({res})")
+        print(f"  {fid:>7}  {h:>18} {hg}-{ag} {a:<18}  ({res})")
 
     if apply and updates:
         con.executemany(
@@ -150,9 +114,10 @@ def run(apply: bool) -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
+    ap.add_argument("--tournament", default="fifa_world_cup_2026")
     ap.add_argument("--apply", action="store_true")
     a = ap.parse_args()
-    run(a.apply)
+    run(a.tournament, a.apply)
 
 
 if __name__ == "__main__":

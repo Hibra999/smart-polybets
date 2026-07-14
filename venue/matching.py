@@ -37,6 +37,30 @@ ALIASES: dict[str, str] = {
     # canónico del mercado ("Curaçao"→curacao, "Türkiye"→turkiye).
     "curaao": "curacao",
     "trkiye": "turkiye",
+    # ── Liga MX (Polymarket usa nombres largos; team_ids del proyecto cortos) ──
+    "cf america": "america",
+    "club america": "america",
+    "cd guadalajara": "guadalajara",
+    "chivas": "guadalajara",
+    "cf cruz azul": "cruz azul",
+    "pumas de la unam": "pumas unam",
+    "tigres de la uanl": "tigres uanl",
+    "cf monterrey": "monterrey",
+    "deportivo toluca fc": "toluca",
+    "deportivo toluca": "toluca",
+    "cf pachuca": "pachuca",
+    "club leon fc": "leon",
+    "club leon": "leon",
+    "atlas fc": "atlas",
+    "club santos laguna": "santos laguna",
+    "fc juarez": "juarez",
+    "queretaro fc": "queretaro",
+    "atletico de san luis": "atletico san luis",
+    "atlante fc": "atlante",
+    "club tijuana": "tijuana",
+    "xolos": "tijuana",
+    "club puebla": "puebla",
+    "club necaxa": "necaxa",
 }
 
 _WILL_WIN_RE = re.compile(r"\s*will\s+(.+?)\s+win\b", re.I)

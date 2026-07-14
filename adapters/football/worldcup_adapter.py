@@ -36,14 +36,18 @@ class FootballWorldCupAdapter(SportAdapter):
     sport = "football"
 
     def __init__(self, tournament_id: str, *, reader: FootballDBReader | None = None,
-                 model_version: str = "wc-elo-bayes-v1", bayes_strength: float = 4.0) -> None:
+                 model_version: str = "wc-elo-bayes-v1", bayes_strength: float = 4.0,
+                 home_adv_elo: float = 0.0) -> None:
         self.tournament_id = tournament_id
         self.reader = reader or FootballDBReader(tournament_id)
         self.model_version = model_version
         self.bayes_strength = bayes_strength
+        # Ventaja de localía en puntos Elo (0 = neutral, ej. Mundial). Para ligas
+        # se toma de TournamentConfig.home_adv_elo (ver tournaments/registry.py).
+        self.home_adv_elo = home_adv_elo
 
     def _run_pipeline(self, before_utc: str, seed: dict[str, float]) -> WorldCupPipeline:
-        pipe = WorldCupPipeline()
+        pipe = WorldCupPipeline(home_adv_elo=self.home_adv_elo)
         pipe.seed(seed, bayes_strength=self.bayes_strength)
         for fx in self.reader.get_finished_fixtures(before_utc=before_utc):
             pipe.process_match(

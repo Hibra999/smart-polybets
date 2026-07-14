@@ -44,9 +44,11 @@ class WorldCupPoissonPipeline:
     """Ajusta el modelo una vez y pronostica goles de cualquier emparejamiento."""
 
     def __init__(self, tournament_id: str = "fifa_world_cup_2026", *,
-                 shrink_k: float = 5.0) -> None:
+                 shrink_k: float = 5.0, neutral: bool = True) -> None:
+        # neutral=False para ligas con localía real (aplica el home_factor
+        # estimado del fit; ver PoissonGoalsModel). El Mundial es neutral.
         self.tournament_id = tournament_id
-        self.model = PoissonGoalsModel(shrink_k=shrink_k)
+        self.model = PoissonGoalsModel(shrink_k=shrink_k, neutral=neutral)
         self._fitted = False
 
     def fit(self) -> "WorldCupPoissonPipeline":

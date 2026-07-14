@@ -33,6 +33,13 @@ accede directamente a los datos crudos.
 | `FootballTrueSkillAdapter` | TrueSkill | loader legacy: degrada a Elo (ídem: el real está en `wc_trueskill.py`) |
 | `AmericanFootballEloAdapter` | Elo binario NFL | implementado |
 
+**Localía (2026-07-14)**: `EloSystem.home_adv` (puntos Elo; team_a = local en
+`update_match`) y `PoissonGoalsModel(neutral=False)` se configuran POR TORNEO vía
+`TournamentConfig.{home_adv_elo, neutral_venue}` en `tournaments/registry.py`
+(Mundial: 0/neutral; Liga MX: 65 placeholder/con localía). Bayes y TrueSkill no
+llevan localía (señal de fuerza relativa). Con Elo seed flat 1500, TrueSkill (μ=25)
+y Bayes (0.5) arrancan uniformes por construcción — cold start coherente.
+
 ## INSTANCIACIÓN
 ```python
 # Siempre pasar tournament_id explícito

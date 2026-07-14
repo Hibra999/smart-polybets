@@ -18,8 +18,15 @@ tournaments/
 │   ├── TOURNAMENT.md
 │   ├── adapter.py
 │   └── strategies/
-│       ├── match_winner_v1/STRATEGY.md   (approved)
-│       └── top_scorer_v1/STRATEGY.md     (draft)
+│       ├── match_winner_wc_v1/STRATEGY.md (approved, activa)
+│       ├── match_winner_v1/STRATEGY.md    (approved)
+│       └── top_scorer_v1/STRATEGY.md      (draft)
+├── liga_mx_2026/
+│   ├── TOURNAMENT.md
+│   ├── adapter.py
+│   └── strategies/
+│       ├── match_winner_ligamx_v1/STRATEGY.md (draft)
+│       └── theta_lay_v1/STRATEGY.md           (draft, trading intra-partido)
 └── nfl_2026/
     ├── TOURNAMENT.md
     ├── adapter.py
@@ -29,11 +36,17 @@ tournaments/
 
 ## Agregar un torneo (4 pasos, whitepaper §13)
 
-1. Crear el adaptador en `adapters/{sport}/`.
-2. Registrar el torneo en `registry.py` (`TOURNAMENTS[...]`).
+1. Crear el adaptador en `adapters/{sport}/` (o reusar: el de fútbol acepta
+   `home_adv_elo` para ligas con localía).
+2. Registrar el torneo en `registry.py` (`TOURNAMENTS[...]`) con sus parámetros
+   de venue/modelo: `polymarket_tag_id` (discovery/update_results/recorder),
+   `neutral_venue` (False = liga con localía → Poisson `neutral=False`) y
+   `home_adv_elo` (puntos Elo de localía, calibrar — Liga MX: 80).
 3. Crear `tournaments/{id}/` con `TOURNAMENT.md`, `adapter.py` y al menos una
    estrategia en `strategies/{strategy_id}/STRATEGY.md` con `status: draft`.
-4. Registrar el torneo en el Django App vía `django_client.register_tournament(...)`.
+4. Construir la DB (`scripts/build_db.py`) y poblarla con los scripts de
+   `data/{id}/ingest/` (+ `DATA_SOURCES.md` con fuentes y rutina).
+   (Django fue retirado — el estado vive en `LocalState`.)
 
 ## STRATEGY.md
 

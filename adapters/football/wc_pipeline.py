@@ -16,7 +16,6 @@ from dataclasses import dataclass, field
 from adapters.football.wc_models import (
     BayesianLeague,
     EloSystem,
-    expected_score,
 )
 from adapters.football.wc_trueskill import TrueSkillSystem
 
@@ -27,6 +26,13 @@ class WorldCupPipeline:
     bayes: BayesianLeague = field(default_factory=BayesianLeague)
     trueskill: TrueSkillSystem = field(default_factory=TrueSkillSystem)
     appearances: dict[str, int] = field(default_factory=dict)
+    # Ventaja de localía en puntos Elo (0 = sede neutral, ej. Mundial). Se aplica
+    # al Elo (expectativa y updates); Bayes/TrueSkill quedan sin localía (son
+    # señales de fuerza relativa, no de precio — documentado en TOURNAMENT.md).
+    home_adv_elo: float = 0.0
+
+    def __post_init__(self) -> None:
+        self.elo.home_adv = self.home_adv_elo
 
     def seed(self, initial_elo: dict[str, float], *, bayes_strength: float = 4.0) -> None:
         self.elo.seed(initial_elo)
@@ -54,7 +60,7 @@ class WorldCupPipeline:
         - bayes_home/away: media bayesiana de la fuerza latente de cada lado
         - home/away_match_no: número de aparición que tendría cada lado (warmup)
         """
-        p_home = expected_score(self.elo.get(home), self.elo.get(away))
+        p_home = self.elo.expected_home(home, away)  # aplica home_adv si hay
         ts_home = self.trueskill.win_probability(home, away)
         return {
             "home": home,

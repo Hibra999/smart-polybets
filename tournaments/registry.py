@@ -29,12 +29,18 @@ class TournamentConfig:
     active_strategy: str  # path relativo a tournaments/, ej: "fifa_world_cup_2026/strategies/match_winner_v1"
     start_date: str
     end_date: str
+    # ── parámetros de venue/modelo por torneo (aditivos; defaults = Mundial) ──
+    polymarket_tag_id: int | None = None  # tag de PM para discovery/update_results
+    neutral_venue: bool = True            # False = liga con localía (Poisson neutral=False)
+    home_adv_elo: float = 0.0             # puntos Elo de localía (0 = sede neutral)
 
 
 def _football_worldcup(tournament_id: str) -> SportAdapter:
-    # Adapter migrado de pypro_worldcup_betting: pipeline Elo+Bayes evolutivo.
+    # Adapter Elo+Bayes evolutivo (migrado de pypro_worldcup_betting). La ventaja
+    # de localía sale de la config del torneo (0 para el Mundial: sede neutral).
     from adapters.football.worldcup_adapter import FootballWorldCupAdapter
-    return FootballWorldCupAdapter(tournament_id)
+    cfg = TOURNAMENTS[tournament_id]
+    return FootballWorldCupAdapter(tournament_id, home_adv_elo=cfg.home_adv_elo)
 
 
 def _nfl_trueskill(tournament_id: str) -> SportAdapter:
@@ -44,6 +50,21 @@ def _nfl_trueskill(tournament_id: str) -> SportAdapter:
 
 
 TOURNAMENTS: dict[str, TournamentConfig] = {
+    "liga_mx_2026": TournamentConfig(
+        tournament_id="liga_mx_2026",
+        display_name="Liga MX Apertura 2026",
+        sport="football",
+        adapter_factory=_football_worldcup,
+        active_strategy="liga_mx_2026/strategies/match_winner_ligamx_v1",
+        start_date="2026-07-16",
+        end_date="2026-12-13",
+        polymarket_tag_id=102448,
+        neutral_venue=False,
+        # CALIBRADO 2026-07-14: grid search sobre 2022/23-2025/26 (football-data
+        # MEX.csv), Brier 0.15940 en el óptimo. Ver scripts/ligamx_backtest.py y
+        # docs/findings/2026-07-14-ligamx-backtest.md.
+        home_adv_elo=80.0,
+    ),
     "fifa_world_cup_2026": TournamentConfig(
         tournament_id="fifa_world_cup_2026",
         display_name="FIFA World Cup 2026",
@@ -52,6 +73,9 @@ TOURNAMENTS: dict[str, TournamentConfig] = {
         active_strategy="fifa_world_cup_2026/strategies/match_winner_wc_v1",
         start_date="2026-06-11",
         end_date="2026-07-19",
+        polymarket_tag_id=102232,
+        neutral_venue=True,
+        home_adv_elo=0.0,
     ),
     "nfl_2026": TournamentConfig(
         tournament_id="nfl_2026",
