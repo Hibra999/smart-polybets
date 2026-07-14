@@ -93,3 +93,24 @@ def test_pending_decision_not_counted_as_trade():
     assert led["summary"]["n_pending"] == 1
     assert led["summary"]["n_open"] == 0
     assert led["summary"]["n_closed"] == 0
+
+
+def test_explicit_resolution_settles_without_fixture():
+    # Backfill / mercado no-winner (O/U): la resolución explícita asienta el PnL
+    # aunque no haya fixture para asentar contra winner_team_id.
+    dec = _dec("executed", None, size="22")
+    dec["pick_side"] = None
+    dec["opportunity_json"]["model_outcome"] = None
+    dec["opportunity_json"]["event_id"] = None
+    dec["resolution"] = {"outcome": LOST, "pnl": "-22.00"}
+    led = build_ledger([dec], {}, bankroll=1000)
+    assert led["summary"]["n_closed"] == 1
+    assert led["closed"][0]["outcome"] == LOST
+    assert led["closed"][0]["pnl"] == Decimal("-22.00")
+
+
+def test_explicit_resolution_won_computes_pnl_from_entry():
+    dec = _dec("executed", None, price="0.50", size="100")
+    dec["resolution"] = {"outcome": WON}
+    led = build_ledger([dec], {}, bankroll=1000)
+    assert led["closed"][0]["pnl"] == Decimal("100")  # 100*(1-0.5)/0.5

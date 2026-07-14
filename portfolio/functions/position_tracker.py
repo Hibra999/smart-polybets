@@ -44,6 +44,13 @@ def mark_executed(
     return client.mark_executed(idempotency_key, order_result.model_dump(mode="json"))
 
 
+def mark_simulated(
+    client: LocalStateClient, idempotency_key: str, order_result: OrderResult
+) -> dict:
+    """Registra un dry-run (status `simulated`, NO bloquea idempotencia)."""
+    return client.mark_simulated(idempotency_key, order_result.model_dump(mode="json"))
+
+
 def _decision_payload(decision: ExecutionDecision) -> dict[str, Any]:
     """Serializa ExecutionDecision al contrato que espera save_decision."""
     verdict = decision.verdict

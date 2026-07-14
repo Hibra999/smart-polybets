@@ -24,6 +24,7 @@ y clasifica si la orden procede en AUTO o necesita REVIEW final.
 | `order_builder.build()` | Construye el payload para el CLOB API | RiskVerdict, SizingOutput, live_price | TradeOrder |
 | `order_classifier.classify()` | Decide AUTO vs REVIEW para la ejecución final | TradeOrder, RiskVerdict | ExecutionDecision |
 | `submit_order()` | Envía la orden REAL al CLOB V2 vía `venue/gateway` (LIMIT al tick; dry-run salvo gates live) | TradeOrder | OrderResult |
+| `theta_exit.evaluate_exit()` | Regla PURA de salida del theta trade (TP desde min X / HARD min Y / STOP opcional) | entry, best_bid, minuto, ThetaExitConfig | (acción, razón) |
 
 ## SCHEMAS QUE CONSUME
 - `optimization/schemas/sizing_output.SizingOutput`
@@ -41,9 +42,11 @@ y clasifica si la orden procede en AUTO o necesita REVIEW final.
 - SIEMPRE guardar el OrderResult en el LocalState antes de retornar (via LocalStateClient);
   solo un fill `live` marca ejecutado — un dry_run NO (gotcha verificado, ver CLAUDE.md)
 - La idempotency_key DEBE verificarse contra el LocalState antes de submit_order()
-- Totales (O/U, BTTS, spread): NO hay ruta de estrategia — orden manual de bajo nivel
-  (ver CLAUDE.md § "Apostar markets de goles / totales" y `scripts/place_totals_qf.py`);
-  requiere `polymarket-client >= 0.1.0b12` (tick 0.0025)
+- Apuestas fuera de estrategia (totales O/U, lado Poisson, sizing CIO): usar el carril
+  **CIO override** — `scripts/propose_bet.py` (riesgo + REVIEW forzado + ledger) y
+  colocar con `orders.py --approve` (ver CLAUDE.md § "Apuestas manuales"). El broker
+  directo (`place_totals_qf.py`) es solo escape hatch; requiere `polymarket-client
+  >= 0.1.0b12` (tick 0.0025) y asentarse después con `backfill_manual_trades.py`
 
 ## ERRORES COMUNES
 - Llamar submit_order() en modo REVIEW (el error más costoso del sistema)

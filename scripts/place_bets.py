@@ -25,8 +25,12 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core.console import enable_utf8
+from core.env import load_env
 
 enable_utf8()  # consola Windows: stdout/stderr en UTF-8
+load_env(Path(__file__).resolve().parent.parent / ".env")  # sin esto, --live degradaba
+#                                                            silencioso a dry-run (gotcha
+#                                                            CLAUDE.md, fixed 2026-07-14)
 
 from adapters.football.db_reader import FootballDBReader
 from agent.workflows import full_analysis

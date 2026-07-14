@@ -26,6 +26,8 @@ def _market_source(market_prob="0.40", outcome="HOME_WIN"):
 
 def test_full_analysis_auto(seeded_data_root, fake_client):
     # ARG favorito (ganó 2 partidos) vs mercado 0.40 → edge alto → AUTO.
+    # Broker default = dry-run → la decisión queda `simulated`, NUNCA `executed`
+    # (el bug de 2026-07-09 marcaba executed en dry-run y bloqueaba el run real).
     decisions = full_analysis.run(
         "m1", "fifa_world_cup_2026",
         client=fake_client, market_source=_market_source("0.40"),
@@ -33,7 +35,9 @@ def test_full_analysis_auto(seeded_data_root, fake_client):
     assert len(decisions) == 1
     assert decisions[0]["mode"] == "AUTO"
     assert fake_client.saved
-    assert fake_client.executed
+    assert not fake_client.executed
+    assert fake_client.simulated
+    assert fake_client.simulated[0][1]["status"] == "dry_run"
 
 
 def test_full_analysis_review_with_flag(seeded_data_root, fake_client):

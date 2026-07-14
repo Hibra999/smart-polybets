@@ -32,7 +32,8 @@ performance. (Django fue retirado; el estado vive en `data/agent_state.json`.)
 | `performance_metrics.summary()` | Métricas completas de performance | PortfolioState, trades | PerformanceSummary |
 | `position_tracker.check_idempotency()` | Verifica si una key ya existe | LocalStateClient, idempotency_key | dict \| None |
 | `position_tracker.save_decision()` | Persiste un AgentDecisionLog | LocalStateClient, ExecutionDecision | dict |
-| `position_tracker.mark_executed()` | Marca un log como ejecutado | LocalStateClient, key, OrderResult | dict |
+| `position_tracker.mark_executed()` | Marca un log como ejecutado (solo fills `live`) | LocalStateClient, key, OrderResult | dict |
+| `position_tracker.mark_simulated()` | Registra un dry-run (`simulated`, NO bloquea idempotencia) | LocalStateClient, key, OrderResult | dict |
 | `account_source.PolymarketAccountSource` | Cuenta LIVE (saldo/posiciones/órdenes) | venue/gateway | snapshots live |
 
 ## SCHEMAS QUE CONSUME
@@ -48,8 +49,12 @@ performance. (Django fue retirado; el estado vive en `data/agent_state.json`.)
 - NUNCA escribir directamente al JSON de estado — siempre a través de LocalStateClient
 - check_idempotency() es OBLIGATORIO antes de save_decision() — sin excepciones
 - Si el estado local no se puede leer/escribir, el workflow PARA — no continúa con estado stale
-- ⚠️ El ledger local suele estar desincronizado de la cuenta real (apuestas colocadas por
-  fuera): para PnL usar SIEMPRE la cuenta live (ver CUÁNDO INVOCAR arriba)
+- ⚠️ Para PnL usar SIEMPRE la cuenta live (ver CUÁNDO INVOCAR arriba). Desde 2026-07-14
+  el ledger sí registra las apuestas manuales (carril CIO override `propose_bet.py` +
+  backfill `backfill_manual_trades.py`), pero la valuación/resolución sigue viniendo
+  de la cuenta live.
+- Los status del ledger: `pending_approval` (REVIEW), `approved`, `executed` (fill live),
+  `simulated` (dry-run; NO bloquea idempotencia), `expired`.
 
 ## ERRORES COMUNES
 - Leer portfolio_state una sola vez y usarlo para todo el pipeline (queda stale)

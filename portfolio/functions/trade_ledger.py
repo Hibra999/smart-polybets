@@ -88,6 +88,14 @@ def _base_row(dec: dict) -> dict[str, Any]:
 
 def _grade_executed(dec: dict, results: dict[str, dict]) -> dict[str, Any]:
     row = _base_row(dec)
+    # Resolución EXPLÍCITA (backfills / mercados no-winner como O/U, que no pueden
+    # asentarse contra winner_team_id): {"outcome": "WON"|"LOST", "pnl": opcional}.
+    explicit = dec.get("resolution") or {}
+    if explicit.get("outcome") in (WON, LOST):
+        row["outcome"] = explicit["outcome"]
+        row["pnl"] = (to_decimal(explicit["pnl"]) if explicit.get("pnl") is not None
+                      else settle_pnl(row["size"], row["entry_price"], row["outcome"]))
+        return row
     fx = results.get(row["event_id"]) or {}
     row["status_db"] = fx.get("status")
     if fx.get("status") != "finished":

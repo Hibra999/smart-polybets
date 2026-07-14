@@ -50,9 +50,10 @@ def run(
     for opp in opportunities:
         key = opp.idempotency_key
 
-        # 1. Idempotencia — OBLIGATORIA antes de procesar.
+        # 1. Idempotencia — OBLIGATORIA antes de procesar. `simulated` (dry-run
+        # previo) y `expired` NO bloquean: el run real puede reprocesarlas.
         existing = portfolio_tools.check_idempotency(key, client)
-        if existing is not None and existing.get("status") != "expired":
+        if existing is not None and existing.get("status") not in ("expired", "simulated"):
             decisions.append({"mode": "SKIP", "idempotency_key": key, "reason": "ya procesada"})
             continue
 
@@ -102,7 +103,12 @@ def run(
                 })
                 continue
             result = execution_tools.submit(order, decision, broker=broker)
-            portfolio_tools.mark_executed(key, result, client)
+            # Sólo un fill REAL marca ejecutado; un dry-run queda `simulated`
+            # (no bloquea el run live siguiente). Paridad con orders.py.
+            if result.status == "live":
+                portfolio_tools.mark_executed(key, result, client)
+            else:
+                portfolio_tools.mark_simulated(key, result, client)
             decisions.append(
                 {
                     "mode": "AUTO",

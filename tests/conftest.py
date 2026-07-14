@@ -174,6 +174,7 @@ class FakeLocalStateClient:
     def __init__(self):
         self.saved = []
         self.executed = []
+        self.simulated = []
 
     def get_portfolio_state(self):
         return {"bankroll_usdc": "1000", "drawdown_7d": "0", "open_positions": [],
@@ -192,6 +193,10 @@ class FakeLocalStateClient:
     def mark_executed(self, key, order_result):
         self.executed.append((key, order_result))
         return {"status": "executed"}
+
+    def mark_simulated(self, key, order_result):
+        self.simulated.append((key, order_result))
+        return {"status": "simulated"}
 
     def get_active_tournaments(self):
         return [{"tournament_id": "fifa_world_cup_2026"}]

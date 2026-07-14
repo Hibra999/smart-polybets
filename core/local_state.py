@@ -79,6 +79,16 @@ class LocalStateClient:
         self._save()
         return d
 
+    def mark_simulated(self, idempotency_key: str, order_result: dict) -> dict:
+        """Registra un dry-run SIN marcar ejecutado: status `simulated` no bloquea
+        la idempotencia (el run real siguiente puede reprocesar la decisión)."""
+        d = self._state["decisions"].setdefault(idempotency_key, {"idempotency_key": idempotency_key})
+        d["status"] = "simulated"
+        d["order_result"] = order_result
+        d["simulated_at"] = utcnow().isoformat()
+        self._save()
+        return d
+
     def set_bankroll(self, value: Decimal | float) -> dict:
         """Persiste el bankroll (p. ej. tras reconciliar con el balance real)."""
         self._state["bankroll_usdc"] = str(value)

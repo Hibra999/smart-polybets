@@ -34,6 +34,12 @@ def mark_executed(
     return position_tracker.mark_executed(_client(client), idempotency_key, order_result)
 
 
+def mark_simulated(
+    idempotency_key: str, order_result: OrderResult, client: LocalStateClient | None = None
+) -> dict:
+    return position_tracker.mark_simulated(_client(client), idempotency_key, order_result)
+
+
 def performance_summary(
     portfolio_state: PortfolioState,
     resolved_trades: list[dict[str, Any]] | None = None,
