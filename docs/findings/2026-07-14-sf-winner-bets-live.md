@@ -35,4 +35,8 @@ totales previos), y desde hoy este escenario va por el carril CIO override
 ## Pendiente al resolverse (14/15-jul)
 - `update_results.py --apply` tras cada partido + insertar fixtures de final/3er puesto
   (ver 2026-07-13-bracket-sin-semifinales.md).
-- Anotar el resultado acá: Spain __ / Argentina __.
+- Resultado: **Spain GANÓ 0-2 (2026-07-14) → +$28.00** (40 shares @ 0.30, payout $40;
+  penal convertido ~min 17 y gol tardío; cuenta pasó de -70.62 a -42.62 neto).
+  Argentina: pendiente (15-jul). El partido completo quedó capturado en
+  `data/fifa_world_cup_2026/events/2026-07-14-france-vs-spain/ticks.sqlite`
+  (378 ticks 1/min + 1,539 lecturas finas 5s — incluye el episodio del penal).

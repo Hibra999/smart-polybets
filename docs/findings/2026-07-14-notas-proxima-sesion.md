@@ -7,17 +7,19 @@ recorder/monitor/theta, EDA de goles. Este doc junta TODO lo abierto, en orden.
 1. **COMMIT PENDIENTE**: ~60 archivos sin versionar (override lane, Liga MX, theta,
    recorder, findings, reportes). El CIO no confirmó aún — preguntar y commitear
    (sugerido: commits separados por tema).
-2. **Posiciones WC abiertas** (se resuelven 14/15-jul):
-   - Spain Yes 40 × 0.30 (SF vs France — al cierre de sesión España ganaba con
-     penal convertido). Argentina Yes 22.22 × 0.315 (SF 15-jul).
-   - Tras cada semi: `python scripts/update_results.py --apply` y anotar resultado
-     en `docs/findings/2026-07-14-sf-winner-bets-live.md`.
+2. **✅ Spain RESUELTA: GANÓ 0-2 → +$28** (finalizada en DB, finding actualizado,
+   dataset completo exportado y commiteado: 378 ticks + 1,539 lecturas finas).
+   **Argentina Yes 22.22 × 0.315 sigue ABIERTA** (SF England-Argentina, 15-jul
+   19:00 UTC): tras el partido `update_results.py --apply` + anotar en el finding
+   sf-winner-bets. Si se quiere grabar el partido: recorder + export (runbook J1).
 3. **Final + 3er puesto del WC NO existen en la DB** (el bracket terminaba en QF,
    las semis se insertaron a mano): cuando PM abra esos mercados, insertar
    `wc_151`/`wc_152` (mismo procedimiento, ver finding 2026-07-13-bracket).
-4. **Export del France-Spain**: al terminar el partido, re-exportar el dataset
-   completo: `python scripts/export_event_ticks.py --event "France vs. Spain"`.
-   (El recorder/monitor de la sesión mueren con ella — el export captura lo grabado.)
+   España ya está en la final (vs ganador de England-Argentina, 19-jul).
+4. **ANÁLISIS DEL DATASET France-Spain** (mañana, acordado 2026-07-14): el export
+   tiene el episodio completo del penal (min ~17: book 0.31→0.46 en segundos,
+   depth 14,000→13.5 shares, Gamma rezagado) + el decay de France 0.36→0.15.
+   Atacar la agenda de 8 puntos del finding theta-trade con estos datos.
 
 ## 🟠 Jueves 2026-07-16: Jornada 1 de Liga MX (runbook)
 1. Diario: `fetch_fixtures_pm.py --apply` + `update_results.py --tournament liga_mx_2026 --apply`.
