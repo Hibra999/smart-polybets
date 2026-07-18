@@ -96,3 +96,48 @@ def check_live_gates_ready() -> PreconditionResult:
         name="live_gates_ready", ok=ok, severity="mandatory", tournament_id=None,
         detail=("gates live OK" if ok else "; ".join(problems)),
         remedy_cmd=None if ok else "setear POLYMARKET_LIVE=1 + key y POLYMARKET_KILL_SWITCH=0")
+
+
+def evaluate(tier: str, tournaments: list[str] | None = None, *, now=None,
+             live: bool = False) -> list[PreconditionResult]:
+    tids = tournaments if tournaments is not None else active_tournaments(
+        None if now is None else now.date())
+    results: list[PreconditionResult] = []
+    for tid in tids:
+        results.append(check_fixtures_finalized(tid, now=now))
+        results.append(check_placeholders_synced(tid, now=now))
+    if tier == "MONEY" and live:
+        results.append(check_live_gates_ready())
+    return results
+
+
+def _line(prefix: str, r: PreconditionResult) -> str:
+    tail = f" → {r.remedy_cmd}" if r.remedy_cmd else ""
+    tid = f"[{r.tournament_id}] " if r.tournament_id else ""
+    return f"  {prefix}: {tid}{r.detail}{tail}"
+
+
+def enforce(tier: str, *, tournaments: list[str] | None = None, force: bool = False,
+            reason: str | None = None, live: bool = False) -> None:
+    results = evaluate(tier, tournaments, live=live)
+    for r in results:
+        if r.ok is None:
+            print(_line("aviso (no verificable)", r))
+        elif r.severity == "advisory" and r.ok is False:
+            print(_line("aviso", r))
+    violations = [r for r in results if r.is_violation]
+    if not violations:
+        return
+    prefix = "BLOQUEO" if tier == "MONEY" else "DATOS VIEJOS"
+    for r in violations:
+        print(_line(prefix, r))
+    if tier != "MONEY":
+        print("  (tier lectura: se continúa igual — refrescá para números correctos)")
+        return
+    if not force:
+        print('  Acción de dinero BLOQUEADA. Refrescá y reintentá, o forzá: --force --reason "..."')
+        raise SystemExit(2)
+    if not reason:
+        print("  --force requiere --reason.")
+        raise SystemExit(2)
+    print(f"  FORZADO por CIO: {reason}")
