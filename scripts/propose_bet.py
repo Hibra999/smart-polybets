@@ -38,6 +38,7 @@ from agent.tools.override_tools import (
     propose_override,
 )
 from core.local_state import LocalStateClient
+from core.preconditions import enforce as enforce_freshness
 from core.utils import to_decimal, utcnow
 from execution.functions.broker import PolymarketBroker
 from research.schemas.market_opportunity import MarketOpportunity
@@ -122,7 +123,14 @@ def main() -> None:
     ap.add_argument("--bankroll", type=float, default=1000.0)
     ap.add_argument("--dry-run", action="store_true",
                     help="evalúa riesgo y muestra la decisión SIN persistir en el ledger")
+    ap.add_argument("--force", action="store_true",
+                    help="fuerza la acción pese a datos viejos (requiere --reason)")
     a = ap.parse_args()
+
+    # Guard MONEY: --reason ya es obligatorio para la propuesta en sí (línea arriba)
+    # y se reutiliza como justificación del --force (evita un --reason duplicado en
+    # el parser, que rompería argparse por conflicting option string).
+    enforce_freshness("MONEY", tournaments=None, force=a.force, reason=a.reason)
 
     strategy = load_active_strategy(TID)
     if strategy is None:

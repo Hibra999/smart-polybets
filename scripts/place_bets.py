@@ -35,6 +35,7 @@ load_env(Path(__file__).resolve().parent.parent / ".env")  # sin esto, --live de
 from adapters.football.db_reader import FootballDBReader
 from agent.workflows import full_analysis
 from core.local_state import LocalStateClient
+from core.preconditions import enforce as enforce_freshness
 from execution.functions import PolymarketBroker
 from research.functions import PolymarketLiveSource
 
@@ -96,7 +97,11 @@ def main() -> None:
     ap.add_argument("--bankroll", type=float, default=1000.0)
     ap.add_argument("--live", action="store_true", help="intenta ejecución REAL (requiere creds + env)")
     ap.add_argument("--state", default="data/agent_state.json")
+    ap.add_argument("--force", action="store_true",
+                    help="fuerza la acción pese a datos viejos (requiere --reason)")
+    ap.add_argument("--reason", default=None, help="justificación del --force (queda en el log)")
     a = ap.parse_args()
+    enforce_freshness("MONEY", force=a.force, reason=a.reason, live=a.live)
     run(a.date, a.bankroll, a.live, a.state)
 
 
