@@ -1,0 +1,11 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          { "type": "command", "command": "python scripts/check_freshness.py" }
+        ]
+      }
+    ]
+  }
+}
