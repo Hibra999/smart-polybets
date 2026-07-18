@@ -36,6 +36,7 @@ from core.exceptions import AccountUnavailableError
 from core.local_state import LocalStateClient
 from portfolio.functions.account_reconcile import reconcile
 from portfolio.functions.account_source import PolymarketAccountSource
+from core.preconditions import enforce as enforce_freshness
 
 
 def _dec(x) -> str:
@@ -56,6 +57,8 @@ def _match_filter(tag_event, tag_tournament, event, tournament) -> bool:
 
 def run(state_path: str, bankroll: float, event: str | None,
         tournament: str | None, do_reconcile: bool, as_json: bool, closed_n: int) -> None:
+    # PnL/cuenta transversal → evalúa TODOS los torneos activos (aviso, no bloquea).
+    enforce_freshness("READ")
     client = LocalStateClient(state_path, bankroll_usdc=bankroll)
     decisions = list(client._state.get("decisions", {}).values())
     source = PolymarketAccountSource()

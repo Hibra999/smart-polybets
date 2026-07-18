@@ -27,6 +27,7 @@ load_env(Path(__file__).resolve().parent.parent / ".env")
 from agent.tools import account_tools
 from core.exceptions import AccountUnavailableError
 from core.local_state import LocalStateClient
+from core.preconditions import enforce as enforce_freshness
 from core.utils import to_decimal, utcnow
 from execution.functions.broker import PolymarketBroker
 from execution.functions.review_order import (
@@ -129,7 +130,11 @@ def main() -> None:
     ap.add_argument("--live", action="store_true", help="intenta envío REAL (requiere env-gates)")
     ap.add_argument("--tolerance", type=float, default=0.15)
     ap.add_argument("--confirm", default=None, help="valor de confirmación (no interactivo)")
+    ap.add_argument("--force", action="store_true",
+                    help="fuerza la acción pese a datos viejos (requiere --reason)")
+    ap.add_argument("--reason", default=None, help="justificación del --force (queda en el log)")
     a = ap.parse_args()
+    enforce_freshness("MONEY", force=a.force, reason=a.reason, live=a.live)
 
     client = LocalStateClient(a.state, bankroll_usdc=a.bankroll)
     decisions = client._state.get("decisions", {})

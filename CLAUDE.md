@@ -31,6 +31,11 @@ Antes de cualquier tarea en este repo, todo agente debe:
    python scripts/update_results.py --tournament liga_mx_2026 --apply # finaliza jugados
    #   en DÍAS DE JORNADA además: python scripts/record_market_ticks.py  (recorder 1/min)
    ```
+   **Enforced (2026-07-17):** el hook `SessionStart` corre `scripts/check_freshness.py`
+   al arrancar y avisa si hay datos viejos; las acciones de dinero (`propose_bet`,
+   `place_bets`, `orders`) **se bloquean** ante `fixtures_finalized` incumplido salvo
+   `--force --reason`. Diseño: `docs/superpowers/specs/2026-07-17-mandatory-dependency-hooks-design.md`;
+   referencia: `docs/dependency-hooks.html`.
    Verificar que quede limpio: 0 fixtures con kickoff pasado en status `scheduled`
    (salvo partidos EN JUEGO ahora). El 2026-07-09 se apostó con los 8 octavos sin
    ingestar — ver `docs/findings/2026-07-09-data-freshness-gaps.md`.

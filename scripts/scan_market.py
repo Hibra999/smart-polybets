@@ -30,6 +30,7 @@ from core.console import enable_utf8  # noqa: E402
 enable_utf8()
 
 from core.env import load_env  # noqa: E402
+from core.preconditions import enforce as enforce_freshness  # noqa: E402
 from core.timez import fmt_local_et_short  # noqa: E402
 from research.functions.wc_strategy import resolve_bet_market  # noqa: E402
 from research.functions.poisson_loader import match_result_probs  # noqa: E402
@@ -270,6 +271,7 @@ def main() -> None:
     )
     args = ap.parse_args()
 
+    enforce_freshness("READ", tournaments=[args.tournament])
     sys.exit(run(args.tournament, args.hours, args.sport, args.as_json))
 
 
