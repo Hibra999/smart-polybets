@@ -38,7 +38,7 @@ def latest_formal_version(evolution_md: str) -> str | None:
         if not dm or not vers:
             continue
         d = dm.group(1)
-        if best_date is None or d >= best_date:
+        if best_date is None or d > best_date:
             best_date, best_ver = d, vers[-1]
     return best_ver
 

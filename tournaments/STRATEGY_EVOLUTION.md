@@ -32,6 +32,9 @@ y la última FORMAL coincidan.
 ## Validación
 `python scripts/check_strategy_evolution.py` verifica que la última entrada FORMAL
 declare la misma `version` que el `STRATEGY.md` (drift → exit 2). Advisory.
+El validador compara la **`version`** (no el `status`) contra la última entrada FORMAL,
+porque la cabecera FORMAL codifica la version pero no el status; el status se audita
+leyendo la entrada.
 
 ## Estrategias doc-only
 Las que no se cargan por el pipeline (`theta_lay_v1`, marcada "Doc-only") igual llevan

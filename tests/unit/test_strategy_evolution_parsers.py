@@ -25,6 +25,14 @@ def test_latest_formal_none_when_no_formal():
     assert latest_formal_version("### 2026-07-18 · [OBSERVACIÓN]\n- z\n") is None
 
 
+def test_latest_formal_same_date_tie_picks_topmost():
+    # reverse-chronological: newest (v0.3) appears first; same date as older (v0.2)
+    evo = ("### 2026-07-18 · v0.2→v0.3 · [FORMAL]\n- nuevo\n\n"
+           "### 2026-07-18 · v0.1→v0.2 · [FORMAL]\n- viejo\n")
+    from core.strategy_evolution import latest_formal_version
+    assert latest_formal_version(evo) == "0.3"
+
+
 def test_check_schema_frozen():
     import pytest
     c = StrategyEvolutionCheck(strategy_id="s", ok=True)
