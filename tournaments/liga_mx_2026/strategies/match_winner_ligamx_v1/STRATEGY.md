@@ -34,7 +34,7 @@ sizing chico. El yardstick de precio es el **Poisson 1X2 con `neutral=False`**
 (docs/findings/2026-07-13-poisson-sesgo-knockout.md).
 
 ## SIGNAL DEFINITION
-edge_threshold_auto: 0.05
+edge_threshold_auto: 0.10            # barra cautelosa (THESIS): el backtest no mostró edge → exigir ≥0.10
 edge_threshold_review: 0.02
 edge_threshold_discard: 0.0
 min_market_volume_usdc: 500

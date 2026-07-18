@@ -10,6 +10,14 @@ Evidencia de concepto: 26 KO del WC 2026 con price history real de PM →
 +6.9% (salida 30min) a +21.4% (105min) BRUTO, 16W-10L a 90min
 (finding 2026-07-14-theta-trade-lay-favorito). NO validado aún en Liga MX.
 
+> ⚠️ **Doc-only — NO se carga vía `parse_strategy_md`/`load_active_strategy`.**
+> Es una estrategia de trading intradía dirigida a mano por el CIO (`review_required:
+> true`), operada por CLI (`theta_monitor.py`), no por el pipeline de decisión. Por eso
+> su `## SIGNAL DEFINITION` usa campos propios del theta (`min_fav_yes`,
+> `entry_window_min`, …) y **no** los campos que exige `StrategyConfig`
+> (`edge_threshold_*`, `max/min_hours_to_event`): esos son irrelevantes para un lay
+> intradía. Cargar este archivo con el loader canónico fallaría a propósito.
+
 ## HEADER
 version: 0.1
 status: draft
