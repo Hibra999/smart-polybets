@@ -71,7 +71,7 @@ umbral rentable — el veredicto "sin edge vs cierre" queda reforzado.
    semanalmente) y recién con evidencia de que PM es blando, proponer aprobación con
    umbral de edge alto (≥0.10) y sizing chico.
 4. El backtest es reproducible: `python scripts/ligamx_backtest.py` (sin red, lee el CSV).
-5. **Reporte HTML**: `docs/ligamx-backtest.html`, regenerable con
+5. **Reporte HTML**: `editorial/reports/liga_mx_2026/ligamx-backtest.html`, regenerable con
    `python scripts/ligamx_backtest_html.py` (recomputa todo, no hay números pegados).
 
 ## D. Experimento ML multiclase (propuesta del CIO, 2026-07-14)

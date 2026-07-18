@@ -36,7 +36,7 @@ recorder/monitor/theta, EDA de goles. Este doc junta TODO lo abierto, en orden.
   (latencia de repricing, evaporación de depth, spread(t), decay real, lag Gamma/CLOB,
   hedge con draw, fees reales, asimetría 1T/2T).
 - Cruzar el hazard de goles (EDA `2026-07-14-ligamx-goles-eda.md` + reporte
-  `docs/ligamx-goles-eda.html`) con los price paths → curva EV(salida en min m)
+  `editorial/reports/liga_mx_2026/ligamx-goles-eda.html`) con los price paths → curva EV(salida en min m)
   → decidir `from_min`/`hard_exit_min`/`tp_pct` del theta_lay_v1 con datos.
   Hipótesis: hard_exit 60-75 (no 105), from_min 20-25, regla de rojas.
 

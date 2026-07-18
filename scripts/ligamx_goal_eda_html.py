@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Reporte HTML del EDA de goles de Liga MX → docs/ligamx-goles-eda.html.
+"""Reporte HTML del EDA de goles de Liga MX → editorial/reports/liga_mx_2026/ligamx-goles-eda.html.
 
 Recomputa desde la DB (match_timeline_event + favoritos del cierre) y grafica
 las curvas de DECAY que gobiernan el theta trade:
@@ -26,7 +26,7 @@ enable_utf8()
 from scripts.ligamx_goal_eda import favorites_by_match, load_timeline
 
 REPO = Path(__file__).resolve().parent.parent
-OUT = REPO / "docs" / "ligamx-goles-eda.html"
+OUT = REPO / "editorial" / "reports" / "liga_mx_2026" / "ligamx-goles-eda.html"
 
 BLUE, AMBER, GREEN, RED = "#388bfd", "#bb8009", "#3fb950", "#f85149"
 INK, MUT, GRID, BORDER = "#e6edf3", "#8b949e", "#21262d", "#30363d"

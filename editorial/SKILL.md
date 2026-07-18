@@ -34,11 +34,18 @@ de performance. NO toma decisiones de trading.
 ## SCHEMAS QUE PRODUCE
 - `editorial/schemas/trade_report.TradeReport`
 - `editorial/schemas/weekly_digest.WeeklyDigest`
-- Archivos Markdown en `editorial/reports/{tournament_id}/`
+- Archivos Markdown o HTML en `editorial/reports/{tournament_id}/` (o `_system/` cross-torneo)
 
 ## CONSTRAINTS
 - NUNCA publicar automáticamente — todo queda en editorial/reports/ para revisión manual
-- Los reportes son SIEMPRE en Markdown, guardados con fecha en el nombre
+- **TODO reporte vive en `editorial/reports/{tournament_id}/`** (o `_system/` si es
+  cross-torneo), con **fecha en el nombre**: `YYYY-MM-DD_<slug>.{md,html}`. NUNCA en `docs/`.
+- Formato: Markdown **o** HTML (las funciones ya generan ambos: `html_report.py`,
+  `backtest_html.py`, `poisson_report.py`). Lo no negociable es el path por torneo + la fecha.
+- **`docs/` es SOLO para docs del sistema** (manuales, arquitectura, explicación de modelos):
+  documentación que no caduca con los datos de un evento. Si el entregable responde
+  "¿cómo fue X evento/semana/torneo?" o caduca al cambiar los datos → es REPORTE → va aquí,
+  no en `docs/`. Ver `docs/findings/2026-07-17-docs-vs-editorial-reports.md`.
 - NUNCA incluir credenciales, wallet addresses completas, o claves privadas en reportes
 - La narrativa de trade_narrator debe indicar si fue AUTO o REVIEW (y por qué)
 

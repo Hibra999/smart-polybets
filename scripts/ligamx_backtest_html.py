@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-"""Reporte HTML del backtest de Liga MX → docs/ligamx-backtest.html.
+"""Reporte HTML del backtest de Liga MX → editorial/reports/liga_mx_2026/ligamx-backtest.html.
 
 Recomputa el backtest (scripts/ligamx_backtest.py, sin red — lee MEX.csv) y los
 seeds actuales de la DB, y renderiza el reporte con el estilo de la casa
-(tema oscuro, SVG inline, mismo look que docs/wc-backtest.html).
+(tema oscuro, SVG inline, mismo look que editorial/reports/fifa_world_cup_2026/wc-backtest.html).
 
 Paleta de series validada (dataviz six-checks, superficie #0d1117):
   modelo = #388bfd (azul) · mercado = #bb8009 (ámbar); verde/rojo SOLO como
@@ -37,7 +37,7 @@ from scripts.ligamx_backtest import (
 RHO, WARMUP = 0.80, 3  # mismos parámetros de producción que scripts/ligamx_backtest.py
 
 REPO = Path(__file__).resolve().parent.parent
-OUT = REPO / "docs" / "ligamx-backtest.html"
+OUT = REPO / "editorial" / "reports" / "liga_mx_2026" / "ligamx-backtest.html"
 DB = REPO / "data" / "liga_mx_2026" / "liga_mx_2026.sqlite"
 
 BLUE, AMBER, GREEN, RED = "#388bfd", "#bb8009", "#3fb950", "#f85149"

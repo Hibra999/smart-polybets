@@ -7,7 +7,7 @@ calibración (Brier), ROI de apuestas al precio de mercado, y contrasta con las 
 reales de la wallet.
 
     python scripts/wc_backtest.py            # imprime métricas (verificación)
-    python scripts/wc_backtest.py --html     # genera docs/wc-backtest.html
+    python scripts/wc_backtest.py --html     # genera editorial/reports/fifa_world_cup_2026/wc-backtest.html
 """
 from __future__ import annotations
 
@@ -315,7 +315,8 @@ def main():
     # HTML
     from wc_backtest_html import render  # noqa
     html = render(rows, mx, wc, checks, strat)
-    out = Path(__file__).resolve().parent.parent / "docs" / "wc-backtest.html"
+    out = (Path(__file__).resolve().parent.parent
+           / "editorial" / "reports" / "fifa_world_cup_2026" / "wc-backtest.html")
     out.write_text(html, encoding="utf-8")
     print(f"HTML: {out}")
 
