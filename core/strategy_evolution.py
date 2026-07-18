@@ -41,3 +41,36 @@ def latest_formal_version(evolution_md: str) -> str | None:
         if best_date is None or d >= best_date:
             best_date, best_ver = d, vers[-1]
     return best_ver
+
+
+def strategy_dirs() -> list[Path]:
+    """Carpetas con STRATEGY.md bajo tournaments/*/strategies/*/."""
+    return sorted(p.parent for p in REPO.glob("tournaments/*/strategies/*/STRATEGY.md"))
+
+
+def check_strategy(strategy_dir: Path) -> StrategyEvolutionCheck:
+    """Valida que STRATEGY.md v== última [FORMAL] en EVOLUTION.md. Retorna StrategyEvolutionCheck."""
+    sid = strategy_dir.name
+    version, _status = read_strategy_header(
+        (strategy_dir / "STRATEGY.md").read_text(encoding="utf-8"))
+    evo = strategy_dir / "EVOLUTION.md"
+    if not evo.exists():
+        return StrategyEvolutionCheck(
+            strategy_id=sid, ok=False, detail="falta EVOLUTION.md",
+            remedy_cmd="crear EVOLUTION.md (ver tournaments/STRATEGY_EVOLUTION.md)")
+    formal = latest_formal_version(evo.read_text(encoding="utf-8"))
+    if formal is None:
+        return StrategyEvolutionCheck(
+            strategy_id=sid, ok=False, detail="EVOLUTION.md sin entrada [FORMAL]",
+            remedy_cmd="agregar la entrada FORMAL de génesis")
+    if formal != version:
+        return StrategyEvolutionCheck(
+            strategy_id=sid, ok=False,
+            detail=f"drift: STRATEGY.md v{version} vs última FORMAL v{formal}",
+            remedy_cmd="agregar una entrada [FORMAL] que registre el cambio de versión")
+    return StrategyEvolutionCheck(strategy_id=sid, ok=True, detail=f"v{version} al día")
+
+
+def evaluate_all() -> list[StrategyEvolutionCheck]:
+    """Valida todas las estrategias. Retorna lista de StrategyEvolutionCheck."""
+    return [check_strategy(d) for d in strategy_dirs()]
