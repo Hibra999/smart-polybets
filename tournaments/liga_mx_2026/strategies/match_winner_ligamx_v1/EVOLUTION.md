@@ -31,13 +31,14 @@ version retroactivamente):
   porque el modelo solo no gana al mercado eficiente; si hay edge será por
   venue blando (PM nuevo/ilíquido), no medido aún.
 - **2026-07-17** (`25a08ee`, `710d9f0`): auditoría de coherencia STRATEGY.md vs
-  código — **E3**: se alineó `edge_threshold_review` de 0.05 a **0.10** en el
+  código — **E3**: se alineó `edge_threshold_auto` de 0.05 a **0.10** en el
   `## SIGNAL DEFINITION` del STRATEGY.md para que el umbral de "proponer
   aprobación" coincida con la recomendación explícita del finding de backtest
   (≥0.10, el único rango con ROI menos negativo, -1.7%, de la simulación de
-  apuestas). Este cambio de threshold en cualquier otro momento habría bumpeado
-  la version (regla config→bump); acá se absorbe en la génesis porque ocurrió
-  antes de este ledger y antes de que la estrategia operara.
+  apuestas). `edge_threshold_review` no se tocó (sigue en 0.02). Este cambio de
+  threshold en cualquier otro momento habría bumpeado la version (regla
+  config→bump); acá se absorbe en la génesis porque ocurrió antes de este
+  ledger y antes de que la estrategia operara.
 
 ### 2026-07-14 · [OBSERVACIÓN]
 **Hipótesis**: el ensemble Elo+Poisson (localía calibrada `home_adv_elo=80`,

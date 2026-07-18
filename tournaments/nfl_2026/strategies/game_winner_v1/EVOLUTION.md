@@ -6,13 +6,15 @@
 > registry.py`). Modelo TrueSkill puro (μ/σ, sin margen ni empates), sizing
 > Kelly fraccional, sembrado con 2022-2025 (1139 juegos) y evaluando 2026
 > (272 juegos `scheduled`).
-> **Preguntas abiertas**: sin backtest de ROI propio registrado en el repo aún
-> (a diferencia de la migración de worldcup, que trae yield/ROI del origen);
-> la aprobación se apoya en que el modelo TrueSkill + Kelly ya operaba en el
-> repo origen (`sports_bet`), no en un backtest re-corrido en este framework.
-> **Próximo paso**: correr un backtest de temporada 2026 vs cierre (análogo al
-> de Liga MX) antes de escalar sizing, dado que no hay evidencia de edge
-> re-verificada post-migración.
+> **Preguntas abiertas**: SÍ existe un backtest de ACIERTO re-corrido en este
+> framework (pick "mayor TrueSkill" acertó **168/271 = 62.0%** en la temporada
+> 2025 regular, datos nflverse, ver `STRATEGY_MIGRATION.md` §Validación). Lo
+> que falta es (a) un backtest de **ROI/edge vs mercado** (el 62% es acierto
+> puro, sin comparar contra el precio implícito — a diferencia de la migración
+> de worldcup, que trae yield/ROI del origen) y (b) repetir la validación sobre
+> la **temporada 2026** una vez haya juegos jugados.
+> **Próximo paso**: correr un backtest de ROI/edge vs cierre sobre la
+> temporada 2026 (análogo al de Liga MX) antes de escalar sizing.
 
 ---
 

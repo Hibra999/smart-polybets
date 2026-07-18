@@ -15,7 +15,7 @@
 
 ---
 
-### 2026-07-02 · v1.0 (génesis) · [FORMAL]
+### 2026-07-01 · v1.0 (génesis) · [FORMAL]
 **Origen**: migración 1:1 desde `pypro_worldcup_betting` (`worldcup.db`, estrategia
 activa **"kelly + blend + filtro no"**: `side_criterion=blend` Elo+Bayes 50/50,
 `sizing=kelly` fraccional ¼, `use_bayes_filter=False`, `start_match_no=2`,
