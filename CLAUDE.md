@@ -75,6 +75,10 @@ explícitos (schemas Pydantic). Mismos inputs → misma decisión.
 6. **`LocalState` (local) es la fuente de estado**: decisiones/órdenes/PnL viven en el estado local del repo; Polymarket se lee live vía `venue/gateway`.
 7. **Una sola librería para Polymarket**: todo va por el SDK oficial a través de `venue/` (cero scrapers HTTP a Gamma).
 8. **Almacenar en UTC, mostrar en local**: los tiempos se guardan en UTC; `core/timez` convierte para display (usuario en PDC/UTC-5; Polymarket etiqueta sus mercados en ET).
+9. **Toda evolución de una estrategia se registra en su `EVOLUTION.md`**: cambios de
+   params/status (entrada FORMAL con evidencia) o ideas probadas/descartadas
+   (OBSERVACIÓN). Guía y ciclo de vida en `tournaments/STRATEGY_EVOLUTION.md`; drift lo
+   marca `scripts/check_strategy_evolution.py`.
 
 ## Convención de documentación (hallazgos y mejoras) — para el futuro
 **Todo hallazgo, gotcha, decisión o mejora de este proyecto se documenta EN ESTE MISMO REPO**
