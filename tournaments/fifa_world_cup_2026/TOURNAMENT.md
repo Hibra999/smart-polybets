@@ -18,11 +18,14 @@ Sedes en tres países; muchos partidos en venue neutral.
 - Adapter activo: `adapters/football/worldcup_adapter.FootballWorldCupAdapter`
   (pipeline Elo+Bayes evolutivo, **migrado de `pypro_worldcup_betting`**).
 - `FootballEloAdapter` (Elo simple) queda disponible como alternativa.
-- TrueSkill: no portado; el criterio `trueskill` degrada a Elo.
+- TrueSkill: **portado puro** (`adapters/football/wc_trueskill.py`, validado contra la
+  lib original); el criterio `trueskill` usa probabilidades TrueSkill reales, no degrada
+  a Elo. Los 4 criterios (elo/bayes/blend/trueskill) operan.
 
 ## Datos
 - SQLite poblado desde `worldcup.db` con `python scripts/migrate_worldcup_data.py`
-  (100 partidos del Mundial 2026, 28 jugados).
+  (104 partidos del bracket; la DB modela 102 — ver `scripts/account.py`/DB para el
+  conteo y estado actual de partidos jugados).
 
 ## Estrategias
 | strategy_id | market_type | status | nota |

@@ -1,9 +1,13 @@
 # STRATEGY: Match Winner — Liga MX Apertura 2026
 
-Borrador clonado de `match_winner_wc_v1` como punto de partida. **NO OPERAR**
-hasta: (1) calibrar ventaja de localía (el blend/Elo del WC es neutral-venue),
-(2) definir seeds de Elo (hoy: flat 1500, cold start), (3) backtest sobre
-jornadas jugadas del Apertura y/o temporadas previas.
+Borrador clonado de `match_winner_wc_v1` como punto de partida. Las tres
+precondiciones originales ya están resueltas: (1) ventaja de localía calibrada
+(`TournamentConfig.home_adv_elo=80` en `tournaments/registry.py`, Elo con
+`home_adv` y Poisson `neutral=False`), (2) seeds de Elo reales cargadas en la DB
+(Cruz Azul ~1638…Puebla ~1374; Atlante=1500 sin historia previa, cold start),
+(3) backtest corrido sobre la temporada 2025/26 (`docs/findings/
+2026-07-14-ligamx-backtest.md`). **Sigue en `draft` (NO OPERAR) únicamente
+porque ese backtest no mostró edge vs las cuotas de cierre** — ver THESIS.
 
 ## HEADER
 version: 0.1

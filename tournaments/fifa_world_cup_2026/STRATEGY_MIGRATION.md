@@ -41,7 +41,7 @@ Más los **modelos** que la alimentan (Elo + Bayes) y los **datos** del Mundial 
 | `use_bayes_filter` | `use_bayes_filter` | `false` |
 | `bayes_threshold` | `bayes_threshold` | `0.5` |
 | `odds` (constante) | — | viene del precio live de Polymarket (no se fija) |
-| `bankroll0` | — | viene del estado del portafolio (Django App) |
+| `bankroll0` | — | viene del estado del portafolio (`LocalState`) |
 
 ## Cómo se traduce la lógica de decisión
 
@@ -64,7 +64,7 @@ El origen es un motor de backtest/recomendación; el framework añade gobernanza
   marca REVIEW en fases de knockout, confianza LOW, o flags cualitativos (QR-xxx).
   El gate cuantitativo se calibró para imitar al origen: `edge_threshold_discard=0`
   (sólo descarta edge negativo, donde el Kelly daría 0 igual).
-- **Idempotencia + estado**: bankroll y posiciones vienen del Django App (no de una
+- **Idempotencia + estado**: bankroll y posiciones vienen de `LocalState` (no de una
   constante), y cada decisión lleva `idempotency_key` + `strategy_version`.
 - **Mercado binario**: outcomes `[HOME_WIN, AWAY_WIN]` (el modelo es win/no-win;
   no hay apuesta al empate), mapeado a los mercados "Will X win" de Polymarket.

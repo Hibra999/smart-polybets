@@ -54,6 +54,9 @@ review_required: true                # cada trade lo arma el CIO a mano (CLI), n
 - Salida: `scripts/theta_monitor.py` (regla automática + hard stop manual `v`).
 - Registro: sesiones/ticks en `theta_session`/`theta_tick`; asentar el round-trip
   en el ledger con `backfill_manual_trades.py`.
+- ⚠️ **Guard de frescura mandatorio (tier MONEY)**: `propose_bet.py`/`orders.py` se
+  bloquean ante datos viejos salvo `--force --reason`. Diseño:
+  `docs/superpowers/specs/2026-07-17-mandatory-dependency-hooks-design.md`.
 
 ## VALIDACIÓN PENDIENTE (bloquea pasar a approved)
 1. J1-J3 Liga MX con sizing de prueba (≤$10): medir PnL NETO de fees y spread real.

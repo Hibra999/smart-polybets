@@ -21,7 +21,7 @@ Antes de cualquier tarea en este repo, todo agente debe:
 5. **Antes de CUALQUIER sugerencia o apuesta: refrescar datos** (los modelos reproducen
    los fixtures jugados en runtime → DB desactualizada = edges falsos). POR TORNEO:
    ```bash
-   # FIFA World Cup 2026 (hasta 2026-07-19; quedan semis/3er puesto/final):
+   # FIFA World Cup 2026 (hasta 2026-07-19; semis jugadas, quedan 3er puesto/final):
    python scripts/update_results.py --apply            # finaliza jugados (Exact Score/escalera)
    python scripts/sync_upcoming_fixtures.py --apply    # placeholders -> equipos reales
    #   ⚠️ el bracket de la DB terminaba en QF: final y 3er puesto se insertan A MANO
@@ -51,7 +51,7 @@ explícitos (schemas Pydantic). Mismos inputs → misma decisión.
 ## Mapa del repo
 | Carpeta | Rol |
 |---|---|
-| `core/` | utilidades compartidas, sin lógica de negocio (tipos, excepciones, strategy parser, `local_state`, `polymarket_client`, `timez`) |
+| `core/` | utilidades compartidas, sin lógica de negocio (tipos, excepciones, strategy parser, `local_state`, `polymarket_client`, `timez`, `preconditions`) |
 | `data/` | un SQLite por torneo + DDL canónico por deporte (`_schema/`) |
 | `adapters/` | única capa que lee los SQLite (read-only) + adapters de modelo (Elo, Bayes, TrueSkill, Poisson) |
 | `venue/` | **única interfaz con Polymarket**: `gateway` (saldos/posiciones/órdenes/best_ask sobre el SDK), `discovery` (eventos vía SDK), `books` (order books + price history públicos), `ticks` (extracción pura de snapshots), `matching` (mapeo mercado↔partido), `results` (marcadores desde mercados resueltos). **Ningún script llama al SDK/cliente directo** — siempre a través de venue/. |
@@ -273,6 +273,12 @@ pytest
   + reporte `editorial/reports/liga_mx_2026/ligamx-goles-eda.html` — Liga MX es más hostil que el WC para el theta
   (favorito ya anotó al min 30 en 37%; bin 76-90 el más denso; rojas en 34% de partidos).
   Ver `tournaments/liga_mx_2026/TOURNAMENT.md` y `data/liga_mx_2026/DATA_SOURCES.md`.
+- **NFL 2026**: registrado en `tournaments/registry.py`, ventana 2026-09-06 → 2027-02-08.
+  Modelo **TrueSkill evolutivo** (`AmericanFootballTrueSkillAdapter`, migrado de `sports_bet`;
+  Elo/Bayes disponibles como ensemble en `adapters/american_football/nfl_ensemble.py`).
+  Estrategia **`game_winner_v1` (status: approved)**. `polymarket_tag_id` aún sin setear en
+  el registry. Datos vía `scripts/migrate_nfl_data.py` + `data/nfl_2026/ingest/`; reportes
+  `scripts/nfl_*_report.py`. Ver `tournaments/nfl_2026/TOURNAMENT.md`.
 - **`update_results.py` es multi-torneo** (2026-07-14): `--tournament <id>` usa el
   `polymarket_tag_id` del registry; marcador vía mercado **Exact Score** (Liga MX) con
   fallback a la escalera O/U (Mundial). Lógica pura en `venue/results.py`.
