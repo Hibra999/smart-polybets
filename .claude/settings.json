@@ -1,4 +1,26 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(python scripts/account.py*)",
+      "Bash(python scripts/check_freshness.py*)",
+      "Bash(python scripts/scan_market.py*)",
+      "Bash(python scripts/portfolio.py*)",
+      "Bash(python scripts/polymarket_check.py*)",
+      "Bash(python -m pytest*)",
+      "Bash(git status*)",
+      "Bash(git log*)",
+      "Bash(git diff*)",
+      "Bash(git show*)",
+      "Bash(git branch*)"
+    ],
+    "ask": [
+      "Bash(python scripts/orders.py*)",
+      "Bash(python scripts/place_bets.py*)",
+      "Bash(python scripts/propose_bet.py*)",
+      "Bash(python scripts/place_totals_qf.py*)",
+      "Bash(python scripts/place_winner_sf.py*)"
+    ]
+  },
   "hooks": {
     "SessionStart": [
       {

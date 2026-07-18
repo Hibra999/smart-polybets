@@ -22,6 +22,9 @@ editorial/reports/**/*.md
 # Entorno
 .env
 
+# Claude Code: overrides personales del proyecto (settings del equipo SÍ se versionan)
+.claude/settings.local.json
+
 # SDD scratch (progreso de refactor, no versionar)
 .superpowers/
 
