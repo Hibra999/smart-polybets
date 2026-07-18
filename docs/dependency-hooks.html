@@ -1,0 +1,110 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Validaciones mandatorias de dependencias — referencia</title>
+<style>
+  :root{--bg:#0d1117;--panel:#161b22;--panel2:#1c2333;--ink:#e6edf3;--muted:#8b949e;--line:#30363d;--accent:#58a6ff;--green:#3fb950;--red:#f85149;--amber:#d29922}
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 -apple-system,Segoe UI,Roboto,Arial,sans-serif}
+  .wrap{max-width:960px;margin:0 auto;padding:32px 20px 80px}
+  h1{font-size:27px;margin:0 0 4px} h2{font-size:19px;margin:38px 0 8px;padding-bottom:7px;border-bottom:1px solid var(--line)}
+  h3{font-size:15px;margin:22px 0 6px;color:var(--accent)}
+  .muted{color:var(--muted)} p{color:#c9d1d9}
+  code{background:#010409;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font:12.5px "SF Mono",Consolas,monospace;color:#c9d1d9}
+  pre{background:#010409;border:1px solid var(--line);border-radius:9px;padding:12px 14px;overflow-x:auto;font:12.5px "SF Mono",Consolas,monospace;color:#c9d1d9}
+  .banner{border-radius:12px;padding:14px 18px;margin:14px 0;border:1px solid #1f6feb;background:rgba(88,166,255,.10)}
+  .banner b{color:var(--accent)}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:16px 18px;margin-top:14px}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+  th,td{text-align:left;padding:7px 9px;border-bottom:1px solid var(--line);vertical-align:top} th{color:var(--muted);font-size:11.5px;text-transform:uppercase}
+  .tag{display:inline-block;font-size:10px;padding:1px 7px;border-radius:20px;vertical-align:middle;border:1px solid}
+  .t-block{background:rgba(248,81,73,.14);color:var(--red);border-color:#9e2b25}
+  .t-warn{background:rgba(210,153,34,.16);color:var(--amber);border-color:#9e6a03}
+  .t-adv{background:rgba(139,148,158,.14);color:var(--muted);border-color:#484f58}
+  .flow{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+  .foot{margin-top:38px;color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);padding-top:14px}
+</style></head><body><div class="wrap">
+
+  <h1>Validaciones mandatorias de dependencias</h1>
+  <p class="muted">Sistema de precondiciones + hooks · Sports Quant Trading · referencia de operación</p>
+
+  <div class="banner">
+    <b>Estado: diseño aprobado — implementación pendiente.</b> Este documento describe cómo
+    funciona (y funcionará) el sistema de validaciones. Diseño completo:
+    <code>docs/superpowers/specs/2026-07-17-mandatory-dependency-hooks-design.md</code>.
+  </div>
+
+  <h2>Por qué existe</h2>
+  <p>Los modelos <b>reproducen los fixtures jugados en runtime</b>: si la base de datos del
+  torneo está desactualizada, los edges son falsos y el PnL/las sugerencias engañan. Antes,
+  "refrescar datos antes de sugerir o apostar" vivía solo como <b>prosa</b> en el protocolo —
+  fácil de olvidar. Ahora es una <b>validación enforced</b>: el sistema detecta datos viejos y
+  <b>bloquea o avisa</b> según lo que estés por hacer.</p>
+
+  <h2>Qué se valida (precondiciones)</h2>
+  <div class="panel"><table>
+    <tr><th>Precondición</th><th>Severidad</th><th>Qué verifica</th><th>Cómo lo arreglás</th></tr>
+    <tr>
+      <td><code>fixtures_finalized</code></td>
+      <td><span class="tag t-block">mandatory</span></td>
+      <td>No hay partidos ya jugados sin finalizar en la DB (kickoff pasado + status <code>scheduled</code>, excluyendo los que están en juego ahora).</td>
+      <td><code>python scripts/update_results.py --tournament &lt;tid&gt; --apply</code></td>
+    </tr>
+    <tr>
+      <td><code>live_gates_ready</code></td>
+      <td><span class="tag t-block">mandatory</span> <span class="muted">(solo dinero)</span></td>
+      <td>Están la private key, <code>POLYMARKET_LIVE=1</code> y el kill-switch apagado.</td>
+      <td>Setear el entorno / desactivar el kill-switch.</td>
+    </tr>
+    <tr>
+      <td><code>placeholders_synced</code></td>
+      <td><span class="tag t-adv">advisory</span></td>
+      <td>Los placeholders de bracket con mercado abierto ya están mapeados a equipos reales. Requiere red → puede quedar "no verificable".</td>
+      <td><code>python scripts/sync_upcoming_fixtures.py --apply</code> (WC)<br><code>fetch_fixtures_pm.py --apply</code> (Liga MX)</td>
+    </tr>
+  </table></div>
+  <p class="muted">La verificación es multi-torneo: recorre los torneos activos del registry
+  (por ventana de fechas) y corre las precondiciones locales sobre cada base de datos.</p>
+
+  <h2>Qué pasa cuando algo falla (por nivel de acción)</h2>
+  <div class="panel"><table>
+    <tr><th>Acción</th><th>Nivel</th><th>Si una dependencia no se cumple</th></tr>
+    <tr><td><code>account.py</code> (PnL), <code>scan_market.py</code></td><td>lectura / análisis</td>
+      <td><span class="tag t-warn">AVISA</span> imprime la violación + el comando de remedio, y <b>continúa</b>.</td></tr>
+    <tr><td><code>propose_bet.py</code>, <code>place_bets.py</code>, <code>orders.py</code></td><td>dinero</td>
+      <td><span class="tag t-block">BLOQUEA</span> se rechaza hasta refrescar, o forzás con <code>--force --reason "…"</code> (queda registrado).</td></tr>
+  </table></div>
+  <p class="muted">Una acción de dinero sobre un mercado concreto bloquea solo si <b>su</b> torneo
+  está viejo — no te frena una apuesta de Liga MX porque el Mundial quedó sin actualizar.</p>
+
+  <h2>Cómo se usa</h2>
+  <h3>Verificar el estado en cualquier momento</h3>
+  <pre>python scripts/check_freshness.py          # resumen legible
+python scripts/check_freshness.py --json   # para scripts/cron
+# exit code != 0 si hay alguna violación mandatoria</pre>
+
+  <h3>Al arrancar una sesión de Claude Code</h3>
+  <p>Un hook <code>SessionStart</code> (en <code>.claude/settings.json</code>) corre esa
+  verificación automáticamente y te inyecta el estado al contexto. Cada sesión arranca sabiendo
+  si hay datos viejos — exactamente lo que faltó el día que el PnL salió mal.</p>
+
+  <h3>Si una acción de dinero te bloquea</h3>
+  <pre># 1. refrescá lo que el mensaje te indique, p.ej.:
+python scripts/update_results.py --tournament fifa_world_cup_2026 --apply
+# 2. reintentá la acción; o, si sabés lo que hacés:
+python scripts/propose_bet.py ... --force --reason "dato al día verificado a mano"</pre>
+
+  <h2>Cómo encaja (arquitectura)</h2>
+  <div class="panel flow">
+    <div><b>Fuente de verdad:</b> <code>core/preconditions.py</code> — predicados puros +
+      <code>evaluate(tier, tournaments)</code>. Testeable, determinístico, sin efectos.</div>
+    <div><b>Capa 1 · guards:</b> una línea <code>enforce(tier, …)</code> al inicio de cada acción → bloquea o avisa.</div>
+    <div><b>Capa 2 · CLI:</b> <code>scripts/check_freshness.py</code> → texto/JSON + exit code.</div>
+    <div><b>Capa 3 · hook:</b> <code>SessionStart</code> inyecta el estado al agente.</div>
+  </div>
+  <p class="muted">Las tres capas cuelgan del mismo módulo puro: un solo lugar define "qué está
+  fresco", un solo formato de mensaje.</p>
+
+  <div class="foot">Referencia de sistema · Sports Quant Trading. Diseño:
+    <code>docs/superpowers/specs/2026-07-17-mandatory-dependency-hooks-design.md</code>.
+    Caso que lo originó: <code>docs/findings/2026-07-17-pnl-cashflow-vs-snapshot.md</code>.</div>
+
+</div></body></html>
