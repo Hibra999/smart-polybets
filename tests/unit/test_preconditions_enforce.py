@@ -34,6 +34,18 @@ def test_money_force_with_reason_proceeds(monkeypatch, capsys):
     assert "FORZADO" in capsys.readouterr().out
 
 
+def test_unverifiable_mandatory_warns_and_does_not_raise(monkeypatch, capsys):
+    """Fail-open pinned: un precondition MONEY/mandatory con ok=None (no
+    verificable, ej. DB corrupta) es solo un aviso — is_violation es False
+    (requiere severity mandatory Y ok is False), así que enforce('MONEY') NO
+    debe levantar SystemExit. Esto fija el comportamiento deliberado del spec
+    para que un refactor futuro no lo cambie en silencio."""
+    monkeypatch.setattr(pc, "evaluate", lambda *a, **k: [
+        PreconditionResult(name="fixtures_finalized", ok=None, severity="mandatory")])
+    pc.enforce("MONEY")  # no debe levantar
+    assert "aviso (no verificable)" in capsys.readouterr().out
+
+
 def test_evaluate_includes_gates_only_when_live(monkeypatch):
     monkeypatch.setattr(pc, "check_fixtures_finalized", lambda tid, **k:
                         PreconditionResult(name="fixtures_finalized", ok=True, severity="mandatory"))

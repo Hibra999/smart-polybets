@@ -38,3 +38,19 @@ def test_missing_db_is_unknown(tmp_path, monkeypatch):
     monkeypatch.setattr(pc, "db_path", lambda tid: tmp_path / "nope.sqlite")
     r = pc.check_fixtures_finalized("x", now=datetime(2026, 7, 17, tzinfo=timezone.utc))
     assert r.ok is None and r.is_violation is False
+
+
+def test_missing_fixture_table_degrades_gracefully(tmp_path, monkeypatch):
+    """DB existe pero sin la tabla 'fixture' (corrupta/incompleta): la query
+    dispara un sqlite3.Error distinto de OperationalError-por-tabla-faltante
+    en algunos casos; el catch ampliado a sqlite3.Error debe cubrir cualquier
+    variante y degradar a ok=None en vez de propagar la excepción."""
+    con_db = tmp_path / "broken.sqlite"
+    con = sqlite3.connect(con_db)
+    con.execute("CREATE TABLE other (x TEXT)")
+    con.commit()
+    con.close()
+    monkeypatch.setattr(pc, "db_path", lambda tid: con_db)
+    r = pc.check_fixtures_finalized("x", now=datetime(2026, 7, 17, tzinfo=timezone.utc))
+    assert r.ok is None
+    assert r.is_violation is False

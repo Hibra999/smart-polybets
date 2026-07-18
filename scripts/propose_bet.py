@@ -130,7 +130,10 @@ def main() -> None:
     # Guard MONEY: --reason ya es obligatorio para la propuesta en sí (línea arriba)
     # y se reutiliza como justificación del --force (evita un --reason duplicado en
     # el parser, que rompería argparse por conflicting option string).
-    enforce_freshness("MONEY", tournaments=None, force=a.force, reason=a.reason)
+    # tournaments=[TID]: este script está hard-scoped a fifa_world_cup_2026 (TID);
+    # pasar None evaluaría TODOS los torneos activos y podría bloquear una apuesta
+    # del Mundial por datos viejos de un torneo no relacionado (ej. liga_mx).
+    enforce_freshness("MONEY", tournaments=[TID], force=a.force, reason=a.reason)
 
     strategy = load_active_strategy(TID)
     if strategy is None:

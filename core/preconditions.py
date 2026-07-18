@@ -44,7 +44,7 @@ def check_fixtures_finalized(tid: str, *, now: datetime | None = None) -> Precon
         (n,) = con.execute(
             "SELECT COUNT(*) FROM fixture WHERE status='scheduled' AND kickoff_utc < ?",
             (cutoff,)).fetchone()
-    except sqlite3.OperationalError as exc:
+    except sqlite3.Error as exc:
         return PreconditionResult(name="fixtures_finalized", ok=None, severity="mandatory",
                                   tournament_id=tid, detail=f"no verificable: {exc}")
     finally:
@@ -71,7 +71,7 @@ def check_placeholders_synced(tid: str, *, now: datetime | None = None,
             "JOIN team h ON h.id=f.home_team_id JOIN team a ON a.id=f.away_team_id "
             "WHERE f.status='scheduled' AND f.kickoff_utc BETWEEN ? AND ? "
             "AND (h.elo_rating IS NULL OR a.elo_rating IS NULL)", (lo, hi)).fetchone()
-    except sqlite3.OperationalError as exc:
+    except sqlite3.Error as exc:
         return PreconditionResult(name="placeholders_synced", ok=None, severity="advisory",
                                   tournament_id=tid, detail=f"no verificable: {exc}")
     finally:
