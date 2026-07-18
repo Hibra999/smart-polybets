@@ -2,6 +2,7 @@
 de 'qué está fresco'. Ver docs/superpowers/specs/2026-07-17-mandatory-dependency-hooks-design.md."""
 from __future__ import annotations
 
+import os
 import sqlite3
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -12,6 +13,8 @@ from tournaments.registry import TOURNAMENTS
 
 REPO = Path(__file__).resolve().parent.parent
 GRACE_MINUTES = 150  # margen para no marcar partidos en juego como 'sin finalizar'
+
+_TRUTHY = ("1", "true", "yes", "on")
 
 
 def db_path(tid: str) -> Path:
@@ -51,3 +54,45 @@ def check_fixtures_finalized(tid: str, *, now: datetime | None = None) -> Precon
         name="fixtures_finalized", ok=ok, severity="mandatory", tournament_id=tid,
         detail=("datos al día" if ok else f"{n} partido(s) jugado(s) sin finalizar"),
         remedy_cmd=None if ok else f"python scripts/update_results.py --tournament {tid} --apply")
+
+
+def check_placeholders_synced(tid: str, *, now: datetime | None = None,
+                              horizon_days: int = 3) -> PreconditionResult:
+    now = now or utcnow()
+    lo, hi = now.isoformat(), (now + timedelta(days=horizon_days)).isoformat()
+    db = db_path(tid)
+    if not db.exists():
+        return PreconditionResult(name="placeholders_synced", ok=None, severity="advisory",
+                                  tournament_id=tid, detail=f"DB no encontrada: {db}")
+    con = sqlite3.connect(db)
+    try:
+        (n,) = con.execute(
+            "SELECT COUNT(*) FROM fixture f "
+            "JOIN team h ON h.id=f.home_team_id JOIN team a ON a.id=f.away_team_id "
+            "WHERE f.status='scheduled' AND f.kickoff_utc BETWEEN ? AND ? "
+            "AND (h.elo_rating IS NULL OR a.elo_rating IS NULL)", (lo, hi)).fetchone()
+    except sqlite3.OperationalError as exc:
+        return PreconditionResult(name="placeholders_synced", ok=None, severity="advisory",
+                                  tournament_id=tid, detail=f"no verificable: {exc}")
+    finally:
+        con.close()
+    ok = n == 0
+    return PreconditionResult(
+        name="placeholders_synced", ok=ok, severity="advisory", tournament_id=tid,
+        detail=("placeholders al día" if ok else f"{n} fixture(s) próximos con equipo placeholder"),
+        remedy_cmd=None if ok else "python scripts/sync_upcoming_fixtures.py --apply")
+
+
+def check_live_gates_ready() -> PreconditionResult:
+    problems = []
+    if not os.getenv("POLYMARKET_PRIVATE_KEY"):
+        problems.append("falta POLYMARKET_PRIVATE_KEY")
+    if os.getenv("POLYMARKET_LIVE", "") not in _TRUTHY:
+        problems.append("POLYMARKET_LIVE!=1")
+    if os.getenv("POLYMARKET_KILL_SWITCH", "") in _TRUTHY:
+        problems.append("kill-switch activo")
+    ok = not problems
+    return PreconditionResult(
+        name="live_gates_ready", ok=ok, severity="mandatory", tournament_id=None,
+        detail=("gates live OK" if ok else "; ".join(problems)),
+        remedy_cmd=None if ok else "setear POLYMARKET_LIVE=1 + key y POLYMARKET_KILL_SWITCH=0")
