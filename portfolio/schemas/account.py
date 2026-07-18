@@ -58,6 +58,36 @@ class ClosedPositionLive(BaseModel):
     event_id: str | None = None
 
 
+class LiveTrade(BaseModel):
+    """Un fill on-chain de la wallet (compra o venta). Insumo del PnL por flujo de caja."""
+
+    model_config = ConfigDict(frozen=True)
+
+    side: str                       # "BUY" | "SELL"
+    size_shares: Decimal
+    price: Decimal                  # precio del fill (0-1)
+    condition_id: str
+    outcome: str | None = None
+    title: str | None = None
+    timestamp: datetime | None = None
+
+    @property
+    def usdc(self) -> Decimal:
+        """USDC movido en el fill (shares × precio), siempre positivo."""
+        return self.size_shares * self.price
+
+
+class LiveRedemption(BaseModel):
+    """Un evento REDEEM: cobro de un mercado resuelto (el payout en USDC)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    condition_id: str
+    amount: Decimal                 # USDC cobrado (0 si el lado redimido perdió)
+    title: str | None = None
+    timestamp: datetime | None = None
+
+
 class OpenOrder(BaseModel):
     model_config = ConfigDict(frozen=True)
 

@@ -1,0 +1,117 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Post-mortem — Cartera Polymarket WC 2026</title>
+<style>
+  :root{--bg:#0d1117;--panel:#161b22;--panel2:#1c2333;--ink:#e6edf3;--muted:#8b949e;--line:#30363d;--accent:#58a6ff;--green:#3fb950;--red:#f85149;--amber:#d29922}
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 -apple-system,Segoe UI,Roboto,Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:32px 20px 80px}
+  h1{font-size:27px;margin:0 0 4px} h2{font-size:19px;margin:38px 0 8px;padding-bottom:7px;border-bottom:1px solid var(--line)}
+  .muted{color:var(--muted)} p{color:#c9d1d9}
+  code{background:#010409;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font:12.5px "SF Mono",Consolas,monospace}
+  .verdict{border-radius:12px;padding:16px 20px;margin-top:14px;border:1px solid;font-size:15px}
+  .v-warn{background:rgba(210,153,34,.10);border-color:#9e6a03} .v-warn b{color:var(--amber)}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:12px 0}
+  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:12px 0}
+  .stat{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:12px;text-align:center}
+  .stat b{font-size:24px;display:block} .stat small{color:var(--muted);font-size:11.5px;display:block;margin-top:4px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:16px 18px;margin-top:14px}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+  th,td{text-align:left;padding:6px 9px;border-bottom:1px solid var(--line)} th{color:var(--muted);font-size:11.5px;text-transform:uppercase}
+  th.r,td.r{text-align:right}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+  .bar{display:flex;align-items:center;gap:10px;margin:7px 0}
+  .bar span.lbl{width:120px;color:#c9d1d9;font-size:13px}
+  .bar .track{flex:1;background:#0d1117;border:1px solid #30363d;border-radius:5px;height:22px;position:relative;overflow:hidden}
+  .tag{display:inline-block;font-size:9.5px;padding:1px 6px;border-radius:20px;background:rgba(210,153,34,.16);color:var(--amber);border:1px solid #9e6a03;vertical-align:middle}
+  .foot{margin-top:38px;color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);padding-top:14px}
+</style></head><body><div class="wrap">
+
+  <h1>Post-mortem — Cartera Polymarket</h1>
+  <p class="muted">FIFA World Cup 2026 · 39 mercados resueltos (2026-06-19 → 2026-07-15) · fuente: cuenta LIVE + marcadores de la DB del torneo</p>
+
+  <div class="verdict" style="background:rgba(88,166,255,.10);border-color:#1f6feb">
+    <b style="color:var(--accent)">Corrección (2026-07-17):</b> el PnL neto se recalculó por
+    <b>flujo de caja</b> (Σ ventas + Σ redenciones − Σ compras) = <b>-19.58 USDC</b>, que cuadra al
+    centavo con la UI de Polymarket. La versión previa mostraba <b>-27.40</b> por el método de
+    <i>snapshot</i>, que sobreestima pérdidas al no ver el salvamento de <b>cierres anticipados</b>
+    (+7.82, todo en el carril de ganador: Colombia/Egypt/Brazil vendidas antes de resolver). El
+    desglose por carril y por apuesta de más abajo queda en base-snapshot. Detalle:
+    <code>docs/findings/2026-07-17-pnl-cashflow-vs-snapshot.md</code>.
+  </div>
+
+  <div class="verdict v-warn">
+    <b>≈ Break-even, ligeramente abajo.</b> PnL neto histórico <b><b style="color:#f85149">-19.58</b></b> USDC sobre 39 apuestas.
+    El carril de <b>ganador</b> fue rentable (<b style="color:#3fb950">+88.56</b> con salvamento; +80.74 base-snapshot); lo hundió el carril de <b>totales O/U</b>,
+    que perdió <b style="color:var(--red)">-108.14</b> en 5 de 5 apuestas (5/5 falladas).
+    Los perdedores grandes son favoritos de knockout que empataron a 90' (el mercado resuelve a 90').
+  </div>
+
+  <div class="grid4">
+    <div class="stat"><b><b style="color:#f85149">-19.58</b></b><small>PnL neto (USDC) · flujo de caja</small></div>
+    <div class="stat"><b>23-16</b><small>ganadas-perdidas</small></div>
+    <div class="stat" style="border-color:#238636"><b style="color:var(--green)">+375</b><small>ganancias brutas</small></div>
+    <div class="stat" style="border-color:#b62324"><b style="color:var(--red)">-403</b><small>pérdidas brutas</small></div>
+  </div>
+  <p class="muted">Cash actual en la wallet: <b style="color:#c9d1d9">512.64</b> USDC (colateral pUSD). Todas las posiciones abiertas están resueltas y a $0 → equity = cash.</p>
+
+  <h2>1 · Comportamiento por tipo de mercado</h2>
+  <div class="row2">
+    <div class="panel">
+      <table>
+        <tr><th>Mercado</th><th class="r">Apuestas</th><th class="r">W-L</th><th class="r">PnL neto</th></tr>
+        <tr><td><b>Ganador</b> (Will X win)</td><td class="r">34</td><td class="r">23-11</td><td style="text-align:right;color:#3fb950;font-variant-numeric:tabular-nums">+80.74</td></tr>
+        <tr><td><b>Totales</b> (O/U 2.5)</td><td class="r">5</td><td class="r">0-5</td><td style="text-align:right;color:#f85149;font-variant-numeric:tabular-nums">-108.14</td></tr>
+        <tr><td><b>Salvamento</b> <span class="muted">(cierres anticipados, carril ganador)</span></td><td class="r">—</td><td class="r">—</td><td style="text-align:right;color:#3fb950;font-variant-numeric:tabular-nums">+7.82</td></tr>
+        <tr style="border-top:2px solid var(--line)"><td><b>Total</b> <span class="muted">(flujo de caja)</span></td><td class="r">39</td><td class="r">23-16</td><td style="text-align:right;color:#f85149;font-variant-numeric:tabular-nums">-19.58</td></tr>
+      </table>
+    </div>
+    <div class="panel">
+      <div class="bar"><span class="lbl">Ganador</span><div class="track"><div style="position:absolute;left:50%;top:0;height:100%;width:54%;background:var(--green)"></div><div style="position:absolute;left:50%;top:0;bottom:0;border-left:1px solid #6e7681"></div></div><span style="width:64px;text-align:right;color:var(--green)">+81</span></div>
+      <div class="bar"><span class="lbl">Totales O/U</span><div class="track"><div style="position:absolute;right:50%;top:0;height:100%;width:72%;background:var(--red)"></div><div style="position:absolute;left:50%;top:0;bottom:0;border-left:1px solid #6e7681"></div></div><span style="width:64px;text-align:right;color:var(--red)">-108</span></div>
+      <p class="muted" style="margin:12px 0 0">El carril de <b>ganador</b> aporta <b style="color:var(--green)">+80.74</b>; el de <b>totales</b> resta <b style="color:var(--red)">-108.14</b>. Sin las 5 apuestas de totales, la cartera estaría <b style="color:var(--green)">verde</b>.</p>
+    </div>
+  </div>
+
+  <h2>2 · Mercados de ganador (34) · 23-11 · <b style="color:#3fb950">+80.74</b></h2>
+  <div class="panel" style="padding:0">
+  <table>
+    <tr><th>Fecha</th><th>Partido</th><th>Pick</th><th>Resultado (90')</th><th style="text-align:center">✓</th><th class="r">PnL</th></tr>
+    <tr><td>2026-07-15</td><td>England vs Argentina</td><td>Argentina gana <span class="muted">@0.32</span></td><td>ganó Argentina 2-1</td><td style="text-align:center;color:#3fb950">✓</td><td style="text-align:right;color:#3fb950;font-variant-numeric:tabular-nums">+15.22</td></tr><tr><td>2026-07-14</td><td>France vs Spain</td><td>Spain gana <span class="muted">@0.30</span></td><td>ganó Spain 2-0</td><td style="text-align:center;color:#3fb950">✓</td><td style="text-align:right;color:#3fb950;font-variant-numeric:tabular-nums">+28.00</td></tr><tr><td>2026-07-07</td><td>Switzerland vs Colombia</td><td>Colombia gana <span class="muted">@0.43</span></td><td>empate 0-0</td><td style="text-align:center;color:#f85149">✗</td><td style="text-align:right;color:#f85149;font-variant-numeric:tabular-nums">-17.90</td></tr><tr><td>2026-07-07</td><td>Argentina vs Egypt</td><td>Argentina gana <span class="muted">@0.73</span></td><td>ganó Argentina 3-2</td><td style="text-align:center;color:#3fb950">✓</td><td style="text-align:right;color:#3fb950;font-variant-numeric:tabular-nums">+18.49</td></tr><tr><td>2026-07-05</td><td>Brazil vs Norway</td><td>Brazil gana <span class="muted">@0.54</span></td><td>ganó Norway 2-1</td><td style="text-align:center;color:#f85149">✗</td><td style="text-align:right;color:#f85149;font-variant-numeric:tabular-nums">-0.93</td></tr><tr><td>2026-07-05</td><td>Mexico vs England</td><td>England NO gana (1X) <span class="muted">@0.61</span> <span class="tag">sin redimir</span></td><td>ganó England 3-2</td><td style="text-align:center;color:#f85149">✗</td><td style="text-align:right;color:#f85149;font-variant-numeric:tabular-nums">-35.00</td></tr><tr><td>2026-07-05</td><td>Brazil vs Norway</td><td>Norway NO gana (1X) <span class="muted">@0.80</span> <span class="tag">sin redimir</span></td><td>ganó Norway 2-1</td><td style="text-align:center;color:#f85149">✗</td><td style="text-align:right;color:#f85149;font-variant-numeric:tabular-nums">-40.00</td></tr><tr><td>2026-07-04</td><td>Paraguay vs France</td><td>France gana <span class="muted">@0.83</span></td><td>ganó France 1-0</td><td style="text-align:center;color:#3fb950">✓</td><td style="text-align:right;color:#3fb950;font-variant-numeric:tabular-nums">+8.19</td></tr><tr><td>2026-07-04</td><td>Canada vs Morocco</td><td>Canada NO gana (1X) <span class="muted">@0.81</span></td><td>ganó Morocco 3-0</td><td style="text-align:center;color:#3fb950">✓</td><td style="text-align:right;color:#3fb950;font-variant-numeric:tabular-nums">+7.04</td></tr><tr><td>2026-07-03</td><td>Colombia vs Ghana</td><td>Colombia gana <span class="muted">@0.64</span></td><td>ganó Colombia 1-0</td><td style="text-align:center;color:#3fb950">✓</td><td style="text-align:right;color:#3fb950;font-variant-numeric:tabular-nums">+21.19</td></tr><tr><td>2026-07-03</td><td>Australia vs Egypt</td><td>Egypt gana <span class="muted">@0.39</span></td><td>empate 1-1</td><td style="text-align:center;color:#f85149">✗</td><td style="text-align:right;color:#f85149;font-variant-numeric:tabular-nums">-18.79</td></tr><tr><td>2026-07-03</td><td>Argentina vs Cape Verde</td><td>Argentina gana <span class="muted">@0.85</span> <span class="tag">sin redimir</span></td><td>empate 1-1</td><td style="text-align:center;color:#f85149">✗</td><td style="text-align:right;color:#f85149;font-variant-numeric:tabular-nums">-49.99</td></tr><tr><td>2026-07-02</td><td>Switzerland vs Algeria</td><td>Switzerland gana <span class="muted">@0.48</span></td><td>ganó Switzerland 2-0</td><td style="text-align:center;color:#3fb950">✓</td><td style="text-align:right;color:#3fb950;font-variant-numeric:tabular-nums">+32.50</td></tr><tr><td>2026-07-02</td><td>Portugal vs Croatia</td><td>Portugal gana <span class="muted">@0.55</span></td><td>ganó Portugal 2-1</td><td style="text-align:center;color:#3fb950">✓</td><td style="text-align:right;color:#3fb950;font-variant-numeric:tabular-nums">+9.31</td></tr><tr><td>2026-07-02</td><td>Spain vs Austria</td><td>Spain gana <span class="muted">@0.76</span></td><td>ganó Spain 2-0</td><td style="text-align:center;color:#3fb950">✓</td><td style="text-align:right;color:#3fb950;font-variant-numeric:tabular-nums">+8.36</td></tr><tr><td>2026-07-01</td><td>USA vs Bosnia-Herzegovina</td><td>United States gana <span class="muted">@0.72</span></td><td>ganó USA 2-0</td><td style="text-align:center;color:#3fb950">✓</td><td style="text-align:right;color:#3fb950;font-variant-numeric:tabular-nums">+11.66</td></tr><tr><td>2026-07-01</td><td>England vs Congo DR</td><td>England gana <span class="muted">@0.77</span></td><td>ganó England 2-1</td><td style="text-align:center;color:#3fb950">✓</td><td style="text-align:right;color:#3fb950;font-variant-numeric:tabular-nums">+8.96</td></tr><tr><td>2026-07-01</td><td>Belgium vs Senegal</td><td>Belgium gana <span class="muted">@0.44</span> <span class="tag">sin redimir</span></td><td>empate 2-2</td><td style="text-align:center;color:#f85149">✗</td><td style="text-align:right;color:#f85149;font-variant-numeric:tabular-nums">-30.00</td></tr><tr><td>2026-06-30</td><td>Mexico vs Ecuador</td><td>Mexico gana <span class="muted">@0.44</span></td><td>ganó Mexico 2-0</td><td style="text-align:center;color:#3fb950">✓</td><td style="text-align:right;color:#3fb950;font-variant-numeric:tabular-nums">+38.18</td></tr><tr><td>2026-06-30</td><td>France vs Sweden</td><td>France gana <span class="muted">@0.78</span></td><td>ganó France 3-0</td><td style="text-align:center;color:#3fb950">✓</td><td style="text-align:right;color:#3fb950;font-variant-numeric:tabular-nums">+8.46</td></tr><tr><td>2026-06-30</td><td>Ivory Coast vs Norway</td><td>Norway gana <span class="muted">@0.46</span></td><td>ganó Norway 2-1</td><td style="text-align:center;color:#3fb950">✓</td><td style="text-align:right;color:#3fb950;font-variant-numeric:tabular-nums">+8.32</td></tr><tr><td>2026-06-29</td><td>Netherlands vs Morocco</td><td>Netherlands gana <span class="muted">@0.42</span> <span class="tag">sin redimir</span></td><td>empate 1-1</td><td style="text-align:center;color:#f85149">✗</td><td style="text-align:right;color:#f85149;font-variant-numeric:tabular-nums">-30.00</td></tr><tr><td>2026-06-29</td><td>Germany vs Paraguay</td><td>Germany gana <span class="muted">@0.74</span> <span class="tag">sin redimir</span></td><td>empate 1-1</td><td style="text-align:center;color:#f85149">✗</td><td style="text-align:right;color:#f85149;font-variant-numeric:tabular-nums">-5.00</td></tr><tr><td>2026-06-24</td><td>Scotland vs Brazil</td><td>Brazil gana <span class="muted">@0.75</span></td><td>ganó Brazil 3-0</td><td style="text-align:center;color:#3fb950">✓</td><td style="text-align:right;color:#3fb950;font-variant-numeric:tabular-nums">+11.10</td></tr><tr><td>2026-06-24</td><td>Morocco vs Haiti</td><td>Morocco gana <span class="muted">@0.83</span></td><td>ganó Morocco 4-2</td><td style="text-align:center;color:#3fb950">✓</td><td style="text-align:right;color:#3fb950;font-variant-numeric:tabular-nums">+10.24</td></tr><tr><td>2026-06-23</td><td>Panama vs Croatia</td><td>Croatia gana <span class="muted">@0.66</span></td><td>ganó Croatia 1-0</td><td style="text-align:center;color:#3fb950">✓</td><td style="text-align:right;color:#3fb950;font-variant-numeric:tabular-nums">+25.76</td></tr><tr><td>2026-06-23</td><td>England vs Ghana</td><td>England gana <span class="muted">@0.83</span> <span class="tag">sin redimir</span></td><td>empate 0-0</td><td style="text-align:center;color:#f85149">✗</td><td style="text-align:right;color:#f85149;font-variant-numeric:tabular-nums">-37.12</td></tr><tr><td>2026-06-22</td><td>Argentina vs Austria</td><td>Argentina gana <span class="muted">@0.68</span></td><td>ganó Argentina 2-0</td><td style="text-align:center;color:#3fb950">✓</td><td style="text-align:right;color:#3fb950;font-variant-numeric:tabular-nums">+23.53</td></tr><tr><td>2026-06-21</td><td>New Zealand vs Egypt</td><td>Egypt gana <span class="muted">@0.61</span></td><td>ganó Egypt 3-1</td><td style="text-align:center;color:#3fb950">✓</td><td style="text-align:right;color:#3fb950;font-variant-numeric:tabular-nums">+19.18</td></tr><tr><td>2026-06-21</td><td>Tunisia vs Japan</td><td>Japan gana <span class="muted">@0.64</span></td><td>ganó Japan 4-0</td><td style="text-align:center;color:#3fb950">✓</td><td style="text-align:right;color:#3fb950;font-variant-numeric:tabular-nums">+23.50</td></tr><tr><td>2026-06-21</td><td>Uruguay vs Cape Verde</td><td>Uruguay gana <span class="muted">@0.67</span> <span class="tag">sin redimir</span></td><td>empate 2-2</td><td style="text-align:center;color:#f85149">✗</td><td style="text-align:right;color:#f85149;font-variant-numeric:tabular-nums">-30.00</td></tr><tr><td>2026-06-20</td><td>Germany vs Ivory Coast</td><td>Germany gana <span class="muted">@0.67</span></td><td>ganó Germany 2-1</td><td style="text-align:center;color:#3fb950">✓</td><td style="text-align:right;color:#8b949e;font-variant-numeric:tabular-nums">0.00</td></tr><tr><td>2026-06-20</td><td>Netherlands vs Sweden</td><td>Netherlands gana <span class="muted">@0.58</span></td><td>ganó Netherlands 5-1</td><td style="text-align:center;color:#3fb950">✓</td><td style="text-align:right;color:#3fb950;font-variant-numeric:tabular-nums">+29.13</td></tr><tr><td>2026-06-19</td><td>Türkiye vs Paraguay</td><td>Paraguay gana <span class="muted">@0.23</span></td><td>ganó Paraguay 1-0</td><td style="text-align:center;color:#3fb950">✓</td><td style="text-align:right;color:#3fb950;font-variant-numeric:tabular-nums">+9.13</td></tr>
+  </table>
+  </div>
+  <p class="muted">Los "Will X win?" resuelven al <b>minuto 90</b> (sin prórroga ni penales): un empate a 90' resuelve <b>No</b>. Ahí murieron Argentina 07-03, Netherlands 06-29, Belgium 07-01, Egypt 07-03 y England 06-23 — favoritos que empataron.</p>
+
+  <h2>3 · Mercados de totales O/U 2.5 (5) · 0-5 · <b style="color:#f85149">-108.14</b></h2>
+  <div class="panel" style="padding:0">
+  <table>
+    <tr><th>Fecha</th><th>Partido</th><th>Pick</th><th>Resultado</th><th style="text-align:center">✓</th><th class="r">PnL</th></tr>
+    <tr><td>—</td><td>England vs Ghana</td><td>Over 2.5 <span class="muted">@0.62</span></td><td>0 goles (England 0-0 Ghana)</td><td style="text-align:center;color:#f85149">✗</td><td style="text-align:right;color:#f85149;font-variant-numeric:tabular-nums">-38.15</td></tr><tr><td>—</td><td>Argentina vs Switzerland</td><td>Over 2.5 <span class="muted">@0.42</span></td><td>2 goles (Argentina 1-1 Switzerland)</td><td style="text-align:center;color:#f85149">✗</td><td style="text-align:right;color:#f85149;font-variant-numeric:tabular-nums">-22.00</td></tr><tr><td>—</td><td>Norway vs England</td><td>Over 2.5 <span class="muted">@0.56</span></td><td>2 goles (Norway 1-1 England)</td><td style="text-align:center;color:#f85149">✗</td><td style="text-align:right;color:#f85149;font-variant-numeric:tabular-nums">-21.99</td></tr><tr><td>—</td><td>Spain vs Belgium</td><td>Under 2.5 <span class="muted">@0.46</span></td><td>3 goles (Spain 2-1 Belgium)</td><td style="text-align:center;color:#f85149">✗</td><td style="text-align:right;color:#f85149;font-variant-numeric:tabular-nums">-14.00</td></tr><tr><td>—</td><td>Paraguay vs France</td><td>Over 2.5 <span class="muted">@0.57</span></td><td>1 goles (Paraguay 0-1 France)</td><td style="text-align:center;color:#f85149">✗</td><td style="text-align:right;color:#f85149;font-variant-numeric:tabular-nums">-12.00</td></tr>
+  </table>
+  </div>
+  <p class="muted">Carril <b>0-5</b>. Cuatro Over y un Under, todos fallados: los partidos elegidos cayeron del lado contrario a la apuesta. Estas apuestas son overrides manuales (CIO), fuera de la estrategia de ganador.</p>
+
+  <h2>4 · Mayores ganadores y perdedores</h2>
+  <div class="row2">
+    <div class="panel">
+      <p style="margin:0 0 4px"><b style="color:var(--green)">Top 5 ganadores</b></p>
+      <table><tr><th>Partido</th><th>Pick</th><th class="r">PnL</th></tr>
+      <tr><td>Mexico vs Ecuador</td><td>Mexico gana</td><td style="text-align:right;color:#3fb950;font-variant-numeric:tabular-nums">+38.18</td></tr><tr><td>Switzerland vs Algeria</td><td>Switzerland gana</td><td style="text-align:right;color:#3fb950;font-variant-numeric:tabular-nums">+32.50</td></tr><tr><td>Netherlands vs Sweden</td><td>Netherlands gana</td><td style="text-align:right;color:#3fb950;font-variant-numeric:tabular-nums">+29.13</td></tr><tr><td>France vs Spain</td><td>Spain gana</td><td style="text-align:right;color:#3fb950;font-variant-numeric:tabular-nums">+28.00</td></tr><tr><td>Panama vs Croatia</td><td>Croatia gana</td><td style="text-align:right;color:#3fb950;font-variant-numeric:tabular-nums">+25.76</td></tr></table>
+    </div>
+    <div class="panel">
+      <p style="margin:0 0 4px"><b style="color:var(--red)">Top 5 perdedores</b></p>
+      <table><tr><th>Partido</th><th>Pick</th><th class="r">PnL</th></tr>
+      <tr><td>Argentina vs Cape Verde</td><td>Argentina gana</td><td style="text-align:right;color:#f85149;font-variant-numeric:tabular-nums">-49.99</td></tr><tr><td>Brazil vs Norway</td><td>Norway NO gana</td><td style="text-align:right;color:#f85149;font-variant-numeric:tabular-nums">-40.00</td></tr><tr><td>England vs Ghana</td><td>Over 2.5</td><td style="text-align:right;color:#f85149;font-variant-numeric:tabular-nums">-38.15</td></tr><tr><td>England vs Ghana</td><td>England gana</td><td style="text-align:right;color:#f85149;font-variant-numeric:tabular-nums">-37.12</td></tr><tr><td>Mexico vs England</td><td>England NO gana</td><td style="text-align:right;color:#f85149;font-variant-numeric:tabular-nums">-35.00</td></tr></table>
+    </div>
+  </div>
+
+  <h2>5 · Lecciones (post-mortem)</h2>
+  <div class="panel">
+    <p><b>1. El edge está en el ganador, no en los totales.</b> El carril de ganador cerró <b style="color:#3fb950">+80.74</b> pese a los empates de knockout; los totales fueron un <b style="color:#f85149">-108.14</b> sin un solo acierto. Regla: no abrir totales sin un modelo de goles calibrado por partido.</p>
+    <p><b>2. Los empates a 90' son el killer del knockout.</b> 8 favoritos (Colombia, Egypt, Argentina, Belgium, Netherlands, Germany, England, Uruguay) empataron el tiempo regular y el mercado resolvió No. El <b>blend sobreestima P(gana)</b> porque no modela el empate → usar Poisson 1X2 para precio a 90'.</p>
+    <p><b>3. Break-even con sesgo positivo en fase de grupos.</b> Los grandes verdes (Mexico +38, Switzerland +32, Netherlands +29, Croatia +26) vienen de grupos, donde el favorito rara vez pincha; el drenaje vino de octavos/cuartos y de los totales.</p>
+    <p class="muted" style="margin-top:10px">Idea accionable ya en el repo: la <b>doble oportunidad 1X</b> (apostar "el rival NO gana") convierte los empates de derrota en victoria — backtest en <code>editorial/reports/fifa_world_cup_2026/wc-backtest.html</code> daba +4.8% ROI vs -1.1% del "pick gana".</p>
+  </div>
+
+  <div class="foot">Generado desde la cuenta LIVE de Polymarket (<code>venue/gateway</code>) + marcadores de <code>data/fifa_world_cup_2026</code>. PnL neto incluye perdedores resueltos sin redimir (posiciones a $0). Ver <code>CLAUDE.md</code> § Reportar PnL.</div>
+
+</div></body></html>

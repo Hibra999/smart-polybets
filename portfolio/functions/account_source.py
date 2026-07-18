@@ -13,6 +13,8 @@ from portfolio.schemas.account import (
     AccountBalance,
     ClosedPositionLive,
     LivePosition,
+    LiveRedemption,
+    LiveTrade,
     OpenOrder,
 )
 from venue.gateway import PolymarketGateway
@@ -23,6 +25,8 @@ class AccountSource(Protocol):
     def get_positions(self) -> list[LivePosition]: ...
     def get_open_orders(self) -> list[OpenOrder]: ...
     def get_closed_positions(self, limit: int = 6) -> list[ClosedPositionLive]: ...
+    def get_trades(self) -> list[LiveTrade]: ...
+    def get_redemptions(self) -> list[LiveRedemption]: ...
 
 
 class PolymarketAccountSource:
@@ -49,3 +53,9 @@ class PolymarketAccountSource:
 
     def get_closed_positions(self, limit: int = 6) -> list[ClosedPositionLive]:
         return self._gateway.closed_positions(limit)
+
+    def get_trades(self) -> list[LiveTrade]:
+        return self._gateway.trades()
+
+    def get_redemptions(self) -> list[LiveRedemption]:
+        return self._gateway.redemptions()

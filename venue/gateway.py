@@ -25,6 +25,8 @@ from portfolio.schemas.account import (
     AccountBalance,
     ClosedPositionLive,
     LivePosition,
+    LiveRedemption,
+    LiveTrade,
     OpenOrder,
 )
 from research.functions.market_scanner import PolymarketMarket
@@ -152,6 +154,39 @@ class PolymarketGateway:
             ))
             if len(out) >= limit:
                 break
+        return out
+
+    # ── flujos de caja (para PnL que cuadra con la UI) ───────────────────────
+
+    def trades(self) -> list[LiveTrade]:
+        """Fills on-chain de la wallet (compras y ventas). Insumo del PnL cash-flow."""
+        client = self._ensure_client()
+        out: list[LiveTrade] = []
+        for t in client.list_trades(page_size=500).iter_items():
+            out.append(LiveTrade(
+                side=str(t.side),
+                size_shares=to_decimal(t.size or 0),
+                price=to_decimal(t.price or 0),
+                condition_id=str(t.condition_id) if t.condition_id is not None else "",
+                outcome=getattr(t, "outcome", None),
+                title=getattr(t, "title", None),
+                timestamp=getattr(t, "timestamp", None),
+            ))
+        return out
+
+    def redemptions(self) -> list[LiveRedemption]:
+        """Eventos REDEEM de la wallet (cobros de mercados resueltos)."""
+        client = self._ensure_client()
+        out: list[LiveRedemption] = []
+        for a in client.list_activity(page_size=500).iter_items():
+            if str(getattr(a, "type", "")).upper() != "REDEEM":
+                continue
+            out.append(LiveRedemption(
+                condition_id=str(a.condition_id) if a.condition_id is not None else "",
+                amount=to_decimal(getattr(a, "amount", 0) or 0),
+                title=getattr(a, "title", None),
+                timestamp=getattr(a, "timestamp", None),
+            ))
         return out
 
     # ── order book ───────────────────────────────────────────────────────────

@@ -104,6 +104,10 @@ def run(state_path: str, bankroll: float, event: str | None,
             "positions": [p.model_dump(mode="json") for p in positions],
             "open_orders": [o.model_dump(mode="json") for o in orders],
             "closed": [c.model_dump(mode="json") for c in closed],
+            # PnL neto autoritativo (cuadra con la UI); None si la fuente no expone trades.
+            "realized_pnl": (str(snap["realized_pnl"]) if snap.get("realized_pnl") is not None else None),
+            "trades": [t.model_dump(mode="json") for t in snap.get("trades", [])],
+            "redemptions": [r.model_dump(mode="json") for r in snap.get("redemptions", [])],
         }, indent=2, default=str))
         return
 
@@ -146,7 +150,12 @@ def run(state_path: str, bankroll: float, event: str | None,
     resolved += [(_date(p, "closed_at"), _tag(p), p.outcome, p.avg_entry_price,
                   -(p.size_shares * p.avg_entry_price), False) for p in lost]
     resolved.sort(key=lambda x: x[0], reverse=True)
-    net = sum((r[4] for r in resolved), Decimal("0"))
+    net_snapshot = sum((r[4] for r in resolved), Decimal("0"))
+    # PnL neto AUTORITATIVO = flujo de caja (Σ ventas + Σ redenciones − Σ compras);
+    # cuadra con la UI de Polymarket. El snapshot sobreestima pérdidas cuando hubo
+    # cierres anticipados (salvamento). Ver docs/findings/2026-07-17-pnl-cashflow-vs-snapshot.md.
+    net_cf = snap.get("realized_pnl")
+    net = net_cf if net_cf is not None else net_snapshot
     wins = sum(1 for r in resolved if r[5])
     losses = sum(1 for r in resolved if not r[5])
     print(f"\n  ── RESUELTAS ({len(resolved)}: {wins}W-{losses}L) · PnL neto {_pnl(net)} ──────────────")
@@ -154,6 +163,12 @@ def run(state_path: str, bankroll: float, event: str | None,
     for d, tag, outc, entry, pnl, won in resolved:
         print(f"  {d:<12}{str(tag)[:33]:<34}{'GANÓ' if won else 'PERDIÓ':<8}"
               f"{Decimal(str(entry)):>7.2f}{_pnl(pnl):>10}")
+    if net_cf is not None and abs(net_cf - net_snapshot) >= Decimal("0.01"):
+        salv = net_cf - net_snapshot
+        print(f"\n  reconciliación: Σ filas (snapshot) {_pnl(net_snapshot)} · "
+              f"salvamento de cierres anticipados {_pnl(salv)} · "
+              f"PnL neto real (flujo de caja) {_pnl(net_cf)}")
+        print("  (las filas 'PERDIÓ' asumen pérdida total; vender antes de la resolución recupera parte)")
     print()
 
 

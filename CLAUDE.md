@@ -210,6 +210,22 @@ Al reportar, mostrar **siempre**:
 Una sola wallet: `POLYMARKET_FUNDER` (proxy, sig type 2). `scripts/account.py --reconcile` solo ajusta
 el bankroll local al cash real; **no** importa las posiciones al ledger.
 
+⚠️ **PnL neto = FLUJO DE CAJA, no snapshot (VERIFICADO 2026-07-17).** El método correcto —el
+único que cuadra con la UI de Polymarket— es `PnL = Σ ventas + Σ redenciones − Σ compras`.
+`scripts/account.py` ya lo muestra en la línea `RESUELTAS (N: W-L) · PnL neto` (y en el campo
+`realized_pnl` del `--json`), con una línea de **reconciliación** debajo. **Usar ese número tal
+cual** — no restar nada a mano. Dos trampas que llevaron a reportes malos, ambas resueltas:
+1. El array `closed` del `--json` **NO** es el PnL completo: las apuestas resueltas y PERDIDAS no
+   se mueven a `closed`, quedan como **posiciones abiertas con `current_price=0`**
+   (`redeemable=True`, `percent_pnl≈-100%`, `cash_pnl=-invertido`; Polymarket no las auto-limpia).
+   Sumar solo `closed` **subestima pérdidas** (el 2026-07-17 reporté +$337.83 leyendo solo `closed`).
+2. El método de **snapshot** (fusionar `closed` + esos perdedores a $0 como −invertido) **sobreestima
+   pérdidas** cuando hubo **cierres anticipados**: vender una posición perdedora antes de la
+   resolución recupera salvamento que el snapshot no ve. El 2026-07-17 daba **−$27.40** por snapshot
+   cuando el neto real (flujo de caja) era **−$19.58**. Ver `docs/findings/2026-07-17-pnl-cashflow-vs-snapshot.md`.
+Ojo con las columnas per-fila: `GANÓ/PERDIÓ` etiqueta **redimido vs sin-redimir** (no el resultado
+real) y las filas `PERDIÓ` asumen pérdida total; el que vale es el **PnL neto** de la cabecera.
+
 ## Setup rápido
 ```bash
 pip install -e ".[dev]"           # o: uv pip install -e ".[dev]"
@@ -249,7 +265,7 @@ pytest
   (ROI negativo) → estrategia sigue draft; plan = observar J1-J3 si Polymarket precia
   peor que el cierre (finding `2026-07-14-ligamx-backtest.md`). **Minutos de gol + rojas**
   (fuente ESPN, tabla `match_timeline_event`): EDA en finding `2026-07-14-ligamx-goles-eda.md`
-  + reporte `docs/ligamx-goles-eda.html` — Liga MX es más hostil que el WC para el theta
+  + reporte `editorial/reports/liga_mx_2026/ligamx-goles-eda.html` — Liga MX es más hostil que el WC para el theta
   (favorito ya anotó al min 30 en 37%; bin 76-90 el más denso; rojas en 34% de partidos).
   Ver `tournaments/liga_mx_2026/TOURNAMENT.md` y `data/liga_mx_2026/DATA_SOURCES.md`.
 - **`update_results.py` es multi-torneo** (2026-07-14): `--tournament <id>` usa el
