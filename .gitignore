@@ -25,6 +25,9 @@ editorial/reports/**/*.md
 # Claude Code: overrides personales del proyecto (settings del equipo SÍ se versionan)
 .claude/settings.local.json
 
+# graphify: grafo de conocimiento generado (AST local; se reconstruye con `graphify update .`)
+graphify-out/
+
 # SDD scratch (progreso de refactor, no versionar)
 .superpowers/
 
