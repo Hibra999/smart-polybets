@@ -19,6 +19,13 @@ data/agent_state.json
 editorial/reports/**/*.md
 !editorial/reports/.gitkeep
 
+# Reports NFL 2025 con data embebida ENORME (>100MB) — GitHub rechaza archivos
+# >100MB. Se regeneran con scripts/nfl_*_report.py; NUNCA versionar (2026-08-22).
+editorial/reports/nfl_2026/2026-06-21_all_strategies_2025.html
+editorial/reports/nfl_2026/2026-06-21_weekly_trueskill_fav_2025.html
+editorial/reports/nfl_2026/2026-06-21_backtest_2025.html
+editorial/reports/nfl_2026/2026-06-21_weekly_trueskill_dog_2025.html
+
 # Entorno
 .env
 
