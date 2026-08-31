@@ -7,14 +7,33 @@ obsoleta; los comandos y el estado actual del código o de los datos siempre man
 
 1. `AGENTS.md` para reglas del repositorio y seguridad.
 2. `README.md` para arquitectura y flujo unidireccional.
-3. El `SKILL.md` del área que se vaya a tocar.
-4. `tournaments/<tournament_id>/TOURNAMENT.md` y la estrategia activa en
+3. Todos los `docs/**/*.html` antes de modificar u operar el pipeline.
+4. El `SKILL.md` del área que se vaya a tocar.
+5. `tournaments/<tournament_id>/TOURNAMENT.md` y la estrategia activa en
    `tournaments/<tournament_id>/strategies/*/STRATEGY.md`.
-5. `EXECUTION_GOLIVE.md` antes de cualquier trabajo relacionado con dinero real.
+6. `EXECUTION_GOLIVE.md` antes de cualquier trabajo relacionado con dinero real.
 
 No llamar al SDK de Polymarket desde scripts o paquetes de dominio: todo acceso pasa
 por `venue/`. No cambiar estados ni umbrales de estrategias sólo porque un backtest
 salga bien o mal.
+
+### Mapa obligatorio de los HTML
+
+Listarlos con `rg --files docs -g '*.html'` y abrir cada resultado completo. Al
+2026-08-31 son los cinco siguientes; no usar esta tabla como sustituto de su lectura:
+
+| Archivo | Control que aporta | Precaución |
+|---|---|---|
+| `docs/architecture.html` | Capas, contratos, gateway único y gates de ejecución | El orden vigente es Research → Risk → Optimization → Execution → Portfolio → Editorial. |
+| `docs/dependency-hooks.html` | Frescura, severidades READ/MONEY y remedios | Su banner dice “implementación pendiente”, pero ya existe en `core/preconditions.py`; manda el código. |
+| `docs/models.html` | Elo, Bayes, TrueSkill, Poisson, ensemble y edge | Está escrito para el Mundial: neutralidad y parámetros no se trasladan a Liga MX o NFL. |
+| `docs/theta-trade-manual.html` | Recorder, carril CIO, monitor, salida y riesgos in-play | `theta_lay_v1` continúa `draft`; sus ejemplos `--live` no son autorización para ejecutarlos. |
+| `docs/use-cases.html` | Recorrido diario, Kelly, cuenta, reconciliación y ejecución | Sus balances, fills, “hoy” y conteo de tests son ejemplos históricos del 2026-07-02. |
+
+Los HTML explican intención y operación, pero pueden estar fechados. Ante conflicto,
+mandan `AGENTS.md`, el código y tests actuales, el registry, el `STRATEGY.md` aplicable
+y `EXECUTION_GOLIVE.md`. Nunca inferir saldo, posiciones, permisos live ni estado
+actual de ejemplos incrustados en un reporte.
 
 ## 2. Arranque desde un clon limpio
 
@@ -95,6 +114,31 @@ No continuar con el pipeline si hay partidos pasados todavía `scheduled`. No us
 `--force` salvo autorización explícita del usuario y una razón auditable.
 
 ## 4. Operación segura y backtesting
+
+### Controles del pipeline
+
+Usar estos checkpoints en orden; no saltar directamente a una recomendación u orden:
+
+1. **Datos:** ejecutar freshness. READ avisa y puede continuar; MONEY bloquea una
+   violación mandatoria. Live añade la validación de signer, flag y kill-switch.
+2. **Research:** cargar la estrategia del torneo, descubrir vía `venue/` y producir
+   probabilidades/edge. Para `double_chance`, Poisson precia `P(pick)+P(empate)` contra
+   el lado NO del rival; para otros deportes manda su provider y estrategia.
+3. **Risk:** emitir `AUTO`, `REVIEW` o `DISCARD` antes del sizing. Los flags
+   cualitativos fuerzan REVIEW y el CIO humano decide.
+4. **Optimization:** dimensionar sólo lo que sobrevivió Risk, con Kelly fraccional y
+   topes del `STRATEGY.md`.
+5. **Execution:** construir/repreciar la orden y validar slippage, tick y tamaño mínimo.
+   REVIEW no se envía; DISCARD y SKIP se detienen. Todo acceso al CLOB pasa por el
+   broker/gateway.
+6. **Portfolio:** persistir decisión e idempotency key. Un dry-run queda `simulated`;
+   sólo `result.status == "live"` marca ejecución real. `AUTO` describe el veredicto,
+   no demuestra que se haya enviado dinero.
+7. **Editorial:** generar el resumen después de la decisión. Publicar o usar Metricool
+   requiere una solicitud explícita independiente.
+
+El orden visual “Kelly antes de Risk” de `use-cases.html` es ilustrativo y antiguo;
+`agent/workflows/full_analysis.py` y `architecture.html` confirman Risk → Optimization.
 
 Backtest multitorneo con bankroll teórico de USD 1,000:
 
