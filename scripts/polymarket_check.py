@@ -9,6 +9,7 @@ Sirve para confirmar que todo está conectado ANTES de `place_bets --live`.
 """
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
@@ -17,6 +18,7 @@ sys.path.insert(0, str(REPO))
 
 from core.console import enable_utf8
 from core.env import load_env
+from core.polymarket_client import is_relayer_api_key
 
 enable_utf8()  # consola Windows: stdout/stderr en UTF-8
 load_env(REPO / ".env")
@@ -26,10 +28,15 @@ def main() -> None:
     from core.exceptions import PolymarketClientError
     from core.polymarket_client import build_secure_client
 
+    configured_key = os.getenv("RELAYER_API_KEY") or os.getenv("POLYMARKET_PRIVATE_KEY") or ""
+    relayer_address = os.getenv("RELAYER_API_KEY_ADDRESS") or ""
+    if is_relayer_api_key(configured_key) and relayer_address:
+        print(f"[OK] Relayer configurado para: {relayer_address}")
+
     try:
         client = build_secure_client()
     except PolymarketClientError:
-        print("[ERROR] No se pudo crear el cliente (configuración o SDK).")
+        print("[ERROR] Falta una private key EVM válida para autenticar la cuenta.")
         raise SystemExit(1) from None
     except Exception as exc:  # noqa: BLE001
         print(f"[ERROR] No se pudo crear el cliente: {type(exc).__name__}")

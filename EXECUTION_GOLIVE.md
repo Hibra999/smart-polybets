@@ -72,6 +72,8 @@ precio redondeado al tick, shares, neg_risk).
    - `POLYMARKET_PRIVATE_KEY` — llave que firma (¡secreta!).
    - `POLYMARKET_FUNDER` — **opcional** (override). El SDK V2 deriva el proxy wallet de
      la private key; `signature_type` ya **no** se configura (unificado en el SDK).
+   - `RELAYER_API_KEY` + `RELAYER_API_KEY_ADDRESS` — **opcionales**, habilitan
+     workflows gasless. No reemplazan la firma de `POLYMARKET_PRIVATE_KEY`.
    - `POLYMARKET_LIVE=1` — interruptor maestro.
 4. **Ejecutar**:
    ```bash
@@ -80,6 +82,18 @@ precio redondeado al tick, shares, neg_risk).
 
 El broker sólo envía si: `--live` **y** `POLYMARKET_LIVE=1` **y** hay private key
 **y** el kill-switch está apagado. Si falta cualquiera, sigue en dry-run.
+
+## Backtest del pipeline
+
+El runner multitorneo reutiliza la estrategia activa, selección de lado, Risk y
+Kelly. Los precios son proxies históricos de cierre; el volumen se asume en el
+mínimo de la estrategia porque las fuentes históricas no lo conservan.
+
+```bash
+python scripts/backtest_pipeline.py --tournament liga_mx_2026 --bankroll 1000
+python scripts/backtest_pipeline.py --tournament nfl_2026 --season 2025 --json
+python scripts/backtest_pipeline.py --tournament all
+```
 
 ## Guardas de seguridad (defensa en profundidad)
 

@@ -40,6 +40,17 @@ def test_live_gates(monkeypatch):
     monkeypatch.setenv("POLYMARKET_LIVE", "0")
     monkeypatch.delenv("POLYMARKET_KILL_SWITCH", raising=False)
     assert pc.check_live_gates_ready().is_violation is True
-    monkeypatch.setenv("POLYMARKET_PRIVATE_KEY", "0xabc")
+    monkeypatch.setenv("POLYMARKET_PRIVATE_KEY", "0x" + "a" * 64)
     monkeypatch.setenv("POLYMARKET_LIVE", "1")
     assert pc.check_live_gates_ready().ok is True
+
+
+def test_live_gate_rejects_relayer_key_as_signer(monkeypatch):
+    monkeypatch.setenv("POLYMARKET_PRIVATE_KEY", "01967c03-b8c8-7000-8f68-8b8eaec6fd3d")
+    monkeypatch.setenv("POLYMARKET_LIVE", "1")
+    monkeypatch.setenv("POLYMARKET_KILL_SWITCH", "0")
+
+    result = pc.check_live_gates_ready()
+
+    assert result.ok is False
+    assert "no es una clave EVM válida" in result.detail

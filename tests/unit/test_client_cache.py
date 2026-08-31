@@ -19,7 +19,6 @@ from core.polymarket_client import (
     reset_client_cache,
 )
 
-
 # ── fixtures ─────────────────────────────────────────────────────────────────
 
 
@@ -34,6 +33,11 @@ def clean_cache():
 def _inject_fake_polymarket(monkeypatch, calls: list):
     """Inyecta un módulo `polymarket` falso con un SecureClient que registra llamadas."""
 
+    class FakeRelayerApiKey:
+        def __init__(self, *, key, address):
+            self.key = key
+            self.address = address
+
     class FakeSecureClient:
         @classmethod
         def create(cls, **kwargs):
@@ -43,6 +47,7 @@ def _inject_fake_polymarket(monkeypatch, calls: list):
 
     fake_mod = types.ModuleType("polymarket")
     fake_mod.SecureClient = FakeSecureClient
+    fake_mod.RelayerApiKey = FakeRelayerApiKey
     monkeypatch.setitem(sys.modules, "polymarket", fake_mod)
     return FakeSecureClient
 
@@ -120,6 +125,22 @@ def test_same_key_different_funder_is_separate_cache_entry(monkeypatch):
 
     assert c1 is not c2
     assert len(calls) == 2
+
+
+def test_relayer_credentials_are_forwarded_without_replacing_signer(monkeypatch):
+    calls: list = []
+    _inject_fake_polymarket(monkeypatch, calls)
+
+    build_secure_client(
+        private_key="0xabc",
+        relayer_api_key="relayer-key",
+        relayer_api_key_address="0x30a886Ac66Ba6ad8cc61Db95ae72f63091Bb4e9b",
+    )
+
+    kwargs = calls[0]["kwargs"]
+    assert kwargs["private_key"] == "0xabc"
+    assert kwargs["api_key"].key == "relayer-key"
+    assert kwargs["api_key"].address == "0x30a886Ac66Ba6ad8cc61Db95ae72f63091Bb4e9b"
 
 
 def test_failure_not_cached(monkeypatch):

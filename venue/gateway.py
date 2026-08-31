@@ -16,11 +16,14 @@ import os
 from decimal import ROUND_DOWN, ROUND_HALF_UP, Decimal
 
 from core.exceptions import AccountUnavailableError, PolymarketClientError
-from core.polymarket_client import build_public_client, build_secure_client
+from core.polymarket_client import (
+    build_public_client,
+    build_secure_client,
+    is_evm_private_key,
+)
 from core.utils import to_decimal, utcnow
 from execution.schemas.order_result import OrderResult
 from execution.schemas.trade_order import TradeOrder
-from venue.matching import match_event
 from portfolio.schemas.account import (
     AccountBalance,
     ClosedPositionLive,
@@ -30,6 +33,7 @@ from portfolio.schemas.account import (
     OpenOrder,
 )
 from research.functions.market_scanner import PolymarketMarket
+from venue.matching import match_event
 
 # Colateral USDC de Polymarket: entero en micro-unidades (6 decimales).
 _USDC_DECIMALS = Decimal(10) ** 6
@@ -65,7 +69,8 @@ class PolymarketGateway:
         self._pub_client = None  # PublicClient del SDK (inyectable en tests)
 
         env_live = os.getenv("POLYMARKET_LIVE", "") in ("1", "true", "yes", "on")
-        self.live = bool(live and env_live and self.private_key and not _kill_switch_on())
+        valid_signer = is_evm_private_key(self.private_key)
+        self.live = bool(live and env_live and valid_signer and not _kill_switch_on())
         self._blocked_reason: str | None = None
         if live and not self.live:
             if _kill_switch_on():
@@ -74,6 +79,8 @@ class PolymarketGateway:
                 self._blocked_reason = "POLYMARKET_LIVE!=1"
             elif not self.private_key:
                 self._blocked_reason = "sin POLYMARKET_PRIVATE_KEY"
+            elif not valid_signer:
+                self._blocked_reason = "POLYMARKET_PRIVATE_KEY inválida"
 
     # ── conexión (lazy) ───────────────────────────────────────────────────────
 

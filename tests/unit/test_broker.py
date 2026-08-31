@@ -67,3 +67,14 @@ def test_kill_switch_blocks_live(monkeypatch):
     b = PolymarketBroker(live=True)
     assert b.live is False
     assert b._blocked_reason == "kill_switch"
+
+
+def test_live_blocked_when_relayer_key_is_used_as_signer(monkeypatch):
+    monkeypatch.setenv("POLYMARKET_LIVE", "1")
+    monkeypatch.setenv("POLYMARKET_KILL_SWITCH", "0")
+    monkeypatch.setenv("POLYMARKET_PRIVATE_KEY", "01967c03-b8c8-7000-8f68-8b8eaec6fd3d")
+
+    broker = PolymarketBroker(live=True)
+
+    assert broker.live is False
+    assert broker._blocked_reason == "POLYMARKET_PRIVATE_KEY inválida"

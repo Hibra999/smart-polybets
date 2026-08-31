@@ -7,6 +7,7 @@ import sqlite3
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
+from core.polymarket_client import is_evm_private_key
 from core.schemas.precondition import PreconditionResult
 from core.utils import utcnow
 from tournaments.registry import TOURNAMENTS
@@ -85,8 +86,11 @@ def check_placeholders_synced(tid: str, *, now: datetime | None = None,
 
 def check_live_gates_ready() -> PreconditionResult:
     problems = []
-    if not os.getenv("POLYMARKET_PRIVATE_KEY"):
+    key = os.getenv("POLYMARKET_PRIVATE_KEY")
+    if not key:
         problems.append("falta POLYMARKET_PRIVATE_KEY")
+    elif not is_evm_private_key(key):
+        problems.append("POLYMARKET_PRIVATE_KEY no es una clave EVM válida")
     if os.getenv("POLYMARKET_LIVE", "") not in _TRUTHY:
         problems.append("POLYMARKET_LIVE!=1")
     if os.getenv("POLYMARKET_KILL_SWITCH", "") in _TRUTHY:
