@@ -1,5 +1,7 @@
 # Repository Guidelines
 
+At the start of every session, read `INIT.md` for the current operational handoff.
+
 ## Project Structure & Module Organization
 
 This Python 3.11 project uses flat, top-level packages. The main pipeline flows through `research/`, `risk/`, `optimization/`, `execution/`, `portfolio/`, and `editorial/`. Shared schemas and utilities live in `core/`; tournament configuration and strategies live under `tournaments/<tournament_id>/`. All Polymarket access must go through `venue/`—do not call an SDK directly from scripts or domain packages. Command-line entry points are in `scripts/`, canonical database DDL and ingest data are in `data/`, documentation is in `docs/`, and tests are split between `tests/unit/` and `tests/integration/`.
