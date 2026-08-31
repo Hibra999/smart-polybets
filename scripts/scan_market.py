@@ -32,15 +32,11 @@ enable_utf8()
 from core.env import load_env  # noqa: E402
 from core.preconditions import enforce as enforce_freshness  # noqa: E402
 from core.timez import fmt_local_et_short  # noqa: E402
-from research.functions.wc_strategy import resolve_bet_market  # noqa: E402
 from research.functions.poisson_loader import match_result_probs  # noqa: E402
+from research.functions.wc_strategy import resolve_bet_market  # noqa: E402
+from tournaments.registry import get_config  # noqa: E402
 
 load_env(_REPO / ".env")
-
-# ── tag IDs de Polymarket por torneo (fuente: research/functions/polymarket_live.py) ──
-_TAG_IDS: dict[str, int] = {
-    "fifa_world_cup_2026": 102232,
-}
 
 # ── lógica principal ──────────────────────────────────────────────────────────
 
@@ -74,18 +70,26 @@ def _bet_row(sig_side, sig_prob, markets, strategy, poisson_result):
         target.model_probability - m.market_probability
 
 
-def run(tournament_id: str, hours: int, sport: str, as_json: bool) -> int:
+def run(
+    tournament_id: str,
+    hours: int,
+    sport: str,
+    as_json: bool,
+    observe_draft: bool = False,
+) -> int:
     """Escanea mercados y muestra oportunidades. Retorna el exit code."""
+    from adapters.base import SQLiteReader
     from core.exceptions import AccountUnavailableError, NotFoundError
-    from adapters.football.db_reader import FootballDBReader
-    from signals.football import FootballSignalProvider
+    from core.utils import utcnow
     from signals import registry
+    from signals.football import FootballSignalProvider
     from tournaments.registry import load_active_strategy
     from venue.gateway import PolymarketGateway
 
     # ── 1. Estrategia activa ──────────────────────────────────────────────────
     try:
-        strategy = load_active_strategy(tournament_id)
+        cfg = get_config(tournament_id)
+        strategy = load_active_strategy(tournament_id, require_approved=not observe_draft)
     except NotFoundError as exc:
         print(f"[scan_market] Torneo no registrado: {exc}", file=sys.stderr)
         return 1
@@ -99,17 +103,25 @@ def run(tournament_id: str, hours: int, sport: str, as_json: bool) -> int:
         return 1
 
     # ── 2. Registrar el provider de señal ────────────────────────────────────
-    provider = FootballSignalProvider(tournament_id=tournament_id, strategy=strategy)
+    provider = FootballSignalProvider(
+        tournament_id=tournament_id, strategy=strategy, sport=cfg.sport
+    )
     registry.register(provider)
 
     # ── 3. Fixtures próximos ─────────────────────────────────────────────────
     try:
-        db = FootballDBReader(tournament_id)
+        db = SQLiteReader(tournament_id)
     except FileNotFoundError as exc:
         print(f"[scan_market] Base de datos no encontrada: {exc}", file=sys.stderr)
         return 1
 
-    upcoming = db.get_upcoming_fixtures(hours_ahead=hours)
+    now = utcnow().isoformat()
+    upcoming = db.query(
+        "SELECT * FROM fixture WHERE status='scheduled' "
+        "AND datetime(kickoff_utc) >= datetime(?) "
+        "AND datetime(kickoff_utc) <= datetime(?, ?) ORDER BY kickoff_utc",
+        (now, now, f"+{int(hours)} hours"),
+    )
     if not upcoming:
         print(
             f"[scan_market] Sin fixtures programados en las próximas {hours}h "
@@ -119,7 +131,7 @@ def run(tournament_id: str, hours: int, sport: str, as_json: bool) -> int:
 
     # ── 4. Gateway (descubrimiento — read-only, sin auth) ────────────────────
     gateway = PolymarketGateway()
-    tag_id = _TAG_IDS.get(tournament_id)
+    tag_id = cfg.polymarket_tag_id
 
     # ── 5. Cabecera ──────────────────────────────────────────────────────────
     prov = registry.get(sport)
@@ -148,8 +160,12 @@ def run(tournament_id: str, hours: int, sport: str, as_json: bool) -> int:
 
     for fix in upcoming:
         fixture_id = str(fix["id"])
-        # Resolver nombres de equipo via get_fixture (tiene el JOIN con team)
-        details = db.get_fixture(fixture_id)
+        details = db.query_one(
+            "SELECT f.*, h.name AS home_team_name, a.name AS away_team_name "
+            "FROM fixture f LEFT JOIN team h ON h.id=f.home_team_id "
+            "LEFT JOIN team a ON a.id=f.away_team_id WHERE f.id=?",
+            (fixture_id,),
+        )
         if details is None:
             continue
         home = details["home_team_name"] or ""
@@ -216,6 +232,8 @@ def run(tournament_id: str, hours: int, sport: str, as_json: bool) -> int:
             "condition_id": matched.condition_id,
             "token_id": matched.token_id,
             "best_ask": float(matched.best_ask) if matched.best_ask is not None else None,
+            "volume_usdc": float(matched.volume_usdc),
+            "liquidity_usdc": float(matched.liquidity_usdc),
         }
         rows.append(row)
 
@@ -269,10 +287,14 @@ def main() -> None:
         "--json", action="store_true", dest="as_json",
         help="Salida en formato JSON"
     )
+    ap.add_argument(
+        "--observe-draft", action="store_true",
+        help="permite escanear una estrategia draft en modo observación",
+    )
     args = ap.parse_args()
 
     enforce_freshness("READ", tournaments=[args.tournament])
-    sys.exit(run(args.tournament, args.hours, args.sport, args.as_json))
+    sys.exit(run(args.tournament, args.hours, args.sport, args.as_json, args.observe_draft))
 
 
 if __name__ == "__main__":

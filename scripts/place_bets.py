@@ -18,8 +18,7 @@ from __future__ import annotations
 
 import argparse
 import sys
-from datetime import datetime, timezone
-from decimal import Decimal
+from datetime import UTC, datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -32,30 +31,44 @@ load_env(Path(__file__).resolve().parent.parent / ".env")  # sin esto, --live de
 #                                                            silencioso a dry-run (gotcha
 #                                                            CLAUDE.md, fixed 2026-07-14)
 
-from adapters.football.db_reader import FootballDBReader
+from adapters.base import SQLiteReader
 from agent.workflows import full_analysis
 from core.local_state import LocalStateClient
 from core.preconditions import enforce as enforce_freshness
 from execution.functions import PolymarketBroker
 from research.functions import PolymarketLiveSource
+from tournaments.registry import get_config
 
 TID = "fifa_world_cup_2026"
 
 
-def run(date: str, bankroll: float, live: bool, state_path: str) -> None:
-    reader = FootballDBReader(TID)
+def run(
+    date: str,
+    bankroll: float,
+    live: bool,
+    state_path: str,
+    tournament_id: str = TID,
+    observe_draft: bool = False,
+) -> None:
+    if observe_draft and live:
+        raise ValueError("--observe-draft no se puede combinar con --live")
+    cfg = get_config(tournament_id)
+    reader = SQLiteReader(tournament_id)
     fixtures = reader.query(
         "SELECT id FROM fixture WHERE status='scheduled' AND kickoff_utc LIKE ? "
         "ORDER BY kickoff_utc",
         (f"{date}%",),
     )
     client = LocalStateClient(state_path, bankroll_usdc=bankroll)
-    market_source = PolymarketLiveSource()           # cuotas LIVE de Gamma
+    market_source = PolymarketLiveSource(tag_id=cfg.polymarket_tag_id)
     broker = PolymarketBroker(live=live)             # dry-run salvo --live + env + creds
 
     mode = "LIVE ⚠️" if broker.live else f"DRY-RUN ({broker._blocked_reason or 'flag off'})"
-    print(f"\n=== Colocación automática WC {date} — modo: {mode} ===")
-    print(f"    bankroll={bankroll:.0f} · estado={state_path} · now={datetime.now(timezone.utc).isoformat(timespec='minutes')}\n")
+    print(f"\n=== Colocación automática {cfg.display_name} {date} — modo: {mode} ===")
+    print(
+        f"    bankroll={bankroll:.0f} · estado={state_path} · "
+        f"now={datetime.now(UTC).isoformat(timespec='minutes')}\n"
+    )
     if not fixtures:
         print("    (sin partidos programados para esa fecha)")
         return
@@ -63,8 +76,15 @@ def run(date: str, bankroll: float, live: bool, state_path: str) -> None:
     placed = reviews = discards = skips = 0
     for f in fixtures:
         decisions = full_analysis.run(
-            f["id"], TID, client=client, market_source=market_source, broker=broker,
+            f["id"], tournament_id, client=client, market_source=market_source,
+            broker=broker, allow_draft=observe_draft,
         )
+        if not decisions:
+            skips += 1
+            print(
+                f"  [SKIP]    {f['id']:8} → sin mercado apto o volumen insuficiente"
+            )
+            continue
         for d in decisions:
             mode = d["mode"]
             key = d.get("idempotency_key", "")[:10]
@@ -93,16 +113,25 @@ def run(date: str, bankroll: float, live: bool, state_path: str) -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--date", default=datetime.now(timezone.utc).strftime("%Y-%m-%d"))
+    ap.add_argument("--date", default=datetime.now(UTC).strftime("%Y-%m-%d"))
+    ap.add_argument("--tournament", default=TID)
     ap.add_argument("--bankroll", type=float, default=1000.0)
     ap.add_argument("--live", action="store_true", help="intenta ejecución REAL (requiere creds + env)")
+    ap.add_argument(
+        "--observe-draft", action="store_true",
+        help="permite observar una estrategia draft; siempre dry-run",
+    )
     ap.add_argument("--state", default="data/agent_state.json")
     ap.add_argument("--force", action="store_true",
                     help="fuerza la acción pese a datos viejos (requiere --reason)")
     ap.add_argument("--reason", default=None, help="justificación del --force (queda en el log)")
     a = ap.parse_args()
-    enforce_freshness("MONEY", force=a.force, reason=a.reason, live=a.live)
-    run(a.date, a.bankroll, a.live, a.state)
+    if a.observe_draft and a.live:
+        ap.error("--observe-draft no se puede combinar con --live")
+    enforce_freshness(
+        "MONEY", tournaments=[a.tournament], force=a.force, reason=a.reason, live=a.live
+    )
+    run(a.date, a.bankroll, a.live, a.state, a.tournament, a.observe_draft)
 
 
 if __name__ == "__main__":

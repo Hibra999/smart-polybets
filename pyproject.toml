@@ -17,6 +17,7 @@ optimize = ["cvxpy>=1.4"]
 # >=0.1.0b12: soporte de tick 0.0025 (mercados de totales WC) — ver
 # docs/findings/2026-07-09-totals-live-sdk-tick.md
 live = ["polymarket-client>=0.1.0b12"]
+nfl = ["pandas>=2.2"]
 dev = [
     "pytest>=8.0",
     "pytest-cov>=5.0",

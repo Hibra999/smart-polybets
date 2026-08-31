@@ -85,6 +85,7 @@ TOURNAMENTS: dict[str, TournamentConfig] = {
         active_strategy="nfl_2026/strategies/game_winner_v1",
         start_date="2026-09-06",
         end_date="2027-02-08",
+        polymarket_tag_id=450,
     ),
 }
 

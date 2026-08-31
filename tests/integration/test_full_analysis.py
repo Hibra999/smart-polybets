@@ -7,8 +7,13 @@ flujo usa la selección de lado (blend) + warmup + Kelly migrados.
 from __future__ import annotations
 
 from decimal import Decimal
+from types import SimpleNamespace
+
+import pytest
 
 from agent.workflows import full_analysis, post_event_review, quick_scan
+from core.exceptions import NoActiveStrategyError
+from execution.functions import PolymarketBroker
 from research.functions.market_scanner import PolymarketMarket
 
 
@@ -100,3 +105,27 @@ def test_full_analysis_with_real_odds_source(seeded_data_root, fake_client):
     )
     assert len(decisions) == 1
     assert decisions[0]["mode"] == "AUTO"
+
+
+def test_full_analysis_blocks_draft_by_default(fake_client):
+    with pytest.raises(NoActiveStrategyError, match="No hay estrategia aprobada"):
+        full_analysis.run("lmx_001", "liga_mx_2026", client=fake_client)
+
+
+def test_full_analysis_allows_draft_with_dry_run(monkeypatch, fake_client):
+    monkeypatch.setattr(full_analysis.research_tools, "scan_event", lambda *args, **kwargs: [])
+
+    decisions = full_analysis.run(
+        "lmx_001", "liga_mx_2026", client=fake_client,
+        broker=PolymarketBroker(live=False), allow_draft=True,
+    )
+
+    assert decisions == []
+
+
+def test_full_analysis_rejects_live_broker_for_draft(fake_client):
+    with pytest.raises(NoActiveStrategyError, match="sólo dry-run"):
+        full_analysis.run(
+            "lmx_001", "liga_mx_2026", client=fake_client,
+            broker=SimpleNamespace(live=True), allow_draft=True,
+        )

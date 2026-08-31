@@ -21,7 +21,7 @@ from __future__ import annotations
 import argparse
 import sqlite3
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -31,6 +31,7 @@ from core.console import enable_utf8
 
 enable_utf8()
 
+from tournaments.registry import get_config
 from venue.discovery import match_events
 from venue.matching import canon
 
@@ -85,22 +86,27 @@ def ensure_base_rows(con: sqlite3.Connection) -> None:
             (tid_, TID, name, short, SEED_ELO))
 
 
-def discover_matches() -> list[tuple[str, str, str]]:
-    """[(home_id, away_id, kickoff_iso)] únicos de los mercados abiertos de PM."""
-    seen: dict[tuple[str, str, str], None] = {}
+def discover_matches(*, include_closed: bool = False) -> list[tuple[str, str, str]]:
+    """Partidos únicos del Apertura; al mezclar estados, el mercado abierto gana."""
+    cfg = get_config(TID)
+    seen: dict[tuple[str, str, str], tuple[str, str, str]] = {}
     unknown: set[str] = set()
-    for me in match_events(tag_id=LIGA_MX_TAG_ID, closed=False):
-        if not me.has_winner_market or me.kickoff is None:
-            continue
-        h = ALIAS_TO_ID.get(me.home_canon) or ALIAS_TO_ID.get(canon(me.home_disp))
-        a = ALIAS_TO_ID.get(me.away_canon) or ALIAS_TO_ID.get(canon(me.away_disp))
-        if not h or not a:
-            unknown.add(f"{me.home_disp} vs {me.away_disp}")
-            continue
-        seen[(h, a, me.kickoff.astimezone(timezone.utc).isoformat())] = None
+    for closed in ((True, False) if include_closed else (False,)):
+        for me in match_events(tag_id=LIGA_MX_TAG_ID, closed=closed):
+            if not me.has_winner_market or me.kickoff is None:
+                continue
+            h = ALIAS_TO_ID.get(me.home_canon) or ALIAS_TO_ID.get(canon(me.home_disp))
+            a = ALIAS_TO_ID.get(me.away_canon) or ALIAS_TO_ID.get(canon(me.away_disp))
+            if not h or not a:
+                unknown.add(f"{me.home_disp} vs {me.away_disp}")
+                continue
+            kickoff = me.kickoff.astimezone(UTC).isoformat()
+            date = kickoff[:10]
+            if cfg.start_date <= date <= cfg.end_date:
+                seen[(h, a, date)] = (h, a, kickoff)
     for u in sorted(unknown):
         print(f"  [WARN] equipos no mapeados (agregar alias): {u}")
-    return list(seen.keys())
+    return list(seen.values())
 
 
 def next_fixture_id(con: sqlite3.Connection) -> int:
@@ -111,7 +117,7 @@ def next_fixture_id(con: sqlite3.Connection) -> int:
 
 
 def sync_fixtures(con: sqlite3.Connection, matches: list[tuple[str, str, str]]) -> tuple[int, int]:
-    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    now = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
     added = updated = 0
     n = next_fixture_id(con)
     for home, away, kickoff in sorted(matches, key=lambda m: m[2]):
@@ -142,9 +148,13 @@ def sync_fixtures(con: sqlite3.Connection, matches: list[tuple[str, str, str]]) 
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--apply", action="store_true")
+    ap.add_argument(
+        "--include-closed", action="store_true",
+        help="combina mercados cerrados y abiertos del Apertura 2026",
+    )
     a = ap.parse_args()
 
-    matches = discover_matches()
+    matches = discover_matches(include_closed=a.include_closed)
     print(f"\n=== Liga MX ingest — {len(matches)} partidos en Polymarket "
           f"({'APPLY' if a.apply else 'dry-run'}) ===\n")
 

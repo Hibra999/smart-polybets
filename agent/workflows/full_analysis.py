@@ -12,13 +12,12 @@ Recibe `client` y `market_source` por inyección para ser testeable sin red.
 """
 from __future__ import annotations
 
-from typing import Callable
-
+from collections.abc import Callable
 from decimal import Decimal
 
-from core.local_state import LocalStateClient
-from core.exceptions import NoActiveStrategyError
 from agent.tools import execution_tools, portfolio_tools, research_tools, risk_tools
+from core.exceptions import NoActiveStrategyError
+from core.local_state import LocalStateClient
 from editorial.functions import build_execution_summary, build_review_report
 from execution.functions import PolymarketBroker, validate_live_price
 from optimization.functions import size_single
@@ -34,10 +33,15 @@ def run(
     qualitative_flags: list[str] | None = None,
     broker: PolymarketBroker | None = None,
     price_tolerance: Decimal = Decimal("0.15"),
+    allow_draft: bool = False,
 ) -> list[dict]:
-    strategy = load_active_strategy(tournament_id)
+    strategy = load_active_strategy(tournament_id, require_approved=not allow_draft)
     if strategy is None:
         raise NoActiveStrategyError(f"No hay estrategia aprobada para {tournament_id}")
+    if not strategy.is_approved and broker is not None and broker.live:
+        raise NoActiveStrategyError(
+            f"La estrategia {strategy.strategy_id} está en {strategy.status}: sólo dry-run"
+        )
 
     # Estado fresco al inicio del pipeline.
     portfolio_state = portfolio_tools.get_state(client)

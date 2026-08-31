@@ -9,29 +9,31 @@ Sirve para confirmar que todo está conectado ANTES de `place_bets --live`.
 """
 from __future__ import annotations
 
-import os
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+REPO = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO))
 
 from core.console import enable_utf8
+from core.env import load_env
 
 enable_utf8()  # consola Windows: stdout/stderr en UTF-8
+load_env(REPO / ".env")
 
 
 def main() -> None:
-    from core.polymarket_client import build_secure_client
     from core.exceptions import PolymarketClientError
+    from core.polymarket_client import build_secure_client
 
     try:
         client = build_secure_client()
-    except PolymarketClientError as exc:
-        print(f"[FALTA] {exc}")
-        return
+    except PolymarketClientError:
+        print("[ERROR] No se pudo crear el cliente (configuración o SDK).")
+        raise SystemExit(1) from None
     except Exception as exc:  # noqa: BLE001
-        print(f"[ERROR] No se pudo crear el cliente: {type(exc).__name__}: {exc}")
-        return
+        print(f"[ERROR] No se pudo crear el cliente: {type(exc).__name__}")
+        raise SystemExit(1) from None
 
     signer = getattr(client.signer, "address", client.signer)
     wallet = getattr(client, "wallet", None)
@@ -45,12 +47,9 @@ def main() -> None:
         approved = any(int(v) > 0 for v in allows.values())
         print(f"[OK] Balance pUSD           : {bal:.2f}")
         print(f"[OK] Allowance Exchange V2  : {'aprobado' if approved else 'NO aprobado (falta approve_erc20)'}")
-        if bal > 0 and approved:
-            print("\nTodo listo. Para operar real: POLYMARKET_LIVE=1 + place_bets --live")
-        elif bal <= 0:
-            print("\nSin pUSD libre: depositá USDC en Polymarket (se wrappea a pUSD).")
     except Exception as exc:  # noqa: BLE001
-        print(f"[ERROR] No se pudo leer el balance: {type(exc).__name__}: {exc}")
+        print(f"[ERROR] No se pudo leer el balance: {type(exc).__name__}")
+        raise SystemExit(1) from None
 
 
 if __name__ == "__main__":

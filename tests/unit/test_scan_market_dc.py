@@ -67,3 +67,9 @@ def test_bet_row_double_chance_returns_none_without_poisson():
                  no_token_id="Na", no_probability=Decimal("0.72"))]
     row = sm._bet_row("HOME_WIN", Decimal("0.6"), markets, _strat("double_chance"), None)
     assert row is None
+
+
+def test_registry_has_scan_tags_for_registered_markets():
+    assert sm.get_config("liga_mx_2026").polymarket_tag_id == 102448
+    assert sm.get_config("fifa_world_cup_2026").polymarket_tag_id == 102232
+    assert sm.get_config("nfl_2026").polymarket_tag_id == 450

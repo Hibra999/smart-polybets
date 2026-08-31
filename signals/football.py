@@ -9,7 +9,15 @@ from signals.base import Signal
 class FootballSignalProvider:
     sport = "football"
 
-    def __init__(self, tournament_id: str, strategy, predict: Callable | None = None) -> None:
+    def __init__(
+        self,
+        tournament_id: str,
+        strategy,
+        predict: Callable | None = None,
+        *,
+        sport: str = "football",
+    ) -> None:
+        self.sport = sport
         self._tournament_id = tournament_id
         self._strategy = strategy
         if predict is None:

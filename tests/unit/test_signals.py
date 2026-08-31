@@ -63,6 +63,15 @@ def test_registry_get_unknown_returns_none():
     assert get("cricket") is None
 
 
+def test_provider_can_register_for_american_football():
+    clear()
+    provider = FootballSignalProvider(
+        "nfl_2026", _FakeStrategy(), predict=lambda *_: None, sport="american_football"
+    )
+    register(provider)
+    assert get("american_football") is provider
+
+
 # ── FootballSignalProvider ────────────────────────────────────────────────────
 
 

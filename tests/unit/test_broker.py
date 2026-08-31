@@ -42,6 +42,7 @@ def test_min_size_reject():
 
 def test_live_blocked_without_env(monkeypatch):
     monkeypatch.delenv("POLYMARKET_LIVE", raising=False)
+    monkeypatch.delenv("POLYMARKET_KILL_SWITCH", raising=False)
     monkeypatch.setenv("POLYMARKET_PRIVATE_KEY", "0xdeadbeef")
     b = PolymarketBroker(live=True)
     assert b.live is False
@@ -52,6 +53,7 @@ def test_live_blocked_without_env(monkeypatch):
 
 def test_live_blocked_without_key(monkeypatch):
     monkeypatch.setenv("POLYMARKET_LIVE", "1")
+    monkeypatch.delenv("POLYMARKET_KILL_SWITCH", raising=False)
     monkeypatch.delenv("POLYMARKET_PRIVATE_KEY", raising=False)
     b = PolymarketBroker(live=True)
     assert b.live is False
