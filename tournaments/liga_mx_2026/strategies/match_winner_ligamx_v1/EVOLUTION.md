@@ -15,7 +15,7 @@
 ---
 
 ### 2026-07-18 · v0.1 (génesis) · [FORMAL]
-Borrador clonado de `match_winner_wc_v1` como punto de partida para Liga MX
+Borrador calibrado como punto de partida para Liga MX
 Apertura 2026. Declara `version: 0.1` / `status: draft` — nunca pasó a
 `under_review` ni `approved`. Este ledger se abre en bootstrap y absorbe la
 historia previa a este registro (la estrategia nunca operó en vivo, no hay

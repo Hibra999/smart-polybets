@@ -30,9 +30,9 @@ from core.console import enable_utf8
 
 enable_utf8()
 
-from adapters.football.wc_models import EloSystem
-from adapters.football.wc_poisson import PoissonGoalsModel
-from adapters.football.wc_trueskill import TrueSkillSystem
+from adapters.football.strength_models import EloSystem
+from adapters.football.poisson import PoissonGoalsModel
+from adapters.football.trueskill import TrueSkillSystem
 
 CSV = Path(__file__).resolve().parent.parent / "data" / "liga_mx_2026" / "ingest" / "MEX.csv"
 

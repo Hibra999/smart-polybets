@@ -2,8 +2,8 @@
 """Cuenta live de Polymarket en consola: saldo, posiciones y órdenes abiertas.
 
     python scripts/account.py                       # snapshot (todas las posiciones)
-    python scripts/account.py --event wc_49         # filtra por evento
-    python scripts/account.py --tournament fifa_world_cup_2026
+    python scripts/account.py --event EVENT_ID          # filtra por evento
+    python scripts/account.py --tournament nfl_2026
     python scripts/account.py --reconcile           # drift vs estado local + ajusta bankroll
     python scripts/account.py --json
 

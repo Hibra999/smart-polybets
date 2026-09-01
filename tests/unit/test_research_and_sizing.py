@@ -8,7 +8,7 @@ from research.functions.market_scanner import PolymarketMarket, find_markets
 from risk.functions.evaluate import evaluate
 from tournaments.registry import load_strategy_file
 
-STRATEGY = load_strategy_file("fifa_world_cup_2026/strategies/match_winner_v1")
+STRATEGY = load_strategy_file("liga_mx_2026/strategies/match_winner_ligamx_v1")
 
 
 def _market(prob="0.40", vol="6000"):
@@ -31,8 +31,8 @@ def _prediction():
 
     conn = sqlite3.connect(":memory:")
     seed_football(conn)
-    reader = FootballDBReader("fifa_world_cup_2026", connection=conn)
-    return FootballEloAdapter("fifa_world_cup_2026", reader=reader).get_event_prediction("m1")
+    reader = FootballDBReader("liga_mx_2026", connection=conn)
+    return FootballEloAdapter("liga_mx_2026", reader=reader).get_event_prediction("m1")
 
 
 def test_calculate_edge_builds_opportunity():
@@ -41,7 +41,7 @@ def test_calculate_edge_builds_opportunity():
     assert opp is not None
     # edge = model HOME_WIN (~0.51) - 0.40 > 0
     assert opp.edge > Decimal("0")
-    assert opp.strategy_id == "match_winner_v1"
+    assert opp.strategy_id == "match_winner_ligamx_v1"
     assert opp.polymarket_condition_id == "cond_1"
 
 

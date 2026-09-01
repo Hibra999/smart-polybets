@@ -1,16 +1,14 @@
-#!/usr/bin/env python
 """Marca como finished los partidos ya jugados, con marcador real de Polymarket.
 
-GENERALIZADO (2026-07-14): funciona para cualquier torneo registrado con
-`polymarket_tag_id` en tournaments/registry.py (Mundial, Liga MX, ...). La fuente
+Funciona para los torneos registrados con `polymarket_tag_id`. La fuente
 de verdad del marcador es la resolución de los mercados de Polymarket:
   1. mercado "Exact Score" resuelto (Liga MX y ligas nuevas), o
-  2. escalera O/U per-team + total (formato del Mundial 2026).
+  2. escalera O/U por equipo + total.
 La lógica pura vive en `venue/results.py` (unit-testeable).
 
 Actualiza home_goals, away_goals, winner_team_id, status='finished'.
 
-    python scripts/update_results.py                                # WC, dry-run
+    python scripts/update_results.py --tournament liga_mx_2026
     python scripts/update_results.py --tournament liga_mx_2026 --apply
 """
 from __future__ import annotations
@@ -33,7 +31,7 @@ from venue.results import reconstruct_score
 enable_utf8()
 
 REPO = Path(__file__).resolve().parent.parent
-_VS = re.compile(r"^(.+?)\s+vs\.?\s+(.+?)$", re.I)
+_VS = re.compile(r"^(.+?)\s+vs\.?\s+(.+?)$", re.IGNORECASE)
 
 
 def _pair_key(title: str) -> frozenset | None:
@@ -80,7 +78,7 @@ def run(tid: str, apply: bool) -> None:
     updates = []
     for f in past:
         # display: nombre real de la tabla team (con aliases de venue/matching);
-        # fallback al id sin guiones (compat WC, cuyos ids son los nombres).
+        # fallback al id sin guiones.
         home_disp = f["home_name"] or f["home_team_id"].replace("_", " ")
         away_disp = f["away_name"] or f["away_team_id"].replace("_", " ")
         mkts = (markets_by_pair.get(frozenset((_canon(home_disp), _canon(away_disp))))
@@ -114,7 +112,7 @@ def run(tid: str, apply: bool) -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--tournament", default="fifa_world_cup_2026")
+    ap.add_argument("--tournament", default="liga_mx_2026")
     ap.add_argument("--apply", action="store_true")
     a = ap.parse_args()
     run(a.tournament, a.apply)

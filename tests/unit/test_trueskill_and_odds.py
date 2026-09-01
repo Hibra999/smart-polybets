@@ -4,11 +4,11 @@ from decimal import Decimal
 
 import pytest
 
-from adapters.football.wc_trueskill import TrueSkillSystem
+from adapters.football.trueskill import TrueSkillSystem
 from core.types import ModelConfidence
 from core.utils import utcnow
 from research.functions.odds_source import SqliteOddsSource
-from research.functions.wc_strategy import pick_side
+from research.functions.strategy_selection import pick_side
 from research.schemas.match_prediction import MatchPrediction
 
 
@@ -67,7 +67,7 @@ def _prediction_with_ts() -> MatchPrediction:
             "trueskill": {"HOME_WIN": Decimal("0.40"), "AWAY_WIN": Decimal("0.60")},
         },
         appearances={"HOME_WIN": 2, "AWAY_WIN": 2},
-        model_version="wc", model_confidence=ModelConfidence.MEDIUM, sample_size=2,
+        model_version="football", model_confidence=ModelConfidence.MEDIUM, sample_size=2,
         generated_at=utcnow(),
     )
 

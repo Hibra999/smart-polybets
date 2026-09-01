@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """check_freshness.py — reporta el estado de las precondiciones de datos.
 
     python scripts/check_freshness.py          # resumen legible
@@ -15,15 +14,16 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from core.console import enable_utf8  # noqa: E402
+from core.console import enable_utf8
 
 enable_utf8()
 
-import core.preconditions as pc  # noqa: E402
+import core.preconditions as pc
+from tournaments.registry import TOURNAMENTS
 
 
 def run(as_json: bool = False) -> int:
-    results = pc.evaluate("READ")
+    results = pc.evaluate("READ", tournaments=list(TOURNAMENTS))
     violations = [r for r in results if r.is_violation]
     if as_json:
         print(json.dumps({
@@ -31,7 +31,7 @@ def run(as_json: bool = False) -> int:
             "results": [r.model_dump(mode="json") for r in results],
         }, indent=2, default=str))
     else:
-        print("\n=== Frescura de datos (torneos activos) ===")
+        print("\n=== Frescura de datos (Liga MX y NFL) ===")
         if not results:
             print("  (no hay torneos activos por fecha)")
         for r in results:

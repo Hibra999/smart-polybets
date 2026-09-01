@@ -6,7 +6,7 @@ Contexto:
     el título "Will X win on YYYY-MM-DD?" usa la FECHA de ET, no la de UTC.
   - El usuario está en Playa del Carmen (America/Cancun = UTC-5 FIJO, sin DST).
 
-En verano (Mundial) PDC (UTC-5) va 1 hora detrás de ET (EDT, UTC-4), por lo que la
+En verano PDC (UTC-5) va 1 hora detrás de ET (EDT, UTC-4), por lo que la
 fecha del título de Poly puede ir 1 día adelante de la fecha local. Por eso mostramos
 local + ET juntas.
 

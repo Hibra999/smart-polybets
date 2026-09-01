@@ -21,7 +21,7 @@ def test_placeholder_upcoming_is_advisory_violation(tmp_path, monkeypatch):
     _mk_db(db, [("f1", "real", "ph", soon, "scheduled")],
            [("real", "Real", 1500.0), ("ph", "Placeholder", None)])
     monkeypatch.setattr(pc, "db_path", lambda tid: db)
-    r = pc.check_placeholders_synced("fifa_world_cup_2026", now=now)
+    r = pc.check_placeholders_synced("liga_mx_2026", now=now)
     assert r.severity == "advisory" and r.ok is False and r.is_violation is False
 
 

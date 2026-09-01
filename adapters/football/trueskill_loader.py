@@ -1,8 +1,4 @@
-"""Adapter TrueSkill para fútbol.
-
-STUB INTERFACE: igual que bayes_loader, queda preparado para wirearse al modelo
-TrueSkill de `pypro_worldcup_betting`. Por ahora degrada a Elo.
-"""
+"""Adapter TrueSkill compatible que degrada explícitamente al modelo Elo."""
 from __future__ import annotations
 
 from adapters.base import SportAdapter

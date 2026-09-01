@@ -1,0 +1,37 @@
+{
+  "note": "Fixture sintético Liga MX + NFL",
+  "expected_net_pnl": "6.00",
+  "trades": [
+    {
+      "side": "BUY",
+      "size": "20",
+      "price": "0.40",
+      "condition_id": "liga-1",
+      "outcome": "Yes",
+      "title": "Will Club America win?"
+    },
+    {
+      "side": "SELL",
+      "size": "20",
+      "price": "0.50",
+      "condition_id": "liga-1",
+      "outcome": "Yes",
+      "title": "Will Club America win?"
+    },
+    {
+      "side": "BUY",
+      "size": "10",
+      "price": "0.60",
+      "condition_id": "nfl-1",
+      "outcome": "Yes",
+      "title": "Will Seattle win?"
+    }
+  ],
+  "redemptions": [
+    {
+      "condition_id": "nfl-1",
+      "amount": "10",
+      "title": "Will Seattle win?"
+    }
+  ]
+}

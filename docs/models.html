@@ -1,229 +1,55 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Modelos — Copa del Mundo 2026</title>
-<style>
-  :root{--bg:#0d1117;--panel:#161b22;--panel2:#1c2333;--ink:#e6edf3;--muted:#8b949e;--line:#30363d;
-    --accent:#58a6ff;--elo:#58a6ff;--bayes:#a371f7;--ts:#3fb950;--poi:#d29922;--cyan:#39c5cf}
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 -apple-system,Segoe UI,Roboto,Arial,sans-serif}
-  .wrap{max-width:1040px;margin:0 auto;padding:32px 20px 80px}
-  h1{font-size:28px;margin:0 0 4px}
-  h2{font-size:20px;margin:42px 0 6px;padding-bottom:8px;border-bottom:1px solid var(--line)}
-  .sub{color:var(--muted);margin:0}
-  p{color:#c9d1d9}
-  .pill{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:20px;padding:2px 9px}
-  .lead{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-top:14px}
-  figure{margin:14px 0 0;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px}
-  figcaption{color:var(--muted);font-size:12.5px;margin-top:8px;padding:0 4px}
-  svg{width:100%;height:auto;display:block}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-top:14px;border-left:4px solid var(--accent)}
-  .card h3{margin:0 0 2px;font-size:17px}
-  .card .role{color:var(--muted);font-size:13px;margin:0 0 10px}
-  .fx{background:#010409;border:1px solid var(--line);border-radius:8px;padding:10px 13px;margin:8px 0;
-      font:13px/1.7 "SF Mono",Consolas,monospace;color:#e6edf3;overflow-x:auto}
-  .fx .v{color:var(--cyan)} .fx .cm{color:var(--muted)}
-  ul{margin:7px 0;padding-left:20px}li{margin:3px 0;color:#c9d1d9}
-  code{background:#010409;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font:12.5px/1.4 "SF Mono",Consolas,monospace}
-  table{width:100%;border-collapse:collapse;margin-top:12px;font-size:13.5px}
-  th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
-  th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase}
-  td code{font-size:12px}
-  .foot{margin-top:40px;color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);padding-top:14px}
-  .badge{display:inline-block;font-size:10.5px;padding:2px 8px;border-radius:20px;font-weight:600;margin-left:6px}
-  .b-win{background:rgba(88,166,255,.14);color:#58a6ff;border:1px solid #1f6feb}
-  .b-goal{background:rgba(210,153,34,.16);color:#d29922;border:1px solid #9e6a03}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>PEPA — Modelos Liga MX y NFL</title>
+  <style>
+    body{max-width:900px;margin:40px auto;padding:0 20px;background:#0d1117;color:#e6edf3;
+      font:15px/1.6 system-ui,sans-serif}h1,h2{line-height:1.2}h2{margin-top:32px}
+    section{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:16px;margin:14px 0}
+    code{background:#010409;padding:2px 5px;border-radius:4px}table{width:100%;border-collapse:collapse}
+    th,td{border:1px solid #30363d;padding:8px;text-align:left}.warn{color:#d29922}
+  </style>
 </head>
 <body>
-<div class="wrap">
+  <h1>Modelos predictivos</h1>
+  <p>Dos torneos, un pipeline de contratos tipados. Ningún modelo coloca órdenes.</p>
 
-  <h1>Modelos predictivos — FIFA World Cup 2026</h1>
-  <p class="sub">Cómo el sistema estima la probabilidad de cada resultado <span class="pill">adapters/football/</span></p>
+  <h2>Liga MX — <code>liga_mx_2026</code></h2>
+  <section>
+    <table>
+      <tr><th>Modelo</th><th>Uso</th><th>Configuración</th></tr>
+      <tr><td>Elo</td><td>Fuerza y probabilidad base</td><td>localía calibrada: 80 puntos</td></tr>
+      <tr><td>Bayes Beta-Bernoulli</td><td>Fuerza con incertidumbre</td><td>prior sembrado desde Elo</td></tr>
+      <tr><td>TrueSkill</td><td>Señal de fuerza relativa</td><td>μ/σ evolutivos</td></tr>
+      <tr><td>Poisson</td><td>1X2, goles y doble oportunidad</td><td><code>neutral=False</code></td></tr>
+    </table>
+    <p><code>FootballModelAdapter</code> reproduce los partidos terminados en orden y
+    expone componentes Elo, Bayes y TrueSkill. <code>strategy_selection.pick_side</code>
+    aplica el criterio del <code>STRATEGY.md</code>.</p>
+    <p class="warn">La estrategia sigue <code>draft</code>: sólo observación con
+    <code>--observe-draft</code>, nunca live.</p>
+  </section>
 
-  <div class="lead">
-    Hay <b>cuatro</b> modelos, todos <b>funciones puras</b> (sin DB, sin red) sembrados desde el ranking FIFA y evolucionados partido a partido con resultados reales del torneo. Tres predicen el <b>ganador</b> (Elo, Bayes, TrueSkill) y se combinan en un <b>ensemble</b>; uno predice <b>goles</b> (Poisson) para mercados Over/Under y BTTS, y además <b>precia la doble-oportunidad</b> (1X). La probabilidad resultante se compara con el precio de Polymarket para calcular el <b>edge</b>.
-  </div>
+  <h2>NFL — <code>nfl_2026</code></h2>
+  <section>
+    <p>El adapter activo usa TrueSkill binario, procesando juegos cronológicamente.
+    Elo y Bayes están disponibles como señales auxiliares. El empate práctico no se
+    incorpora al mercado ganador.</p>
+    <p>La estrategia <code>game_winner_v1</code> elige por probabilidad TrueSkill,
+    exige warmup y dimensiona con Kelly fraccional.</p>
+  </section>
 
-  <!-- FLOW DIAGRAM -->
-  <h2>Flujo del modelo</h2>
-  <figure>
-    <svg viewBox="0 0 900 340" role="img" aria-label="Flujo del modelo">
-      <defs>
-        <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#58a6ff"/></marker>
-        <marker id="ag" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#5b6673"/></marker>
-      </defs>
-      <style>
-        .bx{stroke-width:1.4;rx:8} .t{fill:#e6edf3;font:600 12.5px sans-serif} .tb{fill:#e6edf3;font:700 13px sans-serif}
-        .ts{fill:#9aa4af;font:10.5px sans-serif} .e{stroke:#58a6ff;stroke-width:1.9;fill:none;marker-end:url(#a)}
-        .eg{stroke:#5b6673;stroke-width:1.5;fill:none;marker-end:url(#ag);stroke-dasharray:4 3}
-      </style>
+  <h2>De probabilidad a decisión</h2>
+  <section>
+    <p><code>edge = probabilidad_modelo - probabilidad_mercado</code>. Research produce
+    la oportunidad; Risk decide <code>AUTO</code>, <code>REVIEW</code>,
+    <code>DISCARD</code> o <code>SKIP</code>; Optimization limita Kelly; Execution
+    vuelve a validar el precio. Un estado <code>AUTO</code> no prueba una ejecución.</p>
+  </section>
 
-      <!-- seed -->
-      <rect class="bx" x="12" y="140" width="120" height="52" fill="#12161d" stroke="#39414d" rx="8"/>
-      <text class="t" x="72" y="162" text-anchor="middle">Ranking FIFA</text><text class="ts" x="72" y="178" text-anchor="middle">puntos</text>
-      <text class="ts" x="180" y="150" text-anchor="middle">fifa_to_elo</text>
-      <line class="e" x1="132" y1="166" x2="228" y2="166"/>
-
-      <!-- elo hub -->
-      <rect class="bx" x="230" y="140" width="120" height="52" fill="#12233a" stroke="#1f6feb" rx="8"/>
-      <text class="tb" x="290" y="162" text-anchor="middle">Elo</text><text class="ts" x="290" y="178" text-anchor="middle">ratings (K=40)</text>
-
-      <!-- results stream -->
-      <rect class="bx" x="230" y="248" width="120" height="46" fill="#12161d" stroke="#39414d" rx="8"/>
-      <text class="t" x="290" y="268" text-anchor="middle">Resultados</text><text class="ts" x="290" y="283" text-anchor="middle">reales del torneo</text>
-
-      <!-- three models -->
-      <rect class="bx" x="410" y="40" width="150" height="48" fill="#12233a" stroke="#1f6feb" rx="8"/>
-      <text class="tb" x="485" y="60" text-anchor="middle">Elo</text><text class="ts" x="485" y="76" text-anchor="middle">P logística</text>
-      <rect class="bx" x="410" y="146" width="150" height="48" fill="#1e1633" stroke="#8957e5" rx="8"/>
-      <text class="tb" x="485" y="166" text-anchor="middle">Bayes</text><text class="ts" x="485" y="182" text-anchor="middle">Beta-Bernoulli</text>
-      <rect class="bx" x="410" y="252" width="150" height="48" fill="#0f2a1a" stroke="#238636" rx="8"/>
-      <text class="tb" x="485" y="272" text-anchor="middle">TrueSkill</text><text class="ts" x="485" y="288" text-anchor="middle">μ, σ (draw-aware)</text>
-
-      <!-- seeds -->
-      <line class="e" x1="290" y1="140" x2="290" y2="70" ></line><line class="e" x1="290" y1="70" x2="408" y2="66"/>
-      <text class="ts" x="350" y="60" text-anchor="middle">seed</text>
-      <path class="e" d="M350,166 L408,168"/>
-      <path class="e" d="M290,140 C290,120 360,120 360,120 L360,270 L408,272"/>
-      <!-- results update all -->
-      <path class="eg" d="M350,262 C380,262 380,66 408,66"/>
-      <path class="eg" d="M350,266 L408,170"/>
-      <path class="eg" d="M350,276 L408,276"/>
-      <text class="ts" x="384" y="304" text-anchor="middle">update partido a partido</text>
-
-      <!-- blend -->
-      <rect class="bx" x="620" y="92" width="130" height="56" fill="#331d2b" stroke="#da3b8b" rx="8"/>
-      <text class="tb" x="685" y="114" text-anchor="middle">Blend 50/50</text><text class="ts" x="685" y="130" text-anchor="middle">w·Elo + (1−w)·Bayes</text>
-      <line class="e" x1="560" y1="64" x2="618" y2="108"/>
-      <line class="e" x1="560" y1="170" x2="618" y2="130"/>
-
-      <!-- pick prob -->
-      <rect class="bx" x="620" y="200" width="130" height="50" fill="#12161d" stroke="#39414d" rx="8"/>
-      <text class="t" x="685" y="220" text-anchor="middle">P(lado elegido)</text><text class="ts" x="685" y="236" text-anchor="middle">pick_side</text>
-      <line class="e" x1="685" y1="148" x2="685" y2="198"/>
-      <line class="e" x1="560" y1="276" x2="618" y2="240"/>
-
-      <!-- edge -->
-      <rect class="bx" x="788" y="200" width="100" height="50" fill="#0f2b2e" stroke="#1b8a92" rx="8"/>
-      <text class="tb" x="838" y="222" text-anchor="middle">edge</text><text class="ts" x="838" y="238" text-anchor="middle">modelo − mercado</text>
-      <line class="e" x1="750" y1="225" x2="786" y2="225"/>
-
-      <!-- poisson separate -->
-      <rect class="bx" x="620" y="286" width="268" height="44" fill="#2a2110" stroke="#9e6a03" rx="8"/>
-      <text class="tb" x="754" y="305" text-anchor="middle">Poisson (goles)  →  Over/Under · BTTS · 1X2</text>
-      <text class="ts" x="754" y="320" text-anchor="middle">modelo separado y complementario</text>
-    </svg>
-    <figcaption>La semilla FIFA→Elo alimenta los tres modelos de ganador; los resultados reales los evolucionan. Elo+Bayes se combinan (blend) y <code>pick_side</code> da la probabilidad del lado. Poisson corre aparte para mercados de goles.</figcaption>
-  </figure>
-
-  <!-- ELO -->
-  <h2>1 · Elo <span class="badge b-win">ganador</span></h2>
-  <div class="card" style="border-left-color:var(--elo)">
-    <p class="role">Rating de fuerza actualizado por resultado, con multiplicador por margen de victoria (estilo FiveThirtyEight). K alto porque el Mundial tiene pocos partidos.</p>
-    <div class="fx"><span class="cm"># probabilidad esperada (la E de Elo)</span>
-E_A = 1 / (1 + 10^((R_B − R_A) / 400))
-
-<span class="cm"># actualización tras el partido</span>
-R_A ← R_A + K·m·(S_A − E_A)      <span class="cm">K=40 · S∈{1, 0.5, 0}</span>
-m   = log(|Δgoles|+1) · 2.2/((|ΔElo|·0.001)+2.2)   <span class="cm"># margen; empate → m=1</span>
-
-<span class="cm"># semilla desde ranking FIFA</span>
-R_i = 1500 + (FIFA_i − media_FIFA)·0.9</div>
-    <ul><li><b>Salida:</b> <code>E_A</code> = P(el equipo A gana) — la probabilidad principal del sistema.</li>
-    <li>K=40 (agresivo), margen amortiguado para no sobre‑reaccionar a goleadas entre equipos dispares.</li></ul>
-  </div>
-
-  <!-- BAYES -->
-  <h2>2 · Bayes — Beta-Bernoulli <span class="badge b-win">ganador</span></h2>
-  <div class="card" style="border-left-color:var(--bayes)">
-    <p class="role">Creencia probabilística por equipo con incertidumbre explícita. El prior sale del Elo; cada resultado actualiza la Beta. Da media <b>e intervalo creíble</b>.</p>
-    <div class="fx"><span class="cm"># prior desde Elo (strength = pseudo-muestra del prior = 4)</span>
-p  = 1/(1+10^((1500−Elo)/400)),  clip[0.05, 0.95]
-α  = p·4,   β = (1−p)·4
-
-<span class="cm"># update: success s ∈ {1 gana, 0.5 empata, 0 pierde}</span>
-α ← α + s,   β ← β + (1−s)
-
-<span class="cm"># estimación</span>
-media = α/(α+β)      var = αβ / ((α+β)²(α+β+1))</div>
-    <ul><li><b>Salida:</b> <code>media</code> = P(gana), + <code>var</code> para el intervalo creíble (mide confianza).</li>
-    <li>Complementa a Elo: pondera cuánta evidencia respalda la estimación (equipos con pocos partidos → más incertidumbre).</li></ul>
-  </div>
-
-  <!-- TRUESKILL -->
-  <h2>3 · TrueSkill <span class="badge b-win">ganador</span></h2>
-  <div class="card" style="border-left-color:var(--ts)">
-    <p class="role">Habilidad como distribución gaussiana (μ media, σ incertidumbre), con empates nativos. Port 1v1 puro validado numéricamente vs la librería original (1e‑5).</p>
-    <div class="fx"><span class="cm"># probabilidad de ganar</span>
-P(A) = Φ( (μ_A − μ_B) / sqrt(2β² + σ_A² + σ_B²) )
-
-<span class="cm"># parámetros (idénticos a la lib): μ0=25 · σ0=25/3 · β=σ0/2 · τ=σ0/100</span>
-<span class="cm"># semilla desde Elo</span>
-μ_i = 25 + (Elo_i − 1500)/40,   σ_i = σ0
-<span class="cm"># update por factores V/W (truncamiento gaussiano), con p_empate≈0.26</span></div>
-    <ul><li><b>Salida:</b> <code>P(A)</code> con manejo nativo de empates; <code>expose = μ − 3σ</code> como rating conservador.</li>
-    <li>En la estrategia, el criterio <code>trueskill</code> usa esta probabilidad directamente (los demás usan Elo).</li></ul>
-  </div>
-
-  <!-- POISSON -->
-  <h2>4 · Poisson — goles <span class="badge b-goal">Over/Under · BTTS</span></h2>
-  <div class="card" style="border-left-color:var(--poi)">
-    <p class="role">Modelo SEPARADO que predice goles (no el ganador). Tasas de ataque/defensa por equipo con <b>shrinkage</b> hacia la media (pocos partidos por equipo). Sede neutral (Mundial).</p>
-    <div class="fx"><span class="cm"># tasas encogidas (pseudo-conteo k=5 hacia la media base)</span>
-attack_i  = (goles_i + k·base)/(partidos_i + k) / base
-defense_i = (concedidos_i + k·base)/(partidos_i + k) / base
-
-<span class="cm"># goles esperados (neutral: sin ventaja local, hf=1)</span>
-λ_home = base · attack_home · defense_away · hf
-λ_away = base · attack_away · defense_home / hf
-goles ~ Poisson(λ)   (home y away independientes)
-
-<span class="cm"># mercados derivados de la grilla de marcadores</span>
-P(Over 2.5)  = Σ P(i,j) para i+j ≥ 3
-P(BTTS)      = (1−e^−λ_home)(1−e^−λ_away)</div>
-    <ul><li><b>Salida:</b> P(Over/Under), P(BTTS), 1X2 derivado y marcadores más probables.</li>
-    <li><b>Precia la doble-oportunidad (1X):</b> <code>P(pick)+P(empate)</code> del 1X2 es la probabilidad del bet <code>double_chance</code> (que el rival del pick NO gane a 90'), usada para el edge vs el precio del lado NO del mercado del rival. Es el único modelo con probabilidad de empate, por eso precia este bet.</li>
-    <li>El shrinkage evita que un único resultado extremo dispare las tasas de un equipo con 2–3 partidos.</li></ul>
-  </div>
-
-  <!-- ENSEMBLE -->
-  <h2>El ensemble: cómo se elige el lado</h2>
-  <div class="card" style="border-left-color:var(--accent)">
-    <p class="role"><code>research/functions/wc_strategy.py::pick_side</code> combina los modelos según el <code>side_criterion</code> del STRATEGY.md y elige el lado con mayor score.</p>
-    <div class="fx"><span class="cm"># blend (criterio activo del Mundial, w = blend_weight = 0.5)</span>
-score_home = w·Elo_home + (1−w)·Bayes_home
-score_away = w·Elo_away + (1−w)·Bayes_away
-lado = HOME_WIN si score_home ≥ score_away, si no AWAY_WIN
-
-<span class="cm"># probabilidad para el sizing (p_pick): Elo del lado (o TrueSkill si el criterio es trueskill)</span>
-<span class="cm"># edge = p_pick − precio_mercado(Polymarket)</span></div>
-    <ul>
-      <li><b>Criterios disponibles:</b> <code>elo</code> · <code>bayes</code> · <code>blend</code> (activo) · <code>trueskill</code>.</li>
-      <li><b>Confianza</b> (HIGH/MEDIUM/LOW) por tamaño de muestra del lado más flaco → hoy MEDIUM (2–3 partidos), razón para quedarse en ¼ Kelly.</li>
-      <li>Filtros opcionales del STRATEGY.md: warmup (saltar hasta la N‑ésima aparición del lado) y filtro Bayes (descartar si la media &lt; umbral).</li>
-    </ul>
-  </div>
-
-  <!-- PARAMS -->
-  <h2>Parámetros de referencia</h2>
-  <table>
-    <tr><th>Modelo</th><th>Parámetro</th><th>Valor</th><th>Rol</th></tr>
-    <tr><td>Elo</td><td><code>K</code> · escala · margen</td><td>40 · /400 · 2.2</td><td>velocidad de ajuste · logística · amortiguación de goleadas</td></tr>
-    <tr><td>Elo seed</td><td><code>scale</code> (FIFA→Elo)</td><td>0.9 · media 1500</td><td>re-centrado del ranking FIFA</td></tr>
-    <tr><td>Bayes</td><td><code>strength</code> del prior</td><td>4.0</td><td>pseudo-muestra del prior Beta</td></tr>
-    <tr><td>TrueSkill</td><td>μ0 · σ0 · β · τ</td><td>25 · 25/3 · σ0/2 · σ0/100</td><td>media · incertidumbre · ruido de skill · dinámica</td></tr>
-    <tr><td>TrueSkill</td><td><code>p_empate</code></td><td>0.26</td><td>tasa de empates (fase de grupos)</td></tr>
-    <tr><td>Poisson</td><td><code>shrink_k</code> · <code>neutral</code></td><td>5.0 · true</td><td>encogimiento a la media · sin ventaja local</td></tr>
-    <tr><td>Ensemble</td><td><code>blend_weight</code></td><td>0.5</td><td>peso de Elo en el blend (resto Bayes)</td></tr>
-  </table>
-
-  <div class="foot">
-    Modelos en <code>adapters/football/</code> (elo/bayes en <code>wc_models.py</code>, TrueSkill en <code>wc_trueskill.py</code>, Poisson en <code>wc_poisson.py</code>) · funciones puras, testeadas (TrueSkill validado 1e-5 vs la librería). Ver <code>docs/architecture.html</code> y <code>docs/use-cases.html</code>.
-  </div>
-
-</div>
+  <p>Implementación: <code>adapters/football/</code>,
+  <code>adapters/american_football/</code> y <code>research/functions/</code>.</p>
 </body>
 </html>

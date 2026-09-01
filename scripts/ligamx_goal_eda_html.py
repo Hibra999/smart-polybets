@@ -156,8 +156,8 @@ def main() -> None:
 <div class="muted">EDA 2025/26 (ESPN, {n} partidos, {goals} goles) · favoritos por cierre de football-data ·
 generado {now} · <code>python scripts/ligamx_goal_eda_html.py</code></div>
 
-<div class="banner"><b style="color:{AMBER}">Liga MX es más hostil que el WC para aguantar tarde:</b>
-<small class="muted">3.10 goles/partido (WC KO: 2.46), el favorito ya anotó antes del min 30 en el
+<div class="banner"><b style="color:{AMBER}">Liga MX es hostil para aguantar tarde:</b>
+<small class="muted">3.10 goles/partido; el favorito ya anotó antes del min 30 en el
 {cfav[30]:.0%} de los partidos, y el bin 76-90 es el más denso. El decaimiento útil vive temprano.
 Detalle: docs/findings/2026-07-14-ligamx-goles-eda.md</small></div>
 
@@ -188,7 +188,7 @@ y hover. Las rojas se concentran tarde (mediana min 74): tercer factor de volati
 <h2>3. Distribución de goles por bin de 15'</h2>
 <div class="panel">{bins_chart(matches)}
 <small class="muted">En rojo el bin más denso (76-90 + descuentos): exactamente donde el default
-heredado del WC (hard_exit 105) nos tendría adentro. Hipótesis a testear: salir en 60-75.</small></div>
+actual hard_exit 105 nos tendría adentro. Hipótesis a testear: salir en 60-75.</small></div>
 
 <h2>Hipótesis de reglas para J1-J3 (no aplicadas — necesitan price paths)</h2>
 <ol style="font-size:14px">

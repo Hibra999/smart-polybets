@@ -26,8 +26,7 @@ kill-switch off + confirmación tipeada AL INICIO (al disparo importa la velocid
         --entry 0.48 --shares 40                       # dry-run
     python scripts/theta_monitor.py --market "…" --entry 0.46 --shares 40 --live
 
-⚠️ La venta manual NO queda en el ledger: asentarla con backfill_manual_trades.py.
-Finding: docs/findings/2026-07-14-theta-trade-lay-favorito.md
+Después de una salida live, consultar la cuenta y reconciliar el estado local.
 """
 from __future__ import annotations
 
@@ -349,7 +348,7 @@ def main() -> None:
                 print(f"  → {res.status}  order_id={res.order_id}")
                 print(summary(a.entry, a.shares, fill_bid, n_ticks, f"VENDIDO ({action})"))
                 if res.status == "live":
-                    print("  (asentar en el ledger con backfill_manual_trades.py)")
+                    print("  (consultar la cuenta y reconciliar el estado local)")
                 exit_reason = f"{action} @ {fill_bid}"
                 store.close_session(ended_at=_now_iso(), exit_reason=exit_reason,
                                     exit_price=fill_bid, pnl_usdc=pnl,

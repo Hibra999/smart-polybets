@@ -4,10 +4,10 @@ import core.preconditions as pc
 from core.schemas.precondition import PreconditionResult
 
 
-def _viol(tid="wc"):
+def _viol(tid="liga"):
     return PreconditionResult(name="fixtures_finalized", ok=False, severity="mandatory",
                               tournament_id=tid, detail="1 sin finalizar",
-                              remedy_cmd="python scripts/update_results.py --tournament wc --apply")
+                              remedy_cmd="python scripts/update_results.py --tournament liga --apply")
 
 
 def test_read_warns_and_proceeds(monkeypatch, capsys):
@@ -51,7 +51,7 @@ def test_evaluate_includes_gates_only_when_live(monkeypatch):
                         PreconditionResult(name="fixtures_finalized", ok=True, severity="mandatory"))
     monkeypatch.setattr(pc, "check_placeholders_synced", lambda tid, **k:
                         PreconditionResult(name="placeholders_synced", ok=True, severity="advisory"))
-    names_dry = [r.name for r in pc.evaluate("MONEY", tournaments=["wc"], live=False)]
-    names_live = [r.name for r in pc.evaluate("MONEY", tournaments=["wc"], live=True)]
+    names_dry = [r.name for r in pc.evaluate("MONEY", tournaments=["liga"], live=False)]
+    names_live = [r.name for r in pc.evaluate("MONEY", tournaments=["liga"], live=True)]
     assert "live_gates_ready" not in names_dry
     assert "live_gates_ready" in names_live

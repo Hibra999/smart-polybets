@@ -2,7 +2,7 @@
 """Construye el SQLite de un torneo a partir del DDL canónico de su deporte.
 
 Uso:
-    python scripts/build_db.py --tournament fifa_world_cup_2026 --sport football
+    python scripts/build_db.py --tournament liga_mx_2026 --sport football
     python scripts/build_db.py --tournament nfl_2026 --sport american_football
 
 Crea `data/{tournament_id}/{tournament_id}.sqlite` con el schema vacío. La
@@ -51,7 +51,7 @@ def build_db(tournament_id: str, sport: str, *, overwrite: bool = False) -> Path
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Construye el SQLite de un torneo.")
-    parser.add_argument("--tournament", required=True, help="tournament_id, ej: fifa_world_cup_2026")
+    parser.add_argument("--tournament", required=True, help="tournament_id, ej: liga_mx_2026")
     parser.add_argument(
         "--sport",
         required=True,

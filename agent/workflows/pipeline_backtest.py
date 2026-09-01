@@ -7,15 +7,14 @@ from typing import Any
 
 from adapters.american_football.db_reader import AmericanFootballDBReader
 from adapters.american_football.nfl_pipeline import NFLPipeline
-from adapters.football.db_reader import FootballDBReader
-from adapters.football.wc_pipeline import WorldCupPipeline
+from adapters.football.model_pipeline import FootballModelPipeline
 from agent.workflows.nfl_backtest import american_to_decimal
 from core.strategy import StrategyConfig
 from core.types import ModelConfidence
 from optimization.functions import size_single
 from portfolio.schemas.portfolio_state import PortfolioState
 from research.functions.market_scanner import PolymarketMarket
-from research.functions.wc_strategy import build_worldcup_opportunity
+from research.functions.strategy_selection import build_strategy_opportunity
 from research.schemas.match_prediction import MatchPrediction
 from risk.functions import evaluate
 from scripts.ligamx_backtest import load_matches, torneo_corto
@@ -139,7 +138,7 @@ def simulate_games(
                 priced_games += 1
                 snap = pipeline.prematch(game["home"], game["away"])
                 prediction = _prediction(game, snap, strategy)
-                opportunity = build_worldcup_opportunity(
+                opportunity = build_strategy_opportunity(
                     prediction,
                     _markets(game, strategy),
                     strategy,
@@ -276,7 +275,7 @@ def _liga_mx(season: str, bankroll: float) -> dict[str, Any]:
     target = [match for match in matches if match["season"] == season]
     if not target:
         raise ValueError(f"Sin partidos de Liga MX para la temporada {season}")
-    pipeline = WorldCupPipeline(home_adv_elo=cfg.home_adv_elo)
+    pipeline = FootballModelPipeline(home_adv_elo=cfg.home_adv_elo)
     for match in matches:
         if match["date"] >= target[0]["date"]:
             break
@@ -372,56 +371,6 @@ def _nfl(season: int, bankroll: float) -> dict[str, Any]:
     )
 
 
-def _world_cup(bankroll: float) -> dict[str, Any]:
-    strategy = load_active_strategy("fifa_world_cup_2026", require_approved=False)
-    assert strategy is not None
-    reader = FootballDBReader("fifa_world_cup_2026")
-    odds = {
-        row["fixture_id"]: row
-        for row in reader.query(
-            "SELECT fixture_id,home_prob,away_prob FROM polymarket_odds "
-            "WHERE source='polymarket'"
-        )
-    }
-    rows = reader.query(
-        "SELECT f.*,COALESCE(p.name,'group') phase,p.is_knockout FROM fixture f "
-        "LEFT JOIN phase p ON p.id=f.phase_id WHERE f.status='finished' "
-        "AND f.home_goals IS NOT NULL ORDER BY f.kickoff_utc"
-    )
-    games = []
-    for row in rows:
-        price = odds.get(row["id"], {})
-        games.append(
-            {
-                "id": row["id"],
-                "home": row["home_team_id"],
-                "away": row["away_team_id"],
-                "home_score": int(row["home_goals"]),
-                "away_score": int(row["away_goals"]),
-                "winner": (
-                    HOME
-                    if row["home_goals"] > row["away_goals"]
-                    else AWAY if row["away_goals"] > row["home_goals"] else DRAW
-                ),
-                "kickoff_utc": row["kickoff_utc"],
-                "phase": "knockout" if row["is_knockout"] else row["phase"],
-                "market_home": price.get("home_prob"),
-                "market_away": price.get("away_prob"),
-                "target": True,
-            }
-        )
-    pipeline = WorldCupPipeline(home_adv_elo=0)
-    pipeline.seed(reader.get_seed_elo())
-    return simulate_games(
-        "fifa_world_cup_2026",
-        games,
-        pipeline,
-        strategy,
-        bankroll=bankroll,
-        price_source="stored Polymarket pre-match probabilities",
-    )
-
-
 def run(
     tournament_id: str,
     *,
@@ -434,6 +383,4 @@ def run(
         return _liga_mx(season or "2025/2026", bankroll)
     if tournament_id == "nfl_2026":
         return _nfl(int(season or 2025), bankroll)
-    if tournament_id == "fifa_world_cup_2026":
-        return _world_cup(bankroll)
     raise ValueError(f"Backtest no implementado para {tournament_id}")

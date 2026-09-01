@@ -16,8 +16,7 @@
 - **Todo por el SDK de Polymarket** (regla de oro #7): equipos y calendario salen de los
   mercados, no de scrapers. Tag Liga MX = **102448** (slug `mex`); Apertura = 105620.
 - **Ventana rodante**: PM solo lista ~2 jornadas hacia adelante → correr la ingesta a
-  diario o el fixture de un mercado cerrado queda huérfano (lección del Mundial,
-  finding 2026-07-09-data-freshness-gaps).
+  diario o el fixture de un mercado cerrado queda huérfano.
 - Cada partido aparece como ~6 eventos en PM (principal + "more markets"); la ingesta
   filtra por `has_winner_market=True` y dedupea por (home, away, fecha).
 - **Atlante FC está en la liga 2026** (no Mazatlán) — verificado en el mercado campeón.

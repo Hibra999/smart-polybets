@@ -1,35 +1,58 @@
-# Repository Guidelines
+# Reglas del repositorio para Codex
 
-At the start of every session, read `INIT.md` for the current operational handoff.
+Este repositorio se opera exclusivamente con Codex. Al iniciar una sesión, lee
+`INIT.md`; si el usuario pide ayuda, lee también `docs/PROMPTS.md`.
 
-## Project Structure & Module Organization
+## Alcance
 
-This Python 3.11 project uses flat, top-level packages. The main pipeline flows through `research/`, `risk/`, `optimization/`, `execution/`, `portfolio/`, and `editorial/`. Shared schemas and utilities live in `core/`; tournament configuration and strategies live under `tournaments/<tournament_id>/`. All Polymarket access must go through `venue/`—do not call an SDK directly from scripts or domain packages. Command-line entry points are in `scripts/`, canonical database DDL and ingest data are in `data/`, documentation is in `docs/`, and tests are split between `tests/unit/` and `tests/integration/`.
+Sólo existen dos mercados soportados:
 
-## Build, Test, and Development Commands
+- `liga_mx_2026`: Liga MX Apertura 2026, estrategia `draft`; observación y dry-run.
+- `nfl_2026`: NFL 2026, estrategia aprobada; dry-run salvo autorización live explícita.
+
+No agregues mercados fuera de esos dos IDs. El flujo único es
+`Research → Risk → Optimization → Execution → Portfolio → Editorial`.
+
+## Ayuda
+
+Cuando el usuario escriba `Codex, help`, `help`, `ayuda`, “qué puedo pedir” o solicite
+los prompts disponibles, usa `$pepa-help`: muestra el catálogo de `docs/PROMPTS.md` y
+no ejecutes ninguno de sus ejemplos.
+
+## Organización y límites
+
+La lógica pura vive en `*/functions/`, los contratos Pydantic en `*/schemas/`, los
+comandos en `scripts/`, los datos en `data/` y las estrategias en `tournaments/`.
+Todo acceso a Polymarket pasa por `venue/`; ningún script o área llama al SDK directo.
+Respeta los `SKILL.md` del área que toques y no inviertas dependencias entre etapas.
+
+## Desarrollo
 
 ```bash
-pip install -e ".[dev]"             # editable install with pytest, coverage, and Ruff
-pytest                              # run the configured test suite quietly
-pytest tests/unit/test_kelly.py     # run one focused test module
-ruff check .                        # lint all Python sources
-python scripts/build_db.py --tournament liga_mx_2026 --sport football
+python3.11 -m venv .venv
+.venv/bin/pip install --pre -e ".[dev,optimize,live,nfl]"
+.venv/bin/pytest
+.venv/bin/ruff check .
 ```
 
-Optional integrations use `pip install -e ".[optimize]"` or `pip install -e ".[live]"`. There is no separate build step for normal development.
+Usa Python 3.11, cuatro espacios, línea máxima de 100 caracteres y nombres estándar
+de Python. Prefiere pruebas deterministas, SQLite en memoria y cero red en tests.
 
-## Coding Style & Naming Conventions
+## Entrega y Git
 
-Use four-space indentation, Python 3.11 syntax, and a 100-character line limit. Follow Ruff and existing code patterns: `snake_case` for modules, functions, and variables; `PascalCase` for classes and Pydantic models; `UPPER_SNAKE_CASE` for constants. Keep pure logic in `functions/`, contracts in `schemas/`, and CLI orchestration in `scripts/`. Preserve the one-way domain flow documented in `README.md`.
+Después de cada cambio solicitado: valida lo afectado, comprueba que no entren secretos,
+SQLite ni estado local, crea un commit descriptivo y sube la rama actual a `origin`.
+Al entregar, indica rama y SHA. Si el push falla, conserva el commit local y explica el
+bloqueo; nunca fuerces ni reescribas historia sin autorización explícita.
 
-## Testing Guidelines
+Después de cada backtest indica siempre torneo, temporada, bankroll, fuente de precios,
+métricas principales y ruta exacta del reporte. Si el comando sólo imprimió a terminal,
+di expresamente que no guardó archivo y ofrece el generador HTML correspondiente.
 
-Pytest discovers `tests/` automatically. Name files `test_<behavior>.py` and tests `test_<expected_result>`. Prefer deterministic unit tests, in-memory SQLite, existing fixtures from `tests/conftest.py`, and no network access. Add a focused regression test for behavior changes, then run the full suite. No numeric coverage threshold is configured.
+## Seguridad
 
-## Commit & Pull Request Guidelines
-
-History follows Conventional Commit-style subjects such as `feat:`, `fix(scope):`, `docs:`, and `chore:`. Keep commits focused and imperative. Pull requests should explain the behavior change, affected tournament or pipeline area, validation commands, and any data or live-trading risk. Link relevant issues or design documents; include screenshots only for generated HTML/report changes.
-
-## Security & Configuration
-
-Copy `.env.example` locally and never commit `.env`, private keys, wallet credentials, or generated local databases. Trading is dry-run by default. Do not weaken the required `--live`, `POLYMARKET_LIVE=1`, credential, kill-switch, and typed-confirmation gates; consult `EXECUTION_GOLIVE.md` before touching live execution.
+No versionar `.env`, llaves, respuestas autenticadas, SQLite generados ni estados de
+cuenta. La ejecución es dry-run por defecto. No debilitar los gates acumulativos:
+`--live`, `POLYMARKET_LIVE=1`, signer válido, kill-switch desactivado y confirmación
+tipada. `REVIEW` siempre espera aprobación humana. Lee `EXECUTION_GOLIVE.md` antes de
+tocar dinero o código de ejecución.

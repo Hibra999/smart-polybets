@@ -17,9 +17,9 @@ from portfolio.functions.trade_ledger import (
 def _dec(status, event_id, side="HOME_WIN", price="0.50", size="100", verdict="AUTO"):
     return {
         "idempotency_key": f"key_{event_id}_{status}",
-        "tournament_id": "fifa_world_cup_2026",
+        "tournament_id": "liga_mx_2026",
         "sport": "football",
-        "strategy_id": "match_winner_wc_v1",
+        "strategy_id": "match_winner_ligamx_v1",
         "status": status,
         "verdict": verdict,
         "pick_side": side,
@@ -48,16 +48,16 @@ def test_settle_pnl_win_and_loss():
 
 
 def test_open_position_when_fixture_not_finished():
-    decisions = [_dec("executed", "wc_1")]
-    results = {"wc_1": {"status": "scheduled"}}
+    decisions = [_dec("executed", "match_1")]
+    results = {"match_1": {"status": "scheduled"}}
     led = build_ledger(decisions, results, bankroll=1000)
     assert led["summary"]["n_open"] == 1
     assert led["open"][0]["outcome"] == OPEN
 
 
 def test_closed_win_settles_pnl():
-    decisions = [_dec("executed", "wc_1", side=HOME_WIN, price="0.50", size="100")]
-    results = {"wc_1": {"status": "finished", "home_team_id": "home",
+    decisions = [_dec("executed", "match_1", side=HOME_WIN, price="0.50", size="100")]
+    results = {"match_1": {"status": "finished", "home_team_id": "home",
                         "away_team_id": "away", "winner_team_id": "home"}}
     led = build_ledger(decisions, results, bankroll=1000)
     assert led["summary"]["n_closed"] == 1
@@ -69,8 +69,8 @@ def test_closed_win_settles_pnl():
 
 def test_closed_loss_on_draw():
     # apuesta a HOME_WIN pero el partido fue empate (winner NULL) → pierde
-    decisions = [_dec("executed", "wc_1", side=HOME_WIN, price="0.40", size="50")]
-    results = {"wc_1": {"status": "finished", "home_team_id": "home",
+    decisions = [_dec("executed", "match_1", side=HOME_WIN, price="0.40", size="50")]
+    results = {"match_1": {"status": "finished", "home_team_id": "home",
                         "away_team_id": "away", "winner_team_id": None}}
     led = build_ledger(decisions, results, bankroll=1000)
     assert led["closed"][0]["outcome"] == LOST
@@ -78,17 +78,17 @@ def test_closed_loss_on_draw():
 
 
 def test_ungraded_when_pick_side_missing():
-    dec = _dec("executed", "wc_1")
+    dec = _dec("executed", "match_1")
     dec["pick_side"] = None
     dec["opportunity_json"]["model_outcome"] = None
-    results = {"wc_1": {"status": "finished", "home_team_id": "home",
+    results = {"match_1": {"status": "finished", "home_team_id": "home",
                         "away_team_id": "away", "winner_team_id": "home"}}
     led = build_ledger([dec], results, bankroll=1000)
     assert led["open"][0]["outcome"] == UNGRADED  # no se asienta sin el lado
 
 
 def test_pending_decision_not_counted_as_trade():
-    decisions = [_dec("pending_approval", "wc_1", verdict="REVIEW")]
+    decisions = [_dec("pending_approval", "match_1", verdict="REVIEW")]
     led = build_ledger(decisions, {}, bankroll=1000)
     assert led["summary"]["n_pending"] == 1
     assert led["summary"]["n_open"] == 0

@@ -330,7 +330,7 @@ class PolymarketGateway:
         Args:
             home:     Nombre del equipo local.
             away:     Nombre del equipo visitante.
-            tag_ids:  Tag(s) para filtrar eventos (ej: 102232 = WC 2026). None = sin filtro.
+            tag_ids: Tag(s) para filtrar eventos (ej: 102448 = Liga MX).
             closed:   Incluir eventos cerrados (default False).
             page_size: Tamaño de página en la paginación del SDK.
 

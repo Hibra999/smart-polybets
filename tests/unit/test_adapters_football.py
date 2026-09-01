@@ -16,31 +16,31 @@ def test_elo_equal_teams_symmetric():
 
 
 def test_db_reader_fixture(football_conn):
-    reader = FootballDBReader("fifa_world_cup_2026", connection=football_conn)
+    reader = FootballDBReader("liga_mx_2026", connection=football_conn)
     fx = reader.get_fixture("m1")
     assert fx is not None
-    assert fx["home_team_name"] == "Argentina"
+    assert fx["home_team_name"] == "Club America"
 
 
 def test_db_reader_upcoming(football_conn):
-    reader = FootballDBReader("fifa_world_cup_2026", connection=football_conn)
+    reader = FootballDBReader("liga_mx_2026", connection=football_conn)
     assert [f["id"] for f in reader.get_upcoming_fixtures(24)] == ["m1"]
 
 
 def test_elo_adapter_prediction(football_conn):
-    reader = FootballDBReader("fifa_world_cup_2026", connection=football_conn)
-    pred = FootballEloAdapter("fifa_world_cup_2026", reader=reader).get_event_prediction("m1")
+    reader = FootballDBReader("liga_mx_2026", connection=football_conn)
+    pred = FootballEloAdapter("liga_mx_2026", reader=reader).get_event_prediction("m1")
     assert pred is not None
     assert pred.market_type == "match_winner"
     assert pred.prob_for("HOME_WIN") > Decimal("0")
-    assert pred.participant_home == "Argentina"
+    assert pred.participant_home == "Club America"
 
 
 def test_elo_adapter_missing_event(football_conn):
-    reader = FootballDBReader("fifa_world_cup_2026", connection=football_conn)
-    assert FootballEloAdapter("fifa_world_cup_2026", reader=reader).get_event_prediction("zzz") is None
+    reader = FootballDBReader("liga_mx_2026", connection=football_conn)
+    assert FootballEloAdapter("liga_mx_2026", reader=reader).get_event_prediction("zzz") is None
 
 
 def test_availability_query(football_conn):
-    reader = FootballDBReader("fifa_world_cup_2026", connection=football_conn)
-    assert reader.get_player_availability("ARG") == []  # nadie lesionado por defecto
+    reader = FootballDBReader("liga_mx_2026", connection=football_conn)
+    assert reader.get_player_availability("AME") == []  # nadie lesionado por defecto

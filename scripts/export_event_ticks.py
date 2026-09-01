@@ -119,7 +119,7 @@ def export_event(src: sqlite3.Connection, tid: str, title: str) -> Path | None:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--tournament", default="fifa_world_cup_2026")
+    ap.add_argument("--tournament", default="liga_mx_2026")
     g = ap.add_mutually_exclusive_group(required=True)
     g.add_argument("--event", help="título del evento (substring, insensible a acentos)")
     g.add_argument("--all", action="store_true", help="exportar todos los eventos del buffer")

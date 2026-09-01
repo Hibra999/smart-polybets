@@ -35,7 +35,7 @@ from core.console import enable_utf8
 
 enable_utf8()
 
-from adapters.football.wc_models import EloSystem
+from adapters.football.strength_models import EloSystem
 from scripts.ligamx_backtest import load_matches  # mapping + parsing compartidos
 from tournaments.registry import get_config
 

@@ -2,7 +2,7 @@
 
 tournament_id: nfl_2026
 sport: american_football
-status: draft
+status: active
 start_date: 2026-09-06
 end_date: 2027-02-08
 
@@ -28,4 +28,5 @@ Temporada regular NFL 2026 + playoffs. 32 franquicias, 18 semanas + postemporada
 |---|---|---|---|
 | game_winner_v1 | game_winner | **approved (activa)** | migrada de sports_bet (TrueSkill + Kelly) |
 
-Ver `STRATEGY_MIGRATION.md`. NOTA: la temporada arranca el 6-sep-2026; trading live desde entonces.
+Ver `STRATEGY_MIGRATION.md`. La estrategia aprobada sigue en dry-run salvo una
+autorización live explícita.

@@ -17,7 +17,7 @@ from agent.tools.override_tools import propose_override
 from tests.conftest import FakeLocalStateClient, make_opportunity
 from tournaments.registry import load_strategy_file
 
-STRATEGY = load_strategy_file("fifa_world_cup_2026/strategies/match_winner_v1")
+STRATEGY = load_strategy_file("liga_mx_2026/strategies/match_winner_ligamx_v1")
 
 
 def _opp(**kw):

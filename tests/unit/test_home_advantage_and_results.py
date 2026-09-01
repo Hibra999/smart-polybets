@@ -1,17 +1,17 @@
 """Tests de localía (Elo/pipeline), seeds flat consistentes y venue/results.
 
 Cubre lo agregado el 2026-07-14 para Liga MX:
-  - EloSystem.home_adv: sube P(local) y se aplica en updates (default 0 = WC intacto)
+  - EloSystem.home_adv: sube P(local) y se aplica en updates
   - seeds flat 1500 → TrueSkill y Bayes arrancan uniformes (cold start coherente)
-  - reconstrucción de marcador: Exact Score (Liga MX) y escalera O/U (Mundial)
+  - reconstrucción de marcador: Exact Score (Liga MX) y escalera O/U (Liga MX)
 """
 from __future__ import annotations
 
 from types import SimpleNamespace
 
-from adapters.football.wc_models import BayesianLeague, EloSystem
-from adapters.football.wc_pipeline import WorldCupPipeline
-from adapters.football.wc_trueskill import TrueSkillSystem
+from adapters.football.strength_models import BayesianLeague, EloSystem
+from adapters.football.model_pipeline import FootballModelPipeline
+from adapters.football.trueskill import TrueSkillSystem
 from venue.results import reconstruct_score, score_from_exact_markets, score_from_ou_ladder
 
 
@@ -26,7 +26,7 @@ def test_home_adv_raises_home_expectation():
     assert con_adv.expected_home("a", "b") > 0.55  # 65 pts ≈ 59%
 
 
-def test_home_adv_zero_keeps_worldcup_behavior():
+def test_home_adv_zero_is_neutral():
     e = EloSystem()
     e.seed({"a": 1600.0, "b": 1500.0})
     before = (e.get("a"), e.get("b"))
@@ -38,11 +38,11 @@ def test_home_adv_zero_keeps_worldcup_behavior():
 
 
 def test_pipeline_passes_home_adv_to_elo():
-    pipe = WorldCupPipeline(home_adv_elo=65.0)
+    pipe = FootballModelPipeline(home_adv_elo=65.0)
     pipe.seed({"a": 1500.0, "b": 1500.0})
     snap = pipe.prematch("a", "b")
     assert snap["p_home"] > 0.55
-    neutral = WorldCupPipeline()
+    neutral = FootballModelPipeline()
     neutral.seed({"a": 1500.0, "b": 1500.0})
     assert neutral.prematch("a", "b")["p_home"] == 0.5
 
@@ -86,16 +86,16 @@ def test_exact_score_direct():
     assert reconstruct_score(mkts, "Necaxa", "Atlante") == (2, 1)
 
 
-def test_ou_ladder_worldcup_format():
+def test_ou_ladder_format():
     mkts = [
-        _mk("France vs. Morocco: France O/U 0.5", "over"),
-        _mk("France vs. Morocco: France O/U 1.5", "over"),
-        _mk("France vs. Morocco: France O/U 2.5", "under"),
-        _mk("France vs. Morocco: Morocco O/U 0.5", "under"),
-        _mk("France vs. Morocco: O/U 2.5", "under"),
-        _mk("France vs. Morocco: O/U 1.5", "over"),
+        _mk("Cruz Azul vs. Pumas: Cruz Azul O/U 0.5", "over"),
+        _mk("Cruz Azul vs. Pumas: Cruz Azul O/U 1.5", "over"),
+        _mk("Cruz Azul vs. Pumas: Cruz Azul O/U 2.5", "under"),
+        _mk("Cruz Azul vs. Pumas: Pumas O/U 0.5", "under"),
+        _mk("Cruz Azul vs. Pumas: O/U 2.5", "under"),
+        _mk("Cruz Azul vs. Pumas: O/U 1.5", "over"),
     ]
-    assert score_from_ou_ladder(mkts, "France", "Morocco") == (2, 0)
+    assert score_from_ou_ladder(mkts, "Cruz Azul", "Pumas") == (2, 0)
 
 
 def test_reconstruct_prefers_exact_score():

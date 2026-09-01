@@ -3,7 +3,7 @@
 Vas a correr el pipeline `full_analysis` para un evento.
 
 Antes de actuar, leé en orden:
-1. `agent/CLAUDE.md` (reglas de operación)
+1. `agent/AGENTS.md` (reglas de operación)
 2. El `SKILL.md` de cada área que vas a invocar
 3. El `STRATEGY.md` activo del torneo (`load_active_strategy(tournament_id)`)
 

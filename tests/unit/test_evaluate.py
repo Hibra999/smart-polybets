@@ -5,7 +5,7 @@ from tournaments.registry import load_strategy_file
 
 # Estrategia genérica 3-way (thresholds 0.08/0.04/0.04) — estable para probar la
 # lógica de evaluate independientemente de cuál sea la estrategia activa.
-STRATEGY = load_strategy_file("fifa_world_cup_2026/strategies/match_winner_v1")
+STRATEGY = load_strategy_file("liga_mx_2026/strategies/match_winner_ligamx_v1")
 
 
 def test_auto_verdict(opportunity_factory, portfolio_state):
@@ -23,7 +23,7 @@ def test_review_zone_edge(opportunity_factory, portfolio_state):
 
 
 def test_discard_low_edge(opportunity_factory, portfolio_state):
-    opp = opportunity_factory(model_probability="0.52", market_probability="0.50")  # edge 0.02
+    opp = opportunity_factory(model_probability="0.49", market_probability="0.50")
     v = evaluate(opp, STRATEGY, portfolio_state)
     assert v.verdict.value == "DISCARD"
     assert v.recommended_size_usdc == Decimal("0")
@@ -43,8 +43,8 @@ def test_qualitative_flag_forces_review(opportunity_factory, portfolio_state):
     assert "QR-002: lesión" in v.qualitative_flags
 
 
-def test_knockout_phase_forces_review(opportunity_factory, portfolio_state):
-    opp = opportunity_factory(event_phase="knockout")
+def test_liguilla_phase_forces_review(opportunity_factory, portfolio_state):
+    opp = opportunity_factory(event_phase="liguilla")
     v = evaluate(opp, STRATEGY, portfolio_state)
     assert v.verdict.value == "REVIEW"
 

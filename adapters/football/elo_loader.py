@@ -3,9 +3,8 @@
 `elo_win_probabilities` es una función PURA y testeable. `FootballEloAdapter`
 la usa para producir un MatchPrediction leyendo el Elo de los equipos del SQLite.
 
-NOTA: este es el modelo Elo base. Bayes/TrueSkill (bayes_loader, trueskill_loader)
-están preparados para wirearse al repo de modelos `pypro_worldcup_betting` cuando
-se integre; mientras tanto el ensemble degrada a Elo.
+Este adapter es el modelo Elo 1X2 base. El pipeline combinado vive en
+`model_adapter.py`; los loaders Bayes/TrueSkill conservan un fallback explícito.
 """
 from __future__ import annotations
 

@@ -8,8 +8,8 @@ end_date: 2026-12-13
 
 ## Descripción
 Torneo Apertura 2026 de la Liga MX (México). **18 equipos**, 17 jornadas de fase
-regular + liguilla (play-in + cuartos + semis + final, ida y vuelta). A diferencia
-del Mundial: **hay ventaja de localía real** (sedes propias) y el torneo es largo.
+regular + liguilla (play-in + cuartos + semis + final, ida y vuelta). Hay
+**ventaja de localía real** y el torneo es largo.
 Nota de plantel 2026: **Atlante FC está en la liga** (no Mazatlán) — verificado en
 el mercado de campeón de Polymarket (evento 701237).
 
@@ -35,7 +35,7 @@ el mercado de campeón de Polymarket (evento 701237).
   2027 será otro tournament_id.
 - **Poisson con localía**: `neutral_venue=False`; con la 2025/26 en
   `historical_match` estima `home_factor = 1.40` y base 1.45 goles/equipo
-  (`scripts/wc_poisson_suggestions.py --tournament liga_mx_2026`).
+  (`scripts/poisson_predictions.py --tournament liga_mx_2026`).
 - **Bayes/TrueSkill sin localía**: son señales de fuerza relativa, no de precio.
   Con seeds reales ya no arrancan flat (se siembran del Elo).
 - **Resultados**: `scripts/update_results.py --tournament liga_mx_2026 --apply`

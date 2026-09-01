@@ -7,7 +7,7 @@ Puebla/actualiza el SQLite del torneo con:
   - fixtures de los partidos listados en Polymarket (tag Liga MX = 102448)
 
 Polymarket lista los partidos en ventana rodante (~2 jornadas hacia adelante):
-correr a DIARIO durante la temporada (misma lección que el Mundial — un mercado
+correr a DIARIO durante la temporada (un mercado
 que cierra entre corridas deja el fixture huérfano, ver finding 2026-07-09).
 
 IDEMPOTENTE: equipos por PK; fixtures matcheados por (home, away, fecha) — re-run

@@ -1,7 +1,7 @@
 # STRATEGY: Match Winner — Liga MX Apertura 2026
 
-Borrador clonado de `match_winner_wc_v1` como punto de partida. Las tres
-precondiciones originales ya están resueltas: (1) ventaja de localía calibrada
+Borrador calibrado para Liga MX. Las tres precondiciones técnicas están resueltas:
+(1) ventaja de localía calibrada
 (`TournamentConfig.home_adv_elo=80` en `tournaments/registry.py`, Elo con
 `home_adv` y Poisson `neutral=False`), (2) seeds de Elo reales cargadas en la DB
 (Cruz Azul ~1638…Puebla ~1374; Atlante=1500 sin historia previa, cold start),
@@ -12,7 +12,7 @@ porque ese backtest no mostró edge vs las cuotas de cierre** — ver THESIS.
 ## HEADER
 version: 0.1
 status: draft
-author: Claude (scaffolding 2026-07-14) — pendiente de revisión del CIO
+author: Codex (scaffolding 2026-07-14) — pendiente de revisión del CIO
 last_updated: 2026-07-14
 
 ## SCOPE
@@ -30,8 +30,7 @@ docs/findings/2026-07-14-ligamx-backtest.md). El único edge plausible es que
 liquidez) — SIN demostrar. Plan de validación J1-J3: registrar PM vs Poisson vs
 cierre (MEX.csv semanal); aprobar solo con evidencia, umbral de edge ≥0.10 y
 sizing chico. El yardstick de precio es el **Poisson 1X2 con `neutral=False`**
-(el empate es ~25-30% en liga), no el blend win/no-win — lección del Mundial
-(docs/findings/2026-07-13-poisson-sesgo-knockout.md).
+(el empate es ~25-30% en liga), no el blend binario win/no-win.
 
 ## SIGNAL DEFINITION
 edge_threshold_auto: 0.10            # barra cautelosa (THESIS): el backtest no mostró edge → exigir ≥0.10

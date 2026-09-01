@@ -16,11 +16,11 @@ def _pos(cid, token="1", entry="0.50", shares="100"):
                         size_shares=Decimal(shares), avg_entry_price=Decimal(entry))
 
 
-def _dec(cid, event_id="wc_1", status="executed"):
+def _dec(cid, event_id="match_1", status="executed"):
     return {
         "condition_id": cid,
-        "tournament_id": "fifa_world_cup_2026",
-        "strategy_id": "match_winner_wc_v1",
+        "tournament_id": "liga_mx_2026",
+        "strategy_id": "match_winner_ligamx_v1",
         "status": status,
         "opportunity_json": {"event_id": event_id, "polymarket_condition_id": cid},
     }
@@ -46,10 +46,10 @@ def test_mark_to_market_leaves_none_when_no_price():
 
 def test_tag_positions_maps_known_and_leaves_external():
     positions = [_pos("0xa"), _pos("0xEXT")]
-    tagged = tag_positions(positions, [_dec("0xa", event_id="wc_49")])
+    tagged = tag_positions(positions, [_dec("0xa", event_id="match_49")])
     by_cid = {p.condition_id: p for p in tagged}
-    assert by_cid["0xa"].event_id == "wc_49"
-    assert by_cid["0xa"].tournament_id == "fifa_world_cup_2026"
+    assert by_cid["0xa"].event_id == "match_49"
+    assert by_cid["0xa"].tournament_id == "liga_mx_2026"
     assert by_cid["0xEXT"].event_id is None       # externa
 
 

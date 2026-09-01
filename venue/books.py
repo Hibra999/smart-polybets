@@ -2,7 +2,7 @@
 
 Mismo patrón que venue/discovery: los consumidores (scripts, monitors) NUNCA
 tocan el PublicClient directo — todo acceso a Polymarket pasa por venue/
-(regla de oro #7 del CLAUDE.md). Cliente cacheado por proceso.
+(regla de oro #7 del AGENTS.md). Cliente cacheado por proceso.
 
   order_book(token_id)      -> OrderBook de un token
   order_books(token_ids)    -> batch de OrderBooks (mismo orden que la entrada)

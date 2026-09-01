@@ -9,11 +9,12 @@ from __future__ import annotations
 import logging
 
 from adapters.football.db_reader import FootballDBReader
-from adapters.football.wc_poisson_pipeline import WorldCupPoissonPipeline
+from adapters.football.poisson_pipeline import FootballPoissonPipeline
+from tournaments.registry import get_config
 
 logger = logging.getLogger(__name__)
 
-_PIPELINE_CLS = WorldCupPoissonPipeline   # indirección para tests
+_PIPELINE_CLS = FootballPoissonPipeline   # indirección para tests
 _READER_CLS = FootballDBReader
 _CACHE: dict[str, object] = {}
 
@@ -21,7 +22,10 @@ _CACHE: dict[str, object] = {}
 def _pipeline(tournament_id: str):
     pipe = _CACHE.get(tournament_id)
     if pipe is None:
-        pipe = _PIPELINE_CLS(tournament_id).fit()
+        pipe = _PIPELINE_CLS(
+            tournament_id,
+            neutral=get_config(tournament_id).neutral_venue,
+        ).fit()
         _CACHE[tournament_id] = pipe
     return pipe
 

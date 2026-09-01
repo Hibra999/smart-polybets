@@ -6,10 +6,10 @@
 -- TORNEO
 -- ─────────────────────────────────────────────
 CREATE TABLE tournament (
-    id              TEXT PRIMARY KEY,       -- "fifa_world_cup_2026"
+    id              TEXT PRIMARY KEY,       -- "liga_mx_2026"
     name            TEXT NOT NULL,
     sport           TEXT NOT NULL,          -- "football"
-    format          TEXT NOT NULL,          -- "world_cup" | "league" | "cup" | "champions"
+    format          TEXT NOT NULL,          -- "league"
     start_date      DATE NOT NULL,
     end_date        DATE,
     host_country    TEXT,
@@ -46,7 +46,7 @@ CREATE TABLE team (
 );
 
 -- ─────────────────────────────────────────────
--- GRUPO (aplica a World Cup, Champions group stage, etc.)
+-- FASE DEL TORNEO
 -- ─────────────────────────────────────────────
 CREATE TABLE group_table (
     id              TEXT PRIMARY KEY,       -- "A", "B", ... | NULL para ligas sin grupos

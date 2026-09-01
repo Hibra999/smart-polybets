@@ -23,7 +23,7 @@ def calculate_edge(
     """Construye una MarketOpportunity con edge = p_modelo - p_polymarket.
 
     `model_probability` permite forzar la prob del modelo (ej: la prob TrueSkill
-    del lado elegido por la estrategia worldcup). Si es None, se toma del outcome
+    del lado elegido por la estrategia). Si es None, se toma del outcome
     del mercado en la predicción (camino genérico). Retorna None si no hay prob.
     """
     model_prob = (

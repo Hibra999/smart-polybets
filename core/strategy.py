@@ -30,7 +30,7 @@ _QR_RE = re.compile(r"^\s*-\s*(QR-\d+)\s*:\s*(.+?)\s*(?:→|->)\s*(.+?)\s*$")
 
 
 class QualitativeRule(BaseModel):
-    """Una regla cualitativa (QR-xxx). Claude la evalúa con contexto."""
+    """Una regla cualitativa (QR-xxx). Codex la evalúa con contexto."""
 
     id: str
     description: str
@@ -85,7 +85,7 @@ class StrategyConfig(BaseModel):
     max_bet_usdc: Decimal = Decimal("50")
     min_bet_usdc: Decimal = Decimal("5")
 
-    # SELECCIÓN DE LADO (migración worldcup: elo | bayes | blend | trueskill)
+    # SELECCIÓN DE LADO: elo | bayes | blend | trueskill
     side_criterion: str = "elo"
     blend_weight: Decimal = Decimal("0.5")        # peso de Elo en 'blend' (1-w para Bayes)
     warmup_match_no: int = 1                       # arranca en la N-ésima aparición del lado

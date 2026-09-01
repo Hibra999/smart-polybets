@@ -9,9 +9,9 @@ También resuelve:
 """
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable
 
 from adapters.base import SportAdapter
 from core.exceptions import NotFoundError
@@ -26,21 +26,20 @@ class TournamentConfig:
     display_name: str
     sport: str
     adapter_factory: Callable[[str], SportAdapter]
-    active_strategy: str  # path relativo a tournaments/, ej: "fifa_world_cup_2026/strategies/match_winner_v1"
+    active_strategy: str  # path relativo a tournaments/
     start_date: str
     end_date: str
-    # ── parámetros de venue/modelo por torneo (aditivos; defaults = Mundial) ──
+    # ── parámetros de venue/modelo por torneo ──
     polymarket_tag_id: int | None = None  # tag de PM para discovery/update_results
-    neutral_venue: bool = True            # False = liga con localía (Poisson neutral=False)
-    home_adv_elo: float = 0.0             # puntos Elo de localía (0 = sede neutral)
+    neutral_venue: bool = False           # True sólo para sedes realmente neutrales
+    home_adv_elo: float = 0.0             # puntos Elo de localía
 
 
-def _football_worldcup(tournament_id: str) -> SportAdapter:
-    # Adapter Elo+Bayes evolutivo (migrado de pypro_worldcup_betting). La ventaja
-    # de localía sale de la config del torneo (0 para el Mundial: sede neutral).
-    from adapters.football.worldcup_adapter import FootballWorldCupAdapter
+def _football_model(tournament_id: str) -> SportAdapter:
+    # Adapter Elo+Bayes+TrueSkill; la localía sale de la config del torneo.
+    from adapters.football.model_adapter import FootballModelAdapter
     cfg = TOURNAMENTS[tournament_id]
-    return FootballWorldCupAdapter(tournament_id, home_adv_elo=cfg.home_adv_elo)
+    return FootballModelAdapter(tournament_id, home_adv_elo=cfg.home_adv_elo)
 
 
 def _nfl_trueskill(tournament_id: str) -> SportAdapter:
@@ -54,7 +53,7 @@ TOURNAMENTS: dict[str, TournamentConfig] = {
         tournament_id="liga_mx_2026",
         display_name="Liga MX Apertura 2026",
         sport="football",
-        adapter_factory=_football_worldcup,
+        adapter_factory=_football_model,
         active_strategy="liga_mx_2026/strategies/match_winner_ligamx_v1",
         start_date="2026-07-16",
         end_date="2026-12-13",
@@ -64,18 +63,6 @@ TOURNAMENTS: dict[str, TournamentConfig] = {
         # MEX.csv), Brier 0.15940 en el óptimo. Ver scripts/ligamx_backtest.py y
         # docs/findings/2026-07-14-ligamx-backtest.md.
         home_adv_elo=80.0,
-    ),
-    "fifa_world_cup_2026": TournamentConfig(
-        tournament_id="fifa_world_cup_2026",
-        display_name="FIFA World Cup 2026",
-        sport="football",
-        adapter_factory=_football_worldcup,
-        active_strategy="fifa_world_cup_2026/strategies/match_winner_wc_v1",
-        start_date="2026-06-11",
-        end_date="2026-07-19",
-        polymarket_tag_id=102232,
-        neutral_venue=True,
-        home_adv_elo=0.0,
     ),
     "nfl_2026": TournamentConfig(
         tournament_id="nfl_2026",

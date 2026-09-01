@@ -17,7 +17,7 @@ REPORTS_ROOT = Path(os.getenv("REPORTS_ROOT", "editorial/reports"))
 
 
 def build_review_report(decision: ExecutionDecision) -> str:
-    """Reporte estructurado de un REVIEW pendiente (formato de agent/CLAUDE.md)."""
+    """Reporte estructurado de un REVIEW pendiente (formato de agent/AGENTS.md)."""
     v = decision.verdict
     opp = v.opportunity
     flags = "\n  ".join(v.qualitative_flags) if v.qualitative_flags else "(ninguno)"
@@ -49,7 +49,7 @@ FLAGS CUALITATIVOS
   {flags}
 
 RECOMENDACIÓN DEL AGENTE
-  [Claude escribe aquí 2-3 líneas de análisis cualitativo]
+  [Codex escribe aquí 2-3 líneas de análisis cualitativo]
 
 ACCIONES
   [ ] APROBAR — responde "aprobar {decision.idempotency_key}"

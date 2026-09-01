@@ -1,7 +1,7 @@
-"""Tests del modelo Poisson de goles (adapters.football.wc_poisson). Puros."""
+"""Tests del modelo Poisson de goles (adapters.football.poisson). Puros."""
 import math
 
-from adapters.football.wc_poisson import PoissonGoalsModel, poisson_pmf
+from adapters.football.poisson import PoissonGoalsModel, poisson_pmf
 
 # Liga de juguete: A es ofensivo y fuerte, C débil. Suficientes partidos para que
 # el shrinkage no aplaste todo al promedio.

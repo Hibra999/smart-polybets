@@ -1,5 +1,5 @@
 from decimal import Decimal
-from research.functions.wc_strategy import resolve_bet_market, HOME_WIN, AWAY_WIN
+from research.functions.strategy_selection import resolve_bet_market, HOME_WIN, AWAY_WIN
 from research.functions.market_scanner import PolymarketMarket
 from core.strategy import StrategyConfig
 

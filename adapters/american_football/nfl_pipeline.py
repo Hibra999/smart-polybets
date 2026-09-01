@@ -1,7 +1,7 @@
 """Pipeline TrueSkill para NFL — migrado de sports_bet/code/analysis_true_skill.py.
 
 El origen usa la librería `trueskill` (rate_1vs1 ganador/perdedor) y elige el equipo
-de mayor rating. Acá se reutiliza el port puro 1v1 (`wc_trueskill.TrueSkillSystem`,
+de mayor rating. Acá se reutiliza el port puro 1v1 (`trueskill.TrueSkillSystem`,
 validado contra la lib a 1e-5) y se expone la **probabilidad de victoria** TrueSkill
 para poder calcular edge vs el mercado (el origen solo comparaba μ).
 
@@ -13,7 +13,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 # TrueSkill 1v1 puro (vive en adapters/football pero es un modelo genérico).
-from adapters.football.wc_trueskill import TrueSkillSystem
+from adapters.football.trueskill import TrueSkillSystem
 
 
 @dataclass

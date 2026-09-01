@@ -4,7 +4,7 @@ Dos estrategias, en orden de preferencia:
   1. `score_from_exact_markets`: mercado "Exact Score: {H} n - m {A}?" resuelto
      Yes → marcador directo (Liga MX y ligas nuevas de PM lo tienen).
   2. `score_from_ou_ladder`: escalera per-team "{H} vs. {A}: {Team} O/U N.5" +
-     total "{H} vs. {A}: O/U N.5" (formato del Mundial 2026).
+     total "{H} vs. {A}: O/U N.5".
 
 Sin red: reciben Market-like objects (atributos vía getattr) → unit-testeables.
 Extraído de scripts/update_results.py al generalizarlo (2026-07-14).
@@ -15,7 +15,7 @@ import re
 
 from venue.matching import canon
 
-_EXACT = re.compile(r"^Exact Score:\s*(.+?)\s+(\d+)\s*-\s*(\d+)\s+(.+?)\?*$", re.I)
+_EXACT = re.compile(r"^Exact Score:\s*(.+?)\s+(\d+)\s*-\s*(\d+)\s+(.+?)\?*$", re.IGNORECASE)
 _TEAM_OU = re.compile(r":\s*(.+?)\s+O/U\s+(\d\.5)$")
 _TOTAL_OU = re.compile(r":\s*O/U\s+(\d\.5)$")
 
@@ -60,7 +60,7 @@ def score_from_ou_ladder(markets, home_disp: str, away_disp: str) -> tuple[int |
     """Reconstruye (home_goals, away_goals) desde la escalera O/U resuelta.
 
     Per-team hasta 2.5; si un equipo marcó 3+ se fija con el total del partido
-    menos los goles del rival (formato Mundial 2026).
+    menos los goles del rival.
     """
     team_over: dict[str, list[float]] = {}
     team_under: dict[str, list[float]] = {}

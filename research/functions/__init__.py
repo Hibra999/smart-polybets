@@ -5,24 +5,24 @@ from research.functions.odds_source import SqliteOddsSource
 from research.functions.poisson_loader import match_result_probs
 from research.functions.polymarket_live import PolymarketLiveSource
 from research.functions.probability_extractor import get_model_prob
-from research.functions.wc_strategy import (
-    build_worldcup_opportunity,
+from research.functions.strategy_selection import (
     BetTarget,
+    build_strategy_opportunity,
     pick_side,
     resolve_bet_market,
 )
 
 __all__ = [
-    "calculate_edge",
+    "BetTarget",
+    "PolymarketLiveSource",
     "PolymarketMarket",
+    "SqliteOddsSource",
+    "build_strategy_opportunity",
+    "calculate_edge",
     "find_markets",
     "get_event_prediction",
     "get_model_prob",
     "match_result_probs",
-    "SqliteOddsSource",
-    "PolymarketLiveSource",
-    "build_worldcup_opportunity",
-    "BetTarget",
     "pick_side",
     "resolve_bet_market",
 ]

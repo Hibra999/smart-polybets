@@ -1,190 +1,66 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sports Quant Trading System — Casos de uso y capacidades</title>
-<style>
-  :root{
-    --bg:#0d1117;--panel:#161b22;--panel2:#1c2333;--ink:#e6edf3;--muted:#8b949e;--line:#30363d;
-    --accent:#58a6ff;--green:#3fb950;--amber:#d29922;--red:#f85149;--pink:#f778ba;--cyan:#39c5cf;--purple:#a371f7;
-  }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
-  .wrap{max-width:1120px;margin:0 auto;padding:32px 22px 80px}
-  h1{font-size:29px;margin:0 0 4px}
-  h2{font-size:20px;margin:40px 0 6px;padding-bottom:8px;border-bottom:1px solid var(--line)}
-  .sub{color:var(--muted);margin:0 0 8px}
-  p{color:#c9d1d9}
-  code{background:#010409;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font:12.5px/1.4 "SF Mono",Consolas,monospace}
-  .lead{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-top:14px}
-  .term{background:#010409;border:1px solid var(--line);border-radius:9px;padding:11px 13px;margin-top:9px;overflow-x:auto}
-  .term pre{margin:0;font:12px/1.5 "SF Mono",Consolas,monospace;color:#c9d1d9;white-space:pre}
-  .term .c{color:var(--green)} .term .m{color:var(--muted)} .term .a{color:var(--accent)} .term .g{color:var(--green)} .term .r{color:var(--red)} .term .y{color:var(--amber)}
-  .flow{display:flex;flex-wrap:wrap;gap:0;align-items:stretch;margin-top:14px}
-  .fstep{flex:1;min-width:132px;background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--accent);border-radius:8px;padding:10px 11px}
-  .fstep b{font-size:13px} .fstep small{display:block;color:var(--muted);font-size:11px;margin-top:3px}
-  .fchev{display:flex;align-items:center;color:var(--accent);font-size:20px;padding:0 3px}
-  .uc{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:15px 17px;margin-top:14px;border-left:4px solid var(--accent)}
-  .uc h3{margin:0 0 3px;font-size:16px}
-  .uc .cap{color:var(--muted);font-size:13px;margin:0 0 8px}
-  .tag{display:inline-block;font-size:10.5px;padding:2px 8px;border-radius:20px;font-weight:600;margin-left:6px;vertical-align:middle}
-  .live{background:rgba(63,185,80,.16);color:var(--green);border:1px solid #238636}
-  .safe{background:rgba(88,166,255,.14);color:var(--accent);border:1px solid #1f6feb}
-  ul{margin:7px 0;padding-left:20px}li{margin:3px 0;color:#c9d1d9}
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;margin-top:12px}
-  .mini{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
-  .mini b{font-size:13px} .mini small{color:var(--muted);font-size:11.5px;display:block;margin-top:3px}
-  .foot{margin-top:40px;color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);padding-top:14px}
-  .pill{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:20px;padding:2px 9px}
-  .kx{color:var(--pink)}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>PEPA — Casos de uso</title>
+  <style>
+    body{max-width:920px;margin:40px auto;padding:0 20px;background:#0d1117;color:#e6edf3;
+      font:15px/1.6 system-ui,sans-serif}section{background:#161b22;border:1px solid #30363d;
+      border-radius:10px;padding:16px;margin:16px 0}code,pre{background:#010409}
+    code{padding:2px 5px;border-radius:4px}pre{padding:12px;overflow:auto}.safe{color:#3fb950}
+    .warn{color:#d29922}
+  </style>
 </head>
 <body>
-<div class="wrap">
+  <h1>Casos de uso — Liga MX y NFL</h1>
 
-  <h1>Casos de uso &amp; capacidades</h1>
-  <p class="sub">Sports Quant Trading System — qué puede hacer <b>hoy</b> el agente, área por área, con ejemplos reales <span class="pill">datos live · 2026-07-02</span></p>
+  <section>
+    <h2>“Codex, help”</h2>
+    <p>Codex lee <code>docs/PROMPTS.md</code>, muestra los prompts agrupados por riesgo
+    y no ejecuta ninguno.</p>
+  </section>
 
-  <div class="lead">
-    El agente cubre el ciclo completo de trading cuant sobre Polymarket: <b>descubrir mercados → generar señal (por deporte) → dimensionar con Kelly → filtrar por riesgo → ejecutar con seguridad → leer/reconciliar la cuenta</b>. Todo con dry-run por defecto; el dinero real exige opt-in explícito en varias capas. Los ejemplos de abajo son <b>corridas reales de esta sesión</b>.
-  </div>
+  <section>
+    <h2>Actualizar y predecir Liga MX</h2>
+    <pre><code>.venv/bin/python data/liga_mx_2026/ingest/load_history_fdcouk.py --apply
+.venv/bin/python data/liga_mx_2026/ingest/fetch_fixtures_pm.py --include-closed --apply
+.venv/bin/python scripts/update_results.py --tournament liga_mx_2026 --apply
+.venv/bin/python scripts/check_freshness.py
+.venv/bin/python scripts/scan_market.py --tournament liga_mx_2026 --hours 168 --observe-draft
+.venv/bin/python scripts/poisson_predictions.py --tournament liga_mx_2026 --date YYYY-MM-DD</code></pre>
+    <p class="warn">La estrategia es draft. <code>--observe-draft</code> sólo habilita
+    análisis dry-run y no puede combinarse con <code>--live</code>.</p>
+  </section>
 
-  <!-- FLOW -->
-  <h2>Un día en la vida del agente</h2>
-  <div class="flow">
-    <div class="fstep"><b>1 · Descubrir</b><small>mercados live de Polymarket</small></div>
-    <div class="fchev">›</div>
-    <div class="fstep"><b>2 · Señal</b><small>modelo por deporte (plugin)</small></div>
-    <div class="fchev">›</div>
-    <div class="fstep"><b>3 · Kelly</b><small>tamaño óptimo</small></div>
-    <div class="fchev">›</div>
-    <div class="fstep"><b>4 · Riesgo</b><small>AUTO / REVIEW / DISCARD</small></div>
-    <div class="fchev">›</div>
-    <div class="fstep"><b>5 · Ejecutar</b><small>orden real (con gates)</small></div>
-    <div class="fchev">›</div>
-    <div class="fstep"><b>6 · Cuenta</b><small>posiciones · PnL · reconciliar</small></div>
-  </div>
+  <section>
+    <h2>Actualizar y predecir NFL</h2>
+    <pre><code>.venv/bin/python scripts/migrate_nfl_data.py --since 2022
+.venv/bin/python scripts/check_freshness.py
+.venv/bin/python scripts/scan_market.py --tournament nfl_2026 --hours 240</code></pre>
+    <p>La estrategia está aprobada, pero el broker sigue dry-run por defecto.</p>
+  </section>
 
-  <!-- 1 -->
-  <h2>1 · Descubrimiento de mercado &amp; señales</h2>
+  <section>
+    <h2>Comparar backtests</h2>
+    <pre><code>.venv/bin/python scripts/backtest_pipeline.py --tournament all --bankroll 1000</code></pre>
+    <p>El resultado informa cobertura, decisiones, W-L, ROI, yield y drawdown. No
+    cambia automáticamente una estrategia.</p>
+  </section>
 
-  <div class="uc">
-    <h3>Escanear oportunidades Polymarket-first <span class="tag live">live</span></h3>
-    <p class="cap">Lista mercados live de Polymarket, les pega la señal del modelo por deporte, y muestra el edge = modelo − mercado.</p>
-    <code>python scripts/scan_market.py --hours 72</code>
-    <div class="term"><pre>FIXTURE                    PICK       MODELO  MERCADO    EDGE  CONF   N
-Spain vs Austria           HOME_WIN    79.9%    74.9%   <span class="g">+5.0%</span>  MEDIUM 3
-Switzerland vs Algeria     HOME_WIN    61.1%    47.5%  <span class="g">+13.6%</span>  MEDIUM 3
-Colombia vs Ghana          HOME_WIN    76.9%    64.5%  <span class="g">+12.4%</span>  MEDIUM 3
-Argentina vs Cape Verde    HOME_WIN    93.0%    84.5%   <span class="g">+8.5%</span>  MEDIUM 3
-  <span class="m">[skip] Round of 32 Winner…: sin mercado en Polymarket (bracket TBD)</span></pre></div>
-  </div>
+  <section>
+    <h2>Simular una fecha</h2>
+    <pre><code>.venv/bin/python scripts/place_bets.py --tournament liga_mx_2026 \
+  --date YYYY-MM-DD --observe-draft --state /tmp/pepa-liga.json
+.venv/bin/python scripts/place_bets.py --tournament nfl_2026 \
+  --date YYYY-MM-DD --state /tmp/pepa-nfl.json</code></pre>
+    <p class="safe">Sin <code>--live</code>, nada toca la wallet.</p>
+  </section>
 
-  <div class="uc">
-    <h3>Doble-oportunidad: apostar a que el rival NO gana <span class="tag live">1X · nuevo</span></h3>
-    <p class="cap">Con <code>bet_type: double_chance</code> en el <code>STRATEGY.md</code>, en vez de apostar el pick a ganar (que pierde en empate), apuesta a que el <b>rival del pick NO gana</b> — el pick gana <b>o</b> empata a 90'. El <b>Poisson</b> lo precia con <code>P(pick)+P(empate)</code> y el edge sale contra el precio del lado <b>NO</b> del mercado del rival. Mismo resolver que las órdenes, así que scan y ejecución coinciden. Backtest: <b>+4.8%</b> ROI vs −1.1% del modo ganador.</p>
-    <div class="term"><pre>FIXTURE                    PICK           MODELO  MERCADO    EDGE   KICKOFF PDC/ET
-Spain vs Austria           HOME_WIN <span class="g">[1X]</span>  85.2%    76.0%  <span class="g">+9.2%</span>   07-02 13:00/14:00
-  <span class="m">(outcome=NO del rival · Polymarket resuelve a 90' incluso en knockouts)</span></pre></div>
-  </div>
-
-  <div class="grid">
-    <div class="mini"><b>Gateway único (venue/)</b><small><code>find_match_markets</code>, <code>best_ask</code>, order book, <code>list_events</code> (vía <code>venue/discovery</code>) — todo sobre <b>una</b> librería SDK, cero scrapers.</small></div>
-    <div class="mini"><b>Modelo deportivo</b><small>Elo + Bayes + TrueSkill (blend) elige lado; <b>Poisson</b> precia la doble-oportunidad. Evolucionado partido a partido.</small></div>
-    <div class="mini"><b>Horario local</b><small><code>core/timez</code> muestra los kickoffs en tu hora (PDC/UTC-5) + ET, la zona con que Polymarket etiqueta sus mercados.</small></div>
-  </div>
-
-  <!-- 2 -->
-  <h2>2 · Sizing con Kelly</h2>
-  <div class="uc">
-    <h3>Verificar si el tamaño es óptimo <span class="tag live">live</span></h3>
-    <p class="cap">Corre el Kelly real del repo (¼ Kelly, topes del <code>STRATEGY.md</code>) sobre las posiciones abiertas y detecta mala asignación.</p>
-    <div class="term"><pre>EQUIPO       MODELO ENTRY  APOST  KELLY   DELTA  DIAGNOSTICO
-argentina     93.0%  0.85  30.00  50.00  <span class="a">-20.00</span>  <span class="a">SUB-apostado</span> [cap]
-colombia      76.9%  0.64  30.00  40.18  <span class="a">-10.18</span>  <span class="a">SUB-apostado</span>
-switzerland   61.1%  0.48  30.00  28.35  +1.65  <span class="g">OK</span>
-spain         79.9%  0.76  26.48  18.01  <span class="y">+8.47</span>  <span class="y">SOBRE-apostado</span>
-egypt         49.3%  0.39  26.18  18.95  <span class="y">+7.23</span>  <span class="y">SOBRE-apostado</span></pre></div>
-    <p style="margin:8px 0 0"><b>Diagnóstico:</b> el libro es casi plano cuando Kelly pide tamaño <b>proporcional al edge</b> — sub-apuesta las señales fuertes, sobre-apuesta las finas.</p>
-  </div>
-  <div class="grid">
-    <div class="mini"><b>Fórmula pura</b><small><code>risk/functions/kelly.py</code>: <span class="kx">f* = p − (1−p)/b</span>, ¼ fraccional, topado por <code>max_bet</code> y <code>max_kelly</code>.</small></div>
-    <div class="mini"><b>Refinamiento</b><small><code>optimization.size_single</code> — cvxpy opcional (batch), fallback Kelly.</small></div>
-    <div class="mini"><b>Reglas en STRATEGY.md</b><small><code>kelly_fraction:0.25</code>, <code>max_bet_usdc:50</code>, <code>max_exposure:0.15</code> — editable sin tocar Python.</small></div>
-  </div>
-
-  <!-- 3 -->
-  <h2>3 · Riesgo &amp; veredicto</h2>
-  <div class="uc">
-    <h3>El guardián: AUTO / REVIEW / DISCARD</h3>
-    <p class="cap"><code>risk.evaluate</code> aplica el <code>STRATEGY.md</code> (edge thresholds, exposición, drawdown, Kelly) y emite el veredicto. Los flags cualitativos (lesión, partido meaningless) <b>fuerzan REVIEW</b>.</p>
-    <div class="grid">
-      <div class="mini" style="border-left:3px solid var(--green)"><b>AUTO</b><small>reglas cuantitativas OK → ejecuta solo.</small></div>
-      <div class="mini" style="border-left:3px solid var(--amber)"><b>REVIEW</b><small>ambiguo / flag cualitativo → reporte y espera al CIO.</small></div>
-      <div class="mini" style="border-left:3px solid var(--red)"><b>DISCARD</b><small>fuera de umbral / evento vencido → no opera.</small></div>
-    </div>
-  </div>
-
-  <!-- 4 -->
-  <h2>4 · Ejecución de órdenes <span class="tag safe">dry-run por defecto</span></h2>
-  <div class="uc">
-    <h3>Aprobar un REVIEW → colocar (con repricing) <span class="tag live">live</span></h3>
-    <p class="cap"><code>orders.py</code> lista REVIEWs pendientes; al aprobar, <b>reprecia al best_ask live</b>, valida (evento no empezado, slippage), muestra la orden EXACTA y exige confirmación tipeada.</p>
-    <code>python scripts/orders.py --list</code> · <code>--approve &lt;key&gt; [--live]</code> · <code>--cancel &lt;id&gt;</code>
-    <div class="term"><pre>── ORDEN A COLOCAR (DRY-RUN) ──
-  Switzerland vs Algeria  outcome=YES
-  side=BUY  <span class="a">precio_live=0.47</span>  size=50.00 USDC  shares=106.38
-  <span class="m">Confirmación incorrecta — abortado, no se colocó nada.</span></pre></div>
-  </div>
-  <div class="uc" style="border-left-color:var(--green)">
-    <h3>Rebalanceo Kelly ejecutado en vivo <span class="tag live">real · hoy</span></h3>
-    <p class="cap">Compra real para llevar las señales sub-apostadas a su tamaño Kelly óptimo (solo compra, sin vender).</p>
-    <div class="term"><pre>[ARGENTINA] BUY 20.00 USDC @ 0.85  -> <span class="g">status=matched</span>  +23.52 shares
-[COLOMBIA]  BUY  8.13 USDC @ 0.65  -> <span class="g">status=matched</span>  +12.50 shares
-balance 448.62 -> <span class="a">420.32</span>  (-28.29)</pre></div>
-  </div>
-  <div class="grid">
-    <div class="mini"><b>Broker → gateway</b><small><code>place</code> / <code>cancel</code> / <code>best_ask</code> sobre el CLOB V2 (SecureClient).</small></div>
-    <div class="mini"><b>Guardas puras</b><small><code>review_order</code>: rechaza eventos vencidos, slippage &gt; tol, tamaño mínimo, redondeo a tick.</small></div>
-    <div class="mini"><b>Doble gate</b><small>Envío real solo con <code>--live</code> + <code>POLYMARKET_LIVE=1</code> + key + kill-switch off <b>y</b> confirmación tipeada.</small></div>
-  </div>
-
-  <!-- 5 -->
-  <h2>5 · Cuenta live, portafolio &amp; PnL</h2>
-  <div class="uc">
-    <h3>Ver la cuenta real <span class="tag live">live</span></h3>
-    <p class="cap">Saldo pUSD, posiciones con mark-to-market, órdenes abiertas y últimas cerradas — directo de la wallet.</p>
-    <code>python scripts/account.py --closed 6</code>
-    <div class="term"><pre>=== Cuenta Polymarket ===  saldo pUSD: <span class="a">420.32</span>
-── POSICIONES ABIERTAS (12) ──
-  Argentina    58.81 sh  entry 0.85  cur 0.845
-  Colombia     59.37 sh  entry 0.64  cur 0.645
-── ÚLTIMAS 6 CERRADAS · PnL realizado <span class="g">+86.69</span> ──
-  Mexico  +38.18   USA  +11.66   Brazil  +11.10   …</pre></div>
-  </div>
-  <div class="grid">
-    <div class="mini"><b>Portafolio local</b><small><code>portfolio.py</code>: abiertas / cerradas (PnL asentado) / pendientes, desde el ledger.</small></div>
-    <div class="mini"><b>Reconciliación</b><small><code>account.py --reconcile</code>: drift wallet vs ledger + ajusta el bankroll al balance real.</small></div>
-    <div class="mini"><b>Editorial</b><small>reportes Markdown/HTML de sugerencias y REVIEWs (no publica solo).</small></div>
-  </div>
-
-  <!-- 6 -->
-  <h2>6 · Seguridad &amp; operación</h2>
-  <div class="grid">
-    <div class="mini" style="border-left:3px solid var(--green)"><b>Dry-run por defecto</b><small>nada se envía sin opt-in explícito (flag + env + key + confirmación).</small></div>
-    <div class="mini" style="border-left:3px solid var(--red)"><b>Kill-switch</b><small><code>POLYMARKET_KILL_SWITCH=1</code> bloquea toda ejecución al instante.</small></div>
-    <div class="mini" style="border-left:3px solid var(--accent)"><b>Armado in-process</b><small>el interruptor maestro se arma solo dentro del proceso de ejecución; el <code>.env</code> queda en 0.</small></div>
-    <div class="mini"><b>Idempotencia</b><small>hash(condition+outcome+strategy+version+fecha) — nunca doble-apuesta.</small></div>
-    <div class="mini"><b>Cache de cliente</b><small>autentica 1×/run (2ª construcción 0 ms) → ~6–12 s más rápido, sin rate-limit.</small></div>
-    <div class="mini"><b>Reproducibilidad</b><small>funciones puras + schemas frozen + <b>165 tests</b> verdes.</small></div>
-  </div>
-
-  <div class="foot">
-    Sports Quant Trading System · casos de uso · datos live 2026-07-02 · dry-run por defecto.
-    Ver <code>docs/architecture.html</code> para el diagrama de capas.
-  </div>
-
-</div>
+  <section>
+    <h2>Dinero real</h2>
+    <p>Primero leer <code>EXECUTION_GOLIVE.md</code>. La intención debe ser concreta,
+    todos los gates deben pasar y <code>REVIEW</code> siempre espera al humano.</p>
+  </section>
 </body>
 </html>

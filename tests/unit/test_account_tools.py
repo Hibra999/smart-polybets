@@ -30,18 +30,18 @@ class FakeSource:
 
 
 def _decisions():
-    return [{"condition_id": "0xa", "tournament_id": "fifa_world_cup_2026",
-             "strategy_id": "match_winner_wc_v1", "status": "executed",
-             "opportunity_json": {"event_id": "wc_49", "polymarket_condition_id": "0xa"}}]
+    return [{"condition_id": "0xa", "tournament_id": "liga_mx_2026",
+             "strategy_id": "match_winner_ligamx_v1", "status": "executed",
+             "opportunity_json": {"event_id": "match_49", "polymarket_condition_id": "0xa"}}]
 
 
 def test_snapshot_tags_and_marks():
     snap = account_tools.account_snapshot(
         FakeSource(), price_of=lambda p: Decimal("0.60"), decisions=_decisions())
     pos = snap["positions"][0]
-    assert pos.event_id == "wc_49"                 # tagged
+    assert pos.event_id == "match_49"                 # tagged
     assert pos.unrealized_pnl == Decimal("10.0")   # marked
-    assert snap["open_orders"][0].event_id == "wc_49"
+    assert snap["open_orders"][0].event_id == "match_49"
     assert snap["balance"].usdc_balance == Decimal("1000")
     assert snap["closed"][0].realized_pnl == Decimal("12.50")
 

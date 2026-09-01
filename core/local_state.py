@@ -1,13 +1,10 @@
-"""Backend de estado LOCAL (file-backed) — alternativa al Django App.
+"""Backend de estado local persistido en JSON.
 
-Implementa la misma interfaz que DjangoClient usa el pipeline (get_portfolio_state,
+Implementa la interfaz que usa el pipeline (get_portfolio_state,
 check_idempotency, save_decision, mark_executed, get_active_tournaments) pero
 persiste en un JSON local. Sirve para operar de forma autónoma sin levantar el
-Django App: garantiza **idempotencia** (no doble-apostar) y lleva el registro de
-decisiones/ejecuciones.
-
-No es la fuente de verdad del whitepaper (ése es el Django App); es un shim
-operativo. El bankroll es un parámetro (idealmente reconciliado con la wallet real).
+Garantiza **idempotencia** (no doble-apostar) y registra decisiones/ejecuciones.
+El bankroll es un parámetro que debe reconciliarse con la wallet real.
 """
 from __future__ import annotations
 
@@ -47,7 +44,7 @@ class LocalStateClient:
         exposure: dict[str, Decimal] = {}
         for d in executed:
             part = (d.get("opportunity_json") or {}).get("participant_home", "?")
-            exposure[part] = exposure.get(part, Decimal("0")) + Decimal(str(d.get("recommended_size", 0)))
+            exposure[part] = exposure.get(part, Decimal(0)) + Decimal(str(d.get("recommended_size", 0)))
         bankroll = self.initial_bankroll
         return {
             "bankroll_usdc": str(bankroll),
@@ -102,4 +99,7 @@ class LocalStateClient:
         return state.get("exposure_by_participant", {})
 
     def get_active_tournaments(self) -> list[dict]:
-        return [{"tournament_id": "fifa_world_cup_2026"}]
+        return [
+            {"tournament_id": "liga_mx_2026"},
+            {"tournament_id": "nfl_2026"},
+        ]

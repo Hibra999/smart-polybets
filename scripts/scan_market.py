@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """scan_market.py — entrypoint Polymarket-first (mercado → señal → edge).
 
 Registra el provider de fútbol, consulta los fixtures próximos en el torneo
@@ -8,9 +7,9 @@ Read-only, dry-run. Demuestra el seam "sports as plugins":
     agregar un deporte = registrar un SignalProvider (sin cambiar el pipeline)
 
 Uso:
-    python scripts/scan_market.py                       # próximas 48h, WC 2026
+    python scripts/scan_market.py --observe-draft       # Liga MX, próximas 48h
     python scripts/scan_market.py --hours 72            # amplía ventana
-    python scripts/scan_market.py --tournament fifa_world_cup_2026 --sport football
+    python scripts/scan_market.py --tournament nfl_2026
     python scripts/scan_market.py --json                # salida JSON
 """
 from __future__ import annotations
@@ -25,16 +24,16 @@ _REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_REPO))
 
 # ── consola UTF-8 + env ANTES de cualquier import de negocio ─────────────────
-from core.console import enable_utf8  # noqa: E402
+from core.console import enable_utf8
 
 enable_utf8()
 
-from core.env import load_env  # noqa: E402
-from core.preconditions import enforce as enforce_freshness  # noqa: E402
-from core.timez import fmt_local_et_short  # noqa: E402
-from research.functions.poisson_loader import match_result_probs  # noqa: E402
-from research.functions.wc_strategy import resolve_bet_market  # noqa: E402
-from tournaments.registry import get_config  # noqa: E402
+from core.env import load_env
+from core.preconditions import enforce as enforce_freshness
+from core.timez import fmt_local_et_short
+from research.functions.poisson_loader import match_result_probs
+from research.functions.strategy_selection import resolve_bet_market
+from tournaments.registry import get_config
 
 load_env(_REPO / ".env")
 
@@ -73,7 +72,7 @@ def _bet_row(sig_side, sig_prob, markets, strategy, poisson_result):
 def run(
     tournament_id: str,
     hours: int,
-    sport: str,
+    sport: str | None,
     as_json: bool,
     observe_draft: bool = False,
 ) -> int:
@@ -93,6 +92,7 @@ def run(
     except NotFoundError as exc:
         print(f"[scan_market] Torneo no registrado: {exc}", file=sys.stderr)
         return 1
+    sport = sport or cfg.sport
 
     if strategy is None:
         print(
@@ -272,16 +272,16 @@ def main() -> None:
         description="Escanea mercados de Polymarket y calcula edge vs. modelo (dry-run)."
     )
     ap.add_argument(
-        "--tournament", default="fifa_world_cup_2026",
-        help="ID del torneo (default: fifa_world_cup_2026)"
+        "--tournament", default="liga_mx_2026",
+        help="ID del torneo (default: liga_mx_2026)"
     )
     ap.add_argument(
         "--hours", type=int, default=48,
         help="Ventana de fixtures en horas (default: 48)"
     )
     ap.add_argument(
-        "--sport", default="football",
-        help="Deporte / key del provider (default: football)"
+        "--sport", default=None,
+        help="Deporte / key del provider (default: el configurado por el torneo)"
     )
     ap.add_argument(
         "--json", action="store_true", dest="as_json",

@@ -2,7 +2,7 @@
 
 Cada torneo tiene su propio archivo `.sqlite` **aislado**. Un archivo por torneo
 significa que podés borrarlo, reemplazarlo o experimentar sin afectar otros
-torneos. Claude Code lo lee directo con `sqlite3` — sin servidor, sin credenciales.
+torneos. Codex lo lee directo con `sqlite3` — sin servidor, sin credenciales.
 
 ## Organización
 
@@ -11,8 +11,8 @@ data/
 ├── _schema/                      # DDL canónico por deporte (el contrato)
 │   ├── football.sql
 │   └── american_football.sql
-├── fifa_world_cup_2026/
-│   ├── fifa_world_cup_2026.sqlite   # generado por scripts/build_db.py (no en git)
+├── liga_mx_2026/
+│   ├── liga_mx_2026.sqlite   # generado por scripts/build_db.py (no en git)
 │   ├── DATA_SOURCES.md
 │   └── ingest/                      # scripts de ingesta de este torneo
 └── nfl_2026/
@@ -27,7 +27,7 @@ Los `.sqlite` **no** se versionan en git (ver `.gitignore`). Se construyen desde
 el DDL canónico:
 
 ```bash
-python scripts/build_db.py --tournament fifa_world_cup_2026 --sport football
+python scripts/build_db.py --tournament liga_mx_2026 --sport football
 python scripts/build_db.py --tournament nfl_2026 --sport american_football
 ```
 

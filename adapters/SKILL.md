@@ -9,7 +9,7 @@ accede directamente a los datos crudos.
 - Research necesita datos del partido antes de calcular edge
 - Se necesita verificar disponibilidad de jugadores (activa QR-002)
 - Se requiere historial head-to-head para contexto cualitativo
-- Claude necesita hacer un join entre torneos del mismo deporte
+- Codex necesita hacer un join entre torneos del mismo deporte
 
 ## CUÁNDO NO INVOCAR
 - Para datos de Polymarket (eso es CLOB API vía research/)
@@ -29,21 +29,22 @@ accede directamente a los datos crudos.
 | Clase | Modelo | Estado |
 |---|---|---|
 | `FootballEloAdapter` | Elo 1X2 | implementado (modelo Elo real) |
-| `FootballBayesAdapter` | Bayes jerárquico | loader legacy: degrada a Elo. Los modelos WC REALES (Elo+Bayes+TrueSkill migrados) viven en `wc_models.py`/`wc_pipeline.py` (+ Poisson en `wc_poisson.py`) y son los que usa `match_winner_wc_v1` |
-| `FootballTrueSkillAdapter` | TrueSkill | loader legacy: degrada a Elo (ídem: el real está en `wc_trueskill.py`) |
+| `FootballModelAdapter` | Elo + Bayes + TrueSkill | activo para Liga MX |
+| `FootballBayesAdapter` | Bayes compatible | fallback explícito a Elo |
+| `FootballTrueSkillAdapter` | TrueSkill compatible | fallback explícito a Elo |
 | `AmericanFootballEloAdapter` | Elo binario NFL | implementado |
 
 **Localía (2026-07-14)**: `EloSystem.home_adv` (puntos Elo; team_a = local en
 `update_match`) y `PoissonGoalsModel(neutral=False)` se configuran POR TORNEO vía
 `TournamentConfig.{home_adv_elo, neutral_venue}` en `tournaments/registry.py`
-(Mundial: 0/neutral; Liga MX: 65 placeholder/con localía). Bayes y TrueSkill no
+(Liga MX: 80 puntos y `neutral_venue=False`). Bayes y TrueSkill no
 llevan localía (señal de fuerza relativa). Con Elo seed flat 1500, TrueSkill (μ=25)
 y Bayes (0.5) arrancan uniformes por construcción — cold start coherente.
 
 ## INSTANCIACIÓN
 ```python
 # Siempre pasar tournament_id explícito
-reader = FootballDBReader(tournament_id="fifa_world_cup_2026")
+reader = FootballDBReader(tournament_id="liga_mx_2026")
 fixture = reader.get_fixture("match_123")
 
 # Para tests: inyectar una conexión sqlite3 (ej: :memory:)

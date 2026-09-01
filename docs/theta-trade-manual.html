@@ -1,128 +1,52 @@
-<!DOCTYPE html>
-<html lang="es"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Theta Trade — Manual de operación</title>
-<style>
-  body{background:#0d1117;color:#e6edf3;font-family:-apple-system,'Segoe UI',sans-serif;
-       margin:0;padding:32px 16px;line-height:1.55}
-  .wrap{max-width:900px;margin:0 auto}
-  h1{font-size:25px;margin:0 0 4px} h2{font-size:18px;margin:30px 0 10px;color:#e6edf3;
-     border-bottom:1px solid #21262d;padding-bottom:6px}
-  .muted{color:#8b949e} small{font-size:12px}
-  .banner{border:1px solid #9e6a03;background:#bb800914;border-radius:8px;padding:12px 16px;margin:16px 0}
-  .panel{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:14px 16px;margin:10px 0}
-  table{border-collapse:collapse;width:100%;font-size:13px;margin:10px 0}
-  th,td{border:1px solid #30363d;padding:6px 10px;text-align:left;vertical-align:top}
-  th{background:#161b22;color:#8b949e;font-weight:600}
-  code,pre{font-family:ui-monospace,Consolas,monospace;font-size:12.5px}
-  code{background:#161b22;border:1px solid #30363d;border-radius:4px;padding:1px 5px}
-  pre{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:12px 14px;
-      overflow-x:auto;color:#c9d1d9}
-  pre code{background:none;border:none;padding:0}
-  .key{display:inline-block;background:#21262d;border:1px solid #484f58;border-radius:5px;
-       padding:0 8px;font-family:ui-monospace,Consolas,monospace;font-weight:700;color:#e6edf3}
-  .ok{color:#3fb950} .warn{color:#d29922} .bad{color:#f85149}
-  ol,ul{padding-left:22px} li{margin:4px 0}
-</style></head><body><div class="wrap">
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>PEPA — Theta lay Liga MX</title>
+  <style>
+    body{max-width:900px;margin:40px auto;padding:0 20px;background:#0d1117;color:#e6edf3;
+      font:15px/1.6 system-ui,sans-serif}code,pre{background:#010409}code{padding:2px 5px}
+    pre{padding:12px;overflow:auto;border:1px solid #30363d}.warn{color:#d29922}
+    section{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:16px;margin:16px 0}
+  </style>
+</head>
+<body>
+  <h1>Theta lay — Liga MX</h1>
+  <p class="warn"><strong>DRAFT y doc-only.</strong> No se carga como estrategia
+  activa, siempre requiere REVIEW y no está validada con ticks propios suficientes.</p>
 
-<h1>Theta Trade — lay del favorito con salida anticipada</h1>
-<div class="muted">Manual de operación · estrategia <code>theta_lay_v1</code> (draft) · Liga MX Apertura 2026 ·
-2026-07-14 · fuentes: <code>tournaments/liga_mx_2026/strategies/theta_lay_v1/STRATEGY.md</code> ·
-<code>docs/theta-trade-manual.md</code></div>
+  <section>
+    <h2>Hipótesis</h2>
+    <p>Comprar el token NO del favorito cerca del kickoff y vender antes de la
+    resolución para capturar decaimiento temporal. Gol temprano, spread, fees y
+    profundidad pueden eliminar el edge.</p>
+  </section>
 
-<div class="banner"><b class="warn">Status: DRAFT — validación en J1-J3 con sizing ≤ $10.</b><br>
-<small class="muted">Evidencia de concepto (26 knockouts del WC, price history real de PM): +6.9% (salida 30min)
-a +21.4% (105min) BRUTO, 16W-10L a 90min. NO validado aún en Liga MX; el TP default es bruto de fees.</small></div>
+  <section>
+    <h2>Captura y monitor dry-run</h2>
+    <pre><code>.venv/bin/python scripts/record_market_ticks.py
+.venv/bin/python scripts/theta_monitor.py --list --tournament liga_mx_2026
+.venv/bin/python scripts/theta_monitor.py --market "QUESTION" \
+  --entry 0.42 --shares 20</code></pre>
+    <p>Las tablas <code>theta_tick</code> y <code>theta_session</code> viven en el
+    buffer local de ticks. Tras una salida live autorizada se consulta la cuenta y se
+    reconcilia el estado.</p>
+  </section>
 
-<h2>La estrategia en una línea</h2>
-<div class="panel">Comprar el <b>NO del favorito al kickoff</b> en mercados "Will X win" (resuelven a 90')
-y <b>salir vendiendo antes de la resolución</b>: cada minuto sin gol del favorito, el NO gana valor
-(decaimiento temporal + sobreprecio retail del favorito). No requiere modelo — requiere venue blando
-y disciplina de salida.</div>
+  <section>
+    <h2>Reglas provisionales</h2>
+    <ul>
+      <li>Yes del favorito ≥ 0.40; volumen ≥ 200 USDC.</li>
+      <li>TP bruto +5% desde minuto 30; hard exit minuto 105.</li>
+      <li>Máximo 10 USDC por trade, dos simultáneos y 30 USDC total.</li>
+    </ul>
+    <p>Los valores deben calibrarse con varias jornadas de Liga MX antes de proponer
+    un cambio de estado.</p>
+  </section>
 
-<h2>Reglas (única fuente: STRATEGY.md)</h2>
-<table>
-<tr><th>Regla</th><th>Valor</th><th>Nota</th></tr>
-<tr><td>Entrada</td><td>NO del favorito (Yes ≥ 0.40), kickoff ± 5 min</td><td>vía carril CIO (propose_bet + orders)</td></tr>
-<tr><td>TP (take-profit)</td><td>PnL ≥ <b>+5%</b> desde el <b>min 30</b></td><td>BRUTO — calibrar neto con ticks de J1</td></tr>
-<tr><td>Salida dura</td><td><b>min 105</b> wall-clock (≈ min 85 de juego)</td><td>vende pase lo que pase</td></tr>
-<tr><td>Stop</td><td>sin stop (opcional <code>--stop</code>)</td><td>los goles gapean: el sizing es el stop</td></tr>
-<tr><td>Sizing</td><td>máx <b>$10</b>/trade · 2 simultáneos · $30 total</td><td>cola real: -0.46/share (gol temprano)</td></tr>
-</table>
-
-<h2>Paso 0 — Cómo obtener el id del mercado</h2>
-<pre><code>python scripts/theta_monitor.py --list                # todos los winner abiertos (Liga MX)
-python scripts/theta_monitor.py --list juarez         # filtro por substring (insensible a acentos)
-python scripts/theta_monitor.py --list --tournament fifa_world_cup_2026</code></pre>
-<div class="panel">Imprime <b>kickoff, question, bid/ask en vivo y el TOKEN NO</b> de cada mercado. Dos formas de apuntar:
-<ul>
-<li><code>--market "&lt;substring de la question&gt;"</code> — <span class="ok">recomendado</span>; resuelve token NO, tick y kickoff solo.</li>
-<li><code>--token &lt;TOKEN_NO&gt; --kickoff &lt;ISO UTC&gt;</code> — directo, sirve para <b>cualquier mercado de Polymarket</b> aunque el torneo no esté registrado.</li>
-</ul></div>
-
-<h2>Ciclo completo de un trade</h2>
-<pre><code># 1. (siempre en jornada) recorder juntando data en paralelo
-python scripts/record_market_ticks.py
-
-# 2. ENTRADA al kickoff — comprar el NO del favorito (carril CIO: riesgo + ledger)
-python scripts/propose_bet.py --market "Will FC Juárez win on 2026-07-17?" \
-    --outcome no --stake 10 --model-prob 0.55 --reason "theta lay J1"
-python scripts/orders.py --approve &lt;key&gt; --live --confirm 10.00
-
-# 3. MONITOREO + SALIDA — armar el CLI con el fill real
-python scripts/theta_monitor.py --market "Will FC Juárez win on 2026-07-17?" \
-    --entry 0.42 --shares 23.8 --live</code></pre>
-
-<h2>Parámetros del CLI (<code>theta_monitor.py</code>)</h2>
-<table>
-<tr><th>Parámetro</th><th>Default</th><th>Qué hace</th></tr>
-<tr><td><code>--list [FILTRO]</code></td><td>—</td><td>lista mercados abiertos (tokens + precios) y sale</td></tr>
-<tr><td><code>--market "TXT"</code></td><td>—</td><td>mercado por substring de la question (usa el token NO)</td></tr>
-<tr><td><code>--token ID</code></td><td>—</td><td>token directo (cualquier mercado de PM); requiere <code>--kickoff</code></td></tr>
-<tr><td><code>--kickoff ISO</code></td><td>—</td><td>kickoff UTC (solo con <code>--token</code>)</td></tr>
-<tr><td><code>--entry P</code></td><td><b>requerido</b></td><td>precio al que compraste el NO</td></tr>
-<tr><td><code>--shares N</code></td><td><b>requerido</b></td><td>shares de NO a vender</td></tr>
-<tr><td><code>--tp PCT</code></td><td>0.05</td><td>take-profit sobre costo (0.05 = +5%); BRUTO de fees</td></tr>
-<tr><td><code>--from-min M</code></td><td>30</td><td>minuto (wall-clock) desde el cual aplica el TP</td></tr>
-<tr><td><code>--hard-exit-min M</code></td><td>105</td><td>venta forzada a ese minuto, pase lo que pase</td></tr>
-<tr><td><code>--stop PCT</code></td><td>sin stop</td><td>stop-loss opcional (ej. 0.25); los goles gapean</td></tr>
-<tr><td><code>--interval S</code></td><td>5</td><td>segundos entre lecturas del book (~460 ms por lectura)</td></tr>
-<tr><td><code>--tournament ID</code></td><td>liga_mx_2026</td><td>torneo del registry (para <code>--market</code>/<code>--list</code>)</td></tr>
-<tr><td><code>--live</code></td><td>dry-run</td><td>venta real: + <code>POLYMARKET_LIVE=1</code> + key + kill-switch off</td></tr>
-<tr><td><code>--confirm N</code></td><td>interactivo</td><td>confirmación no interactiva (= shares exactas)</td></tr>
-</table>
-
-<h2>Comandos EN VIVO (tipear + Enter mientras corre)</h2>
-<table>
-<tr><th>Comando</th><th>Acción</th></tr>
-<tr><td><span class="key">v</span></td><td><b class="bad">HARD STOP manual</b>: vende YA al best bid (3 reintentos con bid fresco)</td></tr>
-<tr><td><span class="key">p</span></td><td>imprime resumen de PnL/estado</td></tr>
-<tr><td><span class="key">q</span> / Ctrl+C</td><td>sale <b>sin</b> vender (la posición queda abierta y lo avisa)</td></tr>
-</table>
-
-<h2>Qué queda registrado (pase lo que pase)</h2>
-<div class="panel"><ul>
-<li>Cada lectura (bid/ask/size/PnL) → tabla <code>theta_tick</code>; la sesión completa (entry, regla,
-salida, order_id, PnL) → <code>theta_session</code>. Ambas en <code>data/&lt;torneo&gt;/market_ticks.sqlite</code>
-(WAL — sobrevive cortes).</li>
-<li>Si la venta falla tras los reintentos: imprime resumen + instrucciones
-(<code>orders.py --list</code>) y todo queda en la DB. <b>Nunca te deja a ciegas.</b></li>
-<li><b>Post-trade</b>: la venta no pasa por el ledger → asentar con
-<code>scripts/backfill_manual_trades.py</code>.</li>
-</ul></div>
-
-<h2>Advertencias operativas</h2>
-<ol>
-<li><b class="warn">El TP default (+5%) es bruto</b>: el round-trip paga ~5% taker sobre ganancias.
-Calibrar el TP mínimo neto con los ticks grabados de J1 antes de dar tamaño.</li>
-<li><b class="bad">Gol temprano del favorito = gap en contra</b> sin stop posible → sizing chico,
-muchas repeticiones (backtest WC: 16W-10L con colas de -0.46/share).</li>
-<li><b class="warn">Liquidez in-play de Liga MX: sin medir</b> — J1 es la prueba. Si el <code>sz</code>
-del bid que imprime el monitor es menor que tus shares, la salida será parcial: achicar el sizing.</li>
-</ol>
-
-<div class="muted" style="margin-top:26px"><small>Evidencia: docs/findings/2026-07-14-theta-trade-lay-favorito.md ·
-sesgos de mercado: docs/findings/2026-07-14-ligamx-sesgos-mercado.md ·
-backtest reproducible: scripts/wc_theta_trade_backtest.py</small></div>
-
-</div></body></html>
+  <p>Fuente canónica:
+  <code>tournaments/liga_mx_2026/strategies/theta_lay_v1/STRATEGY.md</code> y
+  <code>docs/theta-trade-manual.md</code>.</p>
+</body>
+</html>

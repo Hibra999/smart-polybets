@@ -8,7 +8,7 @@ import pytest
 from adapters.american_football.db_reader import AmericanFootballDBReader
 from adapters.american_football.nfl_pipeline import NFLPipeline
 from adapters.american_football.trueskill_loader import AmericanFootballTrueSkillAdapter
-from research.functions.wc_strategy import pick_side
+from research.functions.strategy_selection import pick_side
 from tournaments.registry import load_active_strategy
 
 DDL = (Path(__file__).resolve().parents[2] / "data" / "_schema" / "american_football.sql"

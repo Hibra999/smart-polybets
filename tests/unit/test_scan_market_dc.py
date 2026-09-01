@@ -71,5 +71,4 @@ def test_bet_row_double_chance_returns_none_without_poisson():
 
 def test_registry_has_scan_tags_for_registered_markets():
     assert sm.get_config("liga_mx_2026").polymarket_tag_id == 102448
-    assert sm.get_config("fifa_world_cup_2026").polymarket_tag_id == 102232
     assert sm.get_config("nfl_2026").polymarket_tag_id == 450

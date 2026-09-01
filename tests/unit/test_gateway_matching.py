@@ -122,8 +122,8 @@ def test_canon_alias_south_korea():
 
 def test_canon_simple():
     """Plain ASCII names are just lowercased."""
-    assert canon("Netherlands") == "netherlands"
-    assert canon("Brazil") == "brazil"
+    assert canon("Tigres") == "tigres"
+    assert canon("Seattle") == "seattle"
 
 
 def test_canon_alias_usa():
@@ -185,12 +185,12 @@ def test_extract_yes_token_inverted_labels():
 
 
 def test_match_event_netherlands_sweden_home_win():
-    """'Netherlands vs. Sweden' → Netherlands is HOME_WIN."""
-    mkt_ned = _FakeMarket("Will Netherlands win?", "tok-ned")
-    mkt_swe = _FakeMarket("Will Sweden win?", "tok-swe")
-    ev = _FakeEvent("Netherlands vs. Sweden", [mkt_ned, mkt_swe])
+    """'Tigres vs. Monterrey' → Tigres is HOME_WIN."""
+    mkt_ned = _FakeMarket("Will Tigres win?", "tok-ned")
+    mkt_swe = _FakeMarket("Will Monterrey win?", "tok-swe")
+    ev = _FakeEvent("Tigres vs. Monterrey", [mkt_ned, mkt_swe])
 
-    results = match_event(ev, "Netherlands", "Sweden")
+    results = match_event(ev, "Tigres", "Monterrey")
 
     assert results is not None
     assert len(results) == 2
@@ -203,16 +203,16 @@ def test_match_event_netherlands_sweden_home_win():
 def test_match_event_no_match_returns_none():
     """Event for a different fixture returns None."""
     ev = _FakeEvent("Spain vs. Germany", [_FakeMarket("Will Spain win?", "t1")])
-    assert match_event(ev, "Netherlands", "Sweden") is None
+    assert match_event(ev, "Tigres", "Monterrey") is None
 
 
 def test_match_event_only_win_markets():
     """A market without 'Will X win' pattern is ignored."""
     draw_mkt = _FakeMarket("Will there be a draw?", "tok-draw")
-    win_mkt = _FakeMarket("Will Netherlands win?", "tok-ned")
-    ev = _FakeEvent("Netherlands vs. Sweden", [draw_mkt, win_mkt])
+    win_mkt = _FakeMarket("Will Tigres win?", "tok-ned")
+    ev = _FakeEvent("Tigres vs. Monterrey", [draw_mkt, win_mkt])
 
-    results = match_event(ev, "Netherlands", "Sweden")
+    results = match_event(ev, "Tigres", "Monterrey")
     # Draw market is skipped ('draw' in q)
     assert results is not None
     assert len(results) == 1
@@ -221,11 +221,11 @@ def test_match_event_only_win_markets():
 
 def test_match_event_swapped_polymarket_order():
     """Polymarket may list 'away vs home'; matching should still map outcomes correctly."""
-    mkt_swe = _FakeMarket("Will Sweden win?", "tok-swe")
-    mkt_ned = _FakeMarket("Will Netherlands win?", "tok-ned")
-    ev = _FakeEvent("Sweden vs. Netherlands", [mkt_swe, mkt_ned])
+    mkt_swe = _FakeMarket("Will Monterrey win?", "tok-swe")
+    mkt_ned = _FakeMarket("Will Tigres win?", "tok-ned")
+    ev = _FakeEvent("Monterrey vs. Tigres", [mkt_swe, mkt_ned])
 
-    results = match_event(ev, "Netherlands", "Sweden")
+    results = match_event(ev, "Tigres", "Monterrey")
     assert results is not None
     ned = next((r for r in results if r["model_outcome"] == "HOME_WIN"), None)
     assert ned is not None
@@ -252,12 +252,12 @@ def _gw_with_pub(events: list) -> PolymarketGateway:
 
 def test_find_match_markets_returns_polymarket_markets():
     """find_match_markets returns list[PolymarketMarket]."""
-    mkt_ned = _FakeMarket("Will Netherlands win?", "tok-ned", condition_id="cond-ned")
-    mkt_swe = _FakeMarket("Will Sweden win?", "tok-swe", condition_id="cond-swe")
-    ev = _FakeEvent("Netherlands vs. Sweden", [mkt_ned, mkt_swe])
+    mkt_ned = _FakeMarket("Will Tigres win?", "tok-ned", condition_id="cond-ned")
+    mkt_swe = _FakeMarket("Will Monterrey win?", "tok-swe", condition_id="cond-swe")
+    ev = _FakeEvent("Tigres vs. Monterrey", [mkt_ned, mkt_swe])
 
     gw = _gw_with_pub([ev])
-    result = gw.find_match_markets("Netherlands", "Sweden")
+    result = gw.find_match_markets("Tigres", "Monterrey")
 
     assert isinstance(result, list)
     assert all(isinstance(m, PolymarketMarket) for m in result)
@@ -266,12 +266,12 @@ def test_find_match_markets_returns_polymarket_markets():
 
 def test_find_match_markets_correct_outcomes():
     """find_match_markets assigns HOME_WIN/AWAY_WIN correctly."""
-    mkt_ned = _FakeMarket("Will Netherlands win?", "tok-ned",
+    mkt_ned = _FakeMarket("Will Tigres win?", "tok-ned",
                           yes_price=Decimal("0.65"))
-    ev = _FakeEvent("Netherlands vs. Sweden", [mkt_ned])
+    ev = _FakeEvent("Tigres vs. Monterrey", [mkt_ned])
 
     gw = _gw_with_pub([ev])
-    result = gw.find_match_markets("Netherlands", "Sweden")
+    result = gw.find_match_markets("Tigres", "Monterrey")
 
     assert len(result) == 1
     m = result[0]
@@ -285,16 +285,16 @@ def test_find_match_markets_no_match_returns_empty():
     """No matching event → empty list."""
     ev = _FakeEvent("Spain vs. Germany", [_FakeMarket("Will Spain win?", "t1")])
     gw = _gw_with_pub([ev])
-    assert gw.find_match_markets("Netherlands", "Sweden") == []
+    assert gw.find_match_markets("Tigres", "Monterrey") == []
 
 
 def test_find_match_markets_multiple_events_only_one_matches():
     """Only the matching event's markets are returned."""
     ev1 = _FakeEvent("Spain vs. Germany", [_FakeMarket("Will Spain win?", "t1")])
-    ev2 = _FakeEvent("Netherlands vs. Sweden", [
-        _FakeMarket("Will Netherlands win?", "tok-ned"),
+    ev2 = _FakeEvent("Tigres vs. Monterrey", [
+        _FakeMarket("Will Tigres win?", "tok-ned"),
     ])
     gw = _gw_with_pub([ev1, ev2])
-    result = gw.find_match_markets("Netherlands", "Sweden")
+    result = gw.find_match_markets("Tigres", "Monterrey")
     assert len(result) == 1
     assert result[0].token_id == "tok-ned"

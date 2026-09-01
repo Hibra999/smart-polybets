@@ -1,5 +1,4 @@
-"""Resultado de una precondición de datos. Frozen. Ver
-docs/superpowers/specs/2026-07-17-mandatory-dependency-hooks-design.md."""
+"""Resultado inmutable de una precondición de datos."""
 from __future__ import annotations
 
 from typing import Literal

@@ -1,12 +1,10 @@
-#!/usr/bin/env python
 """Proponer una apuesta manual (CIO override) COMO DECISIÓN DEL PIPELINE.
 
-Reemplaza a los scripts manuales ad-hoc (place_totals_qf/place_winner_sf): la
-apuesta pasa por el motor de riesgo (edge/volumen/drawdown/horas/exposure), queda
+La apuesta pasa por el motor de riesgo (edge/volumen/drawdown/horas/exposure), queda
 en el ledger con idempotency key, y se coloca con la ruta confiable de aprobación:
 
     # 1. proponer (NO coloca nada; guarda una Decision REVIEW)
-    python scripts/propose_bet.py --market "Will Spain win on 2026-07-14?" \
+    python scripts/propose_bet.py --tournament nfl_2026 --market "Will Team win?" \
         --stake 12 --model-prob 0.379 --reason "Poisson corregido vs ask 0.30"
 
     # 2. colocar (gates live + confirmación tipeada del monto)
@@ -15,7 +13,6 @@ en el ledger con idempotency key, y se coloca con la ruta confiable de aprobaci�
 `--market` matchea por texto exacto o substring ÚNICO contra las questions de los
 mercados abiertos del torneo (venue.discovery). `--outcome no` compra el lado NO.
 
-Diseño: docs/superpowers/specs/2026-07-14-cio-override-lane-design.md
 """
 from __future__ import annotations
 
@@ -42,16 +39,16 @@ from core.preconditions import enforce as enforce_freshness
 from core.utils import to_decimal, utcnow
 from execution.functions.broker import PolymarketBroker
 from research.schemas.market_opportunity import MarketOpportunity
-from tournaments.registry import load_active_strategy
+from tournaments.registry import get_config, load_active_strategy
 from venue.discovery import match_events
 
-TID = "fifa_world_cup_2026"
+DEFAULT_TOURNAMENT = "liga_mx_2026"
 
 
-def find_market(query: str) -> tuple[dict, object] | None:
+def find_market(query: str, tag_id: int) -> tuple[dict, object] | None:
     """Mercado abierto cuya question matchea exacto o por substring único."""
     hits: list[tuple[dict, object]] = []
-    for me in match_events(closed=False):
+    for me in match_events(tag_id=tag_id, closed=False):
         for m in me.event.markets:
             d = m.model_dump()
             q = d.get("question") or ""
@@ -68,8 +65,17 @@ def find_market(query: str) -> tuple[dict, object] | None:
     return None
 
 
-def build_opportunity(d: dict, me, *, outcome_key: str, model_prob: Decimal,
-                      market_type: str, broker: PolymarketBroker) -> MarketOpportunity:
+def build_opportunity(
+    d: dict,
+    me,
+    *,
+    tournament_id: str,
+    sport: str,
+    outcome_key: str,
+    model_prob: Decimal,
+    market_type: str,
+    broker: PolymarketBroker,
+) -> MarketOpportunity:
     o = (d.get("outcomes") or {}).get(outcome_key, {})
     token = str(o.get("token_id", ""))
     ask = broker.best_ask(token)
@@ -83,8 +89,8 @@ def build_opportunity(d: dict, me, *, outcome_key: str, model_prob: Decimal,
         polymarket_condition_id=d.get("condition_id") or "",
         polymarket_token_id=token,
         outcome=outcome_key.upper(),
-        tournament_id=TID,
-        sport="football",
+        tournament_id=tournament_id,
+        sport=sport,
         event_id=str(getattr(me.event, "id", "") or d.get("id", "")),
         market_type=market_type,
         strategy_id=OVERRIDE_STRATEGY_ID,
@@ -95,7 +101,7 @@ def build_opportunity(d: dict, me, *, outcome_key: str, model_prob: Decimal,
         participant_away=me.away_disp,
         event_start_utc=kickoff,
         hours_to_event=hours,
-        event_phase="playoff",
+        event_phase="scheduled",
         market_volume_usdc=to_decimal(metrics.get("volume") or 0),
         market_liquidity_usdc=to_decimal(metrics.get("liquidity") or 0),
         model_version="cio-judgment",
@@ -112,6 +118,7 @@ def build_opportunity(d: dict, me, *, outcome_key: str, model_prob: Decimal,
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="Proponer apuesta manual (CIO override) → Decision REVIEW.")
+    ap.add_argument("--tournament", default=DEFAULT_TOURNAMENT)
     ap.add_argument("--market", required=True, help="question del mercado (exacta o substring único)")
     ap.add_argument("--stake", required=True, type=float, help="monto USDC decidido por el CIO")
     ap.add_argument("--model-prob", required=True, type=float,
@@ -127,28 +134,26 @@ def main() -> None:
                     help="fuerza la acción pese a datos viejos (requiere --reason)")
     a = ap.parse_args()
 
-    # Guard MONEY: --reason ya es obligatorio para la propuesta en sí (línea arriba)
-    # y se reutiliza como justificación del --force (evita un --reason duplicado en
-    # el parser, que rompería argparse por conflicting option string).
-    # tournaments=[TID]: este script está hard-scoped a fifa_world_cup_2026 (TID);
-    # pasar None evaluaría TODOS los torneos activos y podría bloquear una apuesta
-    # del Mundial por datos viejos de un torneo no relacionado (ej. liga_mx).
-    enforce_freshness("MONEY", tournaments=[TID], force=a.force, reason=a.reason)
+    cfg = get_config(a.tournament)
+    if cfg.polymarket_tag_id is None:
+        raise ValueError(f"{a.tournament} no tiene polymarket_tag_id configurado")
+    enforce_freshness("MONEY", tournaments=[a.tournament], force=a.force, reason=a.reason)
 
-    strategy = load_active_strategy(TID)
+    strategy = load_active_strategy(a.tournament)
     if strategy is None:
         print("No hay estrategia activa (se necesitan sus límites de riesgo).")
         return
     client = LocalStateClient(a.state, bankroll_usdc=a.bankroll)
     broker = PolymarketBroker(live=False)  # solo lectura de best_ask; NO coloca
 
-    found = find_market(a.market)
+    found = find_market(a.market, cfg.polymarket_tag_id)
     if not found:
         print(f"  mercado no encontrado (abierto): {a.market}")
         return
     d, me = found
 
-    opp = build_opportunity(d, me, outcome_key=a.outcome,
+    opp = build_opportunity(d, me, tournament_id=a.tournament, sport=cfg.sport,
+                            outcome_key=a.outcome,
                             model_prob=to_decimal(a.model_prob),
                             market_type=a.market_type, broker=broker)
     print(f"\n  {d.get('question')}  [{a.outcome.upper()}]")
@@ -175,10 +180,10 @@ def main() -> None:
             else "decisión guardada en el ledger"
         print(f"\n  [REVIEW] {estado} — key: {key}")
         if not a.dry_run:
-            print(f"  Siguiente paso (coloca con gates + confirmación):")
+            print("  Siguiente paso (coloca con gates + confirmación):")
             print(f"    python scripts/orders.py --approve {key[:10]} --live --confirm {to_decimal(a.stake):.2f}")
     elif mode == "DISCARD":
-        print(f"\n  [DISCARD] el motor de riesgo la bloqueó (nada guardado):")
+        print("\n  [DISCARD] el motor de riesgo la bloqueó (nada guardado):")
         for r in res.get("reasons", []):
             print(f"    - {r}")
     else:

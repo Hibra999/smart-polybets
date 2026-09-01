@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Callable
 
-from research.functions.wc_strategy import pick_side
+from research.functions.strategy_selection import pick_side
 from signals.base import Signal
 
 

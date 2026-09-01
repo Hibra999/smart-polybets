@@ -1,7 +1,7 @@
 # Migración: `sports_bet` (NFL) → diseño agéntico
 
 Mapea el modelo y la estrategia del repo `sports_bet` (apuestas NFL) al framework
-agéntico, análogo a la migración de worldcup.
+agéntico compartido por Liga MX y NFL.
 
 ## Qué se migró
 
@@ -11,17 +11,17 @@ win/loss con la librería `trueskill`, elige el equipo de mayor μ) + el sizing
 
 ## Mapeo de componentes
 
-| Origen (`sports_bet`) | Destino (`pypro_polymarket_agent`) |
+| Origen (`sports_bet`) | Destino (PEPA) |
 |---|---|
-| `analysis_true_skill.py` (lib `trueskill`, `rate_1vs1`) | `adapters/football/wc_trueskill.py` (port puro 1v1, reutilizado) |
+| `analysis_true_skill.py` (lib `trueskill`, `rate_1vs1`) | `adapters/football/trueskill.py` (port puro 1v1, reutilizado) |
 | pipeline de ratings (procesa juegos en orden) | `adapters/american_football/nfl_pipeline.py` (`NFLPipeline`) |
-| `select_winner` (compara μ) | `research/functions/wc_strategy.pick_side` (criterio `trueskill`) |
+| `select_winner` (compara μ) | `research/functions/strategy_selection.pick_side` (criterio `trueskill`) |
 | `kelly_criterion` (`test_bet_sizing.py`) | `risk/functions/kelly.fractional_kelly` |
 | EV multi-apuesta (scipy SLSQP) | `optimization/portfolio_optimizer` (cvxpy, opcional) |
 | odds Codere (moneyline americano) | precio implícito de Polymarket (research) |
 | datos NFL (nfl.com scrape + Postgres) | **nflverse `games.csv`** → `scripts/migrate_nfl_data.py` |
 
-## Diferencias clave vs worldcup
+## Decisiones del port
 
 - **Modelo**: NFL usa **solo TrueSkill** (no Elo/Bayes). El origen elegía el equipo
   de mayor μ; aquí se usa la **probabilidad de victoria** TrueSkill

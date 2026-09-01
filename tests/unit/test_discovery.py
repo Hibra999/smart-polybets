@@ -23,22 +23,22 @@ class _Page:
 class _Pub:
     def list_events(self, *, tag_ids, closed, page_size):
         return [_Page([
-            _Ev("Spain vs. Austria", [_Mkt("Will Spain win on 2026-07-02?")],
+            _Ev("Necaxa vs. Atlante", [_Mkt("Will Necaxa win on 2026-09-05?")],
                 datetime(2026, 7, 2, 19, tzinfo=timezone.utc)),
-            _Ev("World Cup Winner", [_Mkt("Will Spain win the 2026 FIFA World Cup?")], None),
+            _Ev("Liga MX Champion", [_Mkt("Will Necaxa win Liga MX?")], None),
         ])]
 
 
 def test_list_events_returns_raw(monkeypatch):
     monkeypatch.setattr(discovery, "build_public_client", lambda: _Pub())
-    assert len(discovery.list_events()) == 2
+    assert len(discovery.list_events(tag_id=102448)) == 2
 
 
 def test_match_events_parses_and_filters(monkeypatch):
     monkeypatch.setattr(discovery, "build_public_client", lambda: _Pub())
-    mes = discovery.match_events()
-    assert len(mes) == 1                       # el evento "World Cup Winner" (sin 'vs') se salta
+    mes = discovery.match_events(tag_id=102448)
+    assert len(mes) == 1                       # el evento de campeón (sin 'vs') se salta
     me = mes[0]
-    assert me.home_canon == "spain" and me.away_canon == "austria"
+    assert me.home_canon == "necaxa" and me.away_canon == "atlante"
     assert me.has_winner_market is True
     assert me.kickoff.year == 2026

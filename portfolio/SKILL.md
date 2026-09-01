@@ -14,7 +14,7 @@ performance. (Django fue retirado; el estado vive en `data/agent_state.json`.)
   → **Fuente de verdad = cuenta LIVE, no el ledger local** (suele estar desincronizado en 0).
     Correr `python scripts/account.py --closed 300 --json` y reportar **equity total = cash +
     Σ(shares × current_price de abiertas)** (el balance es solo cash, no suma posiciones), las
-    posiciones abiertas y el histórico ganado/perdido con record W-L y neto. Ver `CLAUDE.md` §
+    posiciones abiertas y el histórico ganado/perdido con record W-L y neto. Ver `AGENTS.md` §
     "Reportar PnL / cuenta".
 
 ## CUÁNDO NO INVOCAR
@@ -49,10 +49,8 @@ performance. (Django fue retirado; el estado vive en `data/agent_state.json`.)
 - NUNCA escribir directamente al JSON de estado — siempre a través de LocalStateClient
 - check_idempotency() es OBLIGATORIO antes de save_decision() — sin excepciones
 - Si el estado local no se puede leer/escribir, el workflow PARA — no continúa con estado stale
-- ⚠️ Para PnL usar SIEMPRE la cuenta live (ver CUÁNDO INVOCAR arriba). Desde 2026-07-14
-  el ledger sí registra las apuestas manuales (carril CIO override `propose_bet.py` +
-  backfill `backfill_manual_trades.py`), pero la valuación/resolución sigue viniendo
-  de la cuenta live.
+- Para PnL usar SIEMPRE la cuenta live. El ledger registra el carril CIO override,
+  pero la valuación y resolución siguen viniendo de la cuenta live.
 - Los status del ledger: `pending_approval` (REVIEW), `approved`, `executed` (fill live),
   `simulated` (dry-run; NO bloquea idempotencia), `expired`.
 

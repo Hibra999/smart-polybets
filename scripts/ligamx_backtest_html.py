@@ -3,7 +3,7 @@
 
 Recomputa el backtest (scripts/ligamx_backtest.py, sin red — lee MEX.csv) y los
 seeds actuales de la DB, y renderiza el reporte con el estilo de la casa
-(tema oscuro, SVG inline, mismo look que editorial/reports/fifa_world_cup_2026/wc-backtest.html).
+(tema oscuro y SVG inline).
 
 Paleta de series validada (dataviz six-checks, superficie #0d1117):
   modelo = #388bfd (azul) · mercado = #bb8009 (ámbar); verde/rojo SOLO como

@@ -1,44 +1,34 @@
-# Inicio de sesión para agentes LLM
+# INIT — manual operativo de Codex
 
-Este archivo es el handoff operativo del repositorio. La instantánea puede quedar
-obsoleta; los comandos y el estado actual del código o de los datos siempre mandan.
+Este archivo es la fuente de arranque para operar PEPA. El repositorio admite sólo
+Liga MX y NFL; la fecha, los fixtures, el saldo y la frescura siempre se consultan en
+tiempo de ejecución.
 
-## 1. Leer antes de actuar
+## 1. Secuencia obligatoria al iniciar
 
-1. `AGENTS.md` para reglas del repositorio y seguridad.
-2. `README.md` para arquitectura y flujo unidireccional.
-3. Todos los `docs/**/*.html` antes de modificar u operar el pipeline.
-4. El `SKILL.md` del área que se vaya a tocar.
-5. `tournaments/<tournament_id>/TOURNAMENT.md` y la estrategia activa en
-   `tournaments/<tournament_id>/strategies/*/STRATEGY.md`.
-6. `EXECUTION_GOLIVE.md` antes de cualquier trabajo relacionado con dinero real.
+1. Lee `AGENTS.md`, `README.md` y este archivo.
+2. Abre todos los `docs/*.html` antes de cambiar el pipeline.
+3. Lee el `SKILL.md` del área que vayas a usar.
+4. Lee `tournaments/<id>/TOURNAMENT.md` y su `STRATEGY.md`.
+5. Ejecuta `.venv/bin/python scripts/check_freshness.py` antes de predecir u operar.
+6. Lee `EXECUTION_GOLIVE.md` antes de cualquier acción relacionada con dinero.
 
-No llamar al SDK de Polymarket desde scripts o paquetes de dominio: todo acceso pasa
-por `venue/`. No cambiar estados ni umbrales de estrategias sólo porque un backtest
-salga bien o mal.
+Ante un conflicto mandan, en este orden: seguridad, `AGENTS.md`, código y tests,
+`tournaments/registry.py`, estrategia aplicable y documentación.
 
-### Mapa obligatorio de los HTML
+### Ayuda
 
-Listarlos con `rg --files docs -g '*.html'` y abrir cada resultado completo. Al
-2026-08-31 son los cinco siguientes; no usar esta tabla como sustituto de su lectura:
+Si el usuario escribe `Codex, help`, `help`, `ayuda`, “qué puedo pedir” o equivalente:
 
-| Archivo | Control que aporta | Precaución |
-|---|---|---|
-| `docs/architecture.html` | Capas, contratos, gateway único y gates de ejecución | El orden vigente es Research → Risk → Optimization → Execution → Portfolio → Editorial. |
-| `docs/dependency-hooks.html` | Frescura, severidades READ/MONEY y remedios | Su banner dice “implementación pendiente”, pero ya existe en `core/preconditions.py`; manda el código. |
-| `docs/models.html` | Elo, Bayes, TrueSkill, Poisson, ensemble y edge | Está escrito para el Mundial: neutralidad y parámetros no se trasladan a Liga MX o NFL. |
-| `docs/theta-trade-manual.html` | Recorder, carril CIO, monitor, salida y riesgos in-play | `theta_lay_v1` continúa `draft`; sus ejemplos `--live` no son autorización para ejecutarlos. |
-| `docs/use-cases.html` | Recorrido diario, Kelly, cuenta, reconciliación y ejecución | Sus balances, fills, “hoy” y conteo de tests son ejemplos históricos del 2026-07-02. |
+1. Invoca `$pepa-help` o abre `docs/PROMPTS.md`.
+2. Muestra el catálogo agrupado por riesgo.
+3. No ejecutes ningún prompt del catálogo.
+4. Recuerda que Liga MX está en `draft` y que toda acción live necesita autorización
+   específica; pedir ayuda nunca autoriza red, escritura ni dinero.
 
-Los HTML explican intención y operación, pero pueden estar fechados. Ante conflicto,
-mandan `AGENTS.md`, el código y tests actuales, el registry, el `STRATEGY.md` aplicable
-y `EXECUTION_GOLIVE.md`. Nunca inferir saldo, posiciones, permisos live ni estado
-actual de ejemplos incrustados en un reporte.
+## 2. Instalación desde un clon limpio
 
-## 2. Arranque desde un clon limpio
-
-Requiere Python 3.11. Los SQLite, `.env`, `.venv`, estados y respuestas generadas no
-se versionan.
+Requiere Python 3.11. Los SQLite, `.env`, `.venv` y estados locales no se versionan.
 
 ```bash
 python3.11 -m venv .venv
@@ -48,30 +38,22 @@ cp .env.example .env
 chmod 600 .env
 ```
 
-Mantener inicialmente:
+Estado seguro inicial:
 
 ```dotenv
 POLYMARKET_LIVE=0
 POLYMARKET_KILL_SWITCH=1
 ```
 
-`RELAYER_API_KEY` y `RELAYER_API_KEY_ADDRESS` habilitan autenticación gasless del
-relayer, pero no sustituyen `POLYMARKET_PRIVATE_KEY`: consultar la cuenta y firmar
-órdenes requiere una private key EVM válida. Nunca imprimir, copiar al chat ni
-versionar `.env`, private keys, API keys o respuestas autenticadas crudas. El checker
-seguro sólo muestra direcciones públicas, balance y allowance.
-
-La comprobación de cuenta es de sólo lectura y carga `.env` automáticamente:
+Nunca muestres ni copies al chat `.env`, private keys, API keys o respuestas de cuenta
+crudas. `RELAYER_API_KEY` no sustituye `POLYMARKET_PRIVATE_KEY`; firmar una orden
+requiere una clave EVM válida. La comprobación de cuenta es de sólo lectura:
 
 ```bash
 .venv/bin/python scripts/polymarket_check.py
 ```
 
-Si sólo hay credenciales del relayer, es correcto que informe que el relayer está
-configurado y termine con un error sanitizado por falta de signer. En ese estado no
-están verificados signer, wallet derivada, balance ni allowance.
-
-## 3. Reconstruir datos locales
+## 3. Reconstrucción de datos
 
 ### Liga MX Apertura 2026
 
@@ -82,82 +64,70 @@ están verificados signer, wallet derivada, balance ni allowance.
 .venv/bin/python scripts/update_results.py --tournament liga_mx_2026 --apply
 ```
 
-La ingesta mezcla mercados abiertos/cerrados, limita al Apertura 2026 y deduplica por
-local, visitante y fecha. Ejecutar `fetch_fixtures_pm.py` y `update_results.py` a diario
-durante el torneo para no perder mercados de la ventana rodante.
+La ingesta de Polymarket usa el tag `102448`; es incremental e idempotente. El Elo
+aplica 80 puntos de localía y Poisson usa `neutral=False`.
 
 ### NFL 2026
-
-`migrate_nfl_data.py` descarga nflverse, crea el schema y reemplaza su SQLite destino;
-no hace falta ejecutar `build_db.py` antes.
 
 ```bash
 .venv/bin/python scripts/migrate_nfl_data.py --since 2022
 ```
 
-### Mundial 2026 archivado
-
-El soporte sigue registrado, pero el clon no incluye su SQLite ni el `worldcup.db`
-externo. Sólo reconstruirlo cuando exista esa fuente:
-
-```bash
-.venv/bin/python scripts/migrate_worldcup_data.py --source /ruta/absoluta/worldcup.db
-```
-
-Después de cualquier ingesta:
+La migración descarga nflverse, crea el esquema y reemplaza el SQLite local con juegos
+desde 2022 y calendario 2026. Después de cualquier ingesta:
 
 ```bash
 .venv/bin/python scripts/check_freshness.py
 ```
 
-No continuar con el pipeline si hay partidos pasados todavía `scheduled`. No usar
-`--force` salvo autorización explícita del usuario y una razón auditable.
+No continúes si hay fixtures pasados todavía `scheduled`. `--force --reason` sólo se
+usa tras autorización explícita y deja una justificación auditable.
 
-## 4. Operación segura y backtesting
+## 4. Predicción, escaneo y backtest
 
-### Controles del pipeline
+Modelos disponibles:
 
-Usar estos checkpoints en orden; no saltar directamente a una recomendación u orden:
+- Liga MX: Elo, Bayes y TrueSkill forman el pipeline de fuerza; Poisson es un cuarto
+  componente independiente para goles/1X2. La estrategia `draft` actual selecciona el
+  lado con blend Elo+Bayes.
+- NFL: Elo, Bayes y TrueSkill están disponibles; la estrategia aprobada selecciona por
+  TrueSkill.
 
-1. **Datos:** ejecutar freshness. READ avisa y puede continuar; MONEY bloquea una
-   violación mandatoria. Live añade la validación de signer, flag y kill-switch.
-2. **Research:** cargar la estrategia del torneo, descubrir vía `venue/` y producir
-   probabilidades/edge. Para `double_chance`, Poisson precia `P(pick)+P(empate)` contra
-   el lado NO del rival; para otros deportes manda su provider y estrategia.
-3. **Risk:** emitir `AUTO`, `REVIEW` o `DISCARD` antes del sizing. Los flags
-   cualitativos fuerzan REVIEW y el CIO humano decide.
-4. **Optimization:** dimensionar sólo lo que sobrevivió Risk, con Kelly fraccional y
-   topes del `STRATEGY.md`.
-5. **Execution:** construir/repreciar la orden y validar slippage, tick y tamaño mínimo.
-   REVIEW no se envía; DISCARD y SKIP se detienen. Todo acceso al CLOB pasa por el
-   broker/gateway.
-6. **Portfolio:** persistir decisión e idempotency key. Un dry-run queda `simulated`;
-   sólo `result.status == "live"` marca ejecución real. `AUTO` describe el veredicto,
-   no demuestra que se haya enviado dinero.
-7. **Editorial:** generar el resumen después de la decisión. Publicar o usar Metricool
-   requiere una solicitud explícita independiente.
-
-El orden visual “Kelly antes de Risk” de `use-cases.html` es ilustrativo y antiguo;
-`agent/workflows/full_analysis.py` y `architecture.html` confirman Risk → Optimization.
-
-Backtest multitorneo con bankroll teórico de USD 1,000:
+Todo este bloque es read-only o dry-run:
 
 ```bash
+# Ambos torneos
 .venv/bin/python scripts/backtest_pipeline.py --tournament all --bankroll 1000
-# Para tooling, añadir --json; incluye el detalle completo de apuestas.
+
+# Liga MX: la estrategia es draft, por eso exige observe-draft
+.venv/bin/python scripts/scan_market.py --tournament liga_mx_2026 \
+  --hours 168 --observe-draft --json
+.venv/bin/python scripts/poisson_predictions.py --tournament liga_mx_2026 \
+  --date YYYY-MM-DD
+
+# NFL
+.venv/bin/python scripts/scan_market.py --tournament nfl_2026 --hours 240 --json
 ```
 
-Buscar oportunidades próximas, siempre read-only:
+### Salida y reportes de backtest
+
+`scripts/backtest_pipeline.py` imprime el resultado consolidado en terminal; `--json`
+imprime JSON en stdout y no guarda un archivo automáticamente. Los reportes visuales se
+generan así:
 
 ```bash
-.venv/bin/python scripts/scan_market.py --tournament liga_mx_2026 \
-  --sport football --hours 168 --observe-draft --json
-.venv/bin/python scripts/scan_market.py --tournament nfl_2026 \
-  --sport american_football --hours 168 --json
+# Liga MX → editorial/reports/liga_mx_2026/ligamx-backtest.html
+.venv/bin/python scripts/ligamx_backtest_html.py
+
+# NFL → editorial/reports/nfl_2026/YYYY-MM-DD_backtest_2025.html
+.venv/bin/python scripts/nfl_backtest_report.py --season 2025 --bankroll 1000
 ```
 
-Obtener las fechas desde los fixtures actuales; no reutilizar fechas de esta
-instantánea:
+Después de cada backtest, Codex debe informar: comando, torneo/temporada, bankroll,
+fuente de precios, ROI, win rate, drawdown, cumplimiento de targets y ruta exacta del
+reporte. Si no se generó HTML, debe decir claramente “sólo terminal; sin archivo”.
+
+Obtén `YYYY-MM-DD` desde la base actual, no desde ejemplos históricos:
 
 ```bash
 sqlite3 data/liga_mx_2026/liga_mx_2026.sqlite \
@@ -166,61 +136,47 @@ sqlite3 data/nfl_2026/nfl_2026.sqlite \
   "SELECT DISTINCT substr(kickoff_utc,1,10) FROM fixture WHERE status='scheduled' ORDER BY 1;"
 ```
 
-Para cada fecha elegida, ejecutar el pipeline sin `--live` y con estado temporal
-separado:
+Simula el pipeline completo con estado separado:
 
 ```bash
 .venv/bin/python scripts/place_bets.py --tournament liga_mx_2026 \
   --date YYYY-MM-DD --bankroll 1000 --observe-draft \
-  --state /tmp/pypro_liga_mx_state.json
+  --state /tmp/pepa-ligamx.json
 .venv/bin/python scripts/place_bets.py --tournament nfl_2026 \
-  --date YYYY-MM-DD --bankroll 1000 \
-  --state /tmp/pypro_nfl_state.json
+  --date YYYY-MM-DD --bankroll 1000 --state /tmp/pepa-nfl.json
 ```
 
-`--observe-draft` autoriza únicamente observar una estrategia draft en dry-run y se
-rechaza junto con `--live`. `AUTO`, `REVIEW`, `DISCARD`, `SKIP`, volumen insuficiente o
-ausencia de mercado son resultados legítimos. Nunca transformar uno en una orden real.
+`AUTO` es un veredicto, no prueba que se enviara dinero. En dry-run una decisión queda
+`simulated`; sólo una respuesta del broker con `status=live` marca ejecución real.
 
-Revisar el estado simulado con:
+## 5. Flujo de decisión
 
-```bash
-.venv/bin/python scripts/portfolio.py --state /tmp/pypro_liga_mx_state.json \
-  --bankroll 1000 --tournament liga_mx_2026
-```
+1. **Research:** carga estrategia, modelo, fixture y precio a través de `venue/`.
+2. **Risk:** emite `AUTO`, `REVIEW`, `DISCARD` o `SKIP`.
+3. **Optimization:** aplica Kelly fraccional y topes de exposición.
+4. **Execution:** revalida precio, slippage, tick, tamaño y gates.
+5. **Portfolio:** persiste idempotencia, decisión y resultado.
+6. **Editorial:** resume después de decidir; publicar requiere otra autorización.
 
-Limitaciones actuales: `editorial_daily.py` sigue cableado al Mundial y el settlement
-de `portfolio.py` sólo tiene reader de football; no presentarlos como soporte genérico
-de Liga MX/NFL sin implementar y probar primero esa generalización. Metricool queda
-fuera del pipeline de trading y nunca debe publicarse con `--publish` por accidente.
+Liga MX permanece `draft`: `--observe-draft` sólo habilita observación en dry-run y es
+incompatible con `--live`. NFL tiene estrategia `approved`, pero eso no autoriza live.
+`REVIEW` nunca se ejecuta sin una aprobación humana independiente.
 
-## 5. Instantánea verificada: 2026-08-31 UTC
+## 6. Ejecución real
 
-La funcionalidad de observación multitorneo, relayer y backtesting llegó hasta el
-commit base `f04bfdc`. Al iniciar una sesión nueva, ejecutar `git status` y `git log`
-porque el commit de documentación posterior será más reciente.
+No uses `--live` como parte de instalación, ingesta, análisis, predicción o backtest.
+Una solicitud live debe nombrar la orden o acción concreta. Antes de ella:
 
-- Liga MX local: 68 fixtures, 54 `finished` y 14 `scheduled`; los siguientes empiezan
-  el 2026-09-05. Freshness estaba OK.
-- Backtest Liga MX: cobertura 336/336; AUTO 171, REVIEW 125, DISCARD 22, SKIP 18;
-  81W-90L, ROI -14.3%, yield -3.4%, max drawdown 28.2%, bankroll final USD 856.75.
-  Falló los tres targets y `match_winner_ligamx_v1` continúa `draft`.
-- NFL local: 1,139 fixtures `finished` y 272 `scheduled`; primeros juegos 2026-09-09
-  Patriots-Seahawks y 2026-09-10 49ers-Rams.
-- Backtest NFL: cobertura 272/272; AUTO 95, REVIEW 37, DISCARD 140; 43W-52L,
-  ROI -62.7%, yield -13.3%, max drawdown 70.6%, bankroll final USD 373.17. Falló
-  los tres targets; la estrategia versionada sigue `approved` y no debe alterarse
-  automáticamente.
-- Mundial: backtest no disponible porque falta
-  `data/fifa_world_cup_2026/fifa_world_cup_2026.sqlite`.
-- Última observación: Liga MX produjo nueve `SKIP` por volumen menor a USD 500; NFL
-  produjo un `SKIP` por falta de mercado elegible. No se creó estado persistente,
-  ninguna respuesta tuvo `status=live` y no se envió ninguna orden real.
-- La configuración local detectaba relayer, pero no un signer EVM válido; por ello no
-  se confirmó cuenta, balance ni allowance. El valor real de las credenciales nunca
-  pertenece a Git.
+1. Ejecuta freshness y la comprobación de cuenta.
+2. Confirma estrategia aprobada y ausencia de `REVIEW`.
+3. Verifica `POLYMARKET_LIVE=1`, signer válido y kill-switch en `0`.
+4. Presenta precio, stake, slippage y pérdida máxima al usuario.
+5. Exige la confirmación tipada que pide el CLI.
 
-## 6. Validación y entrega
+El procedimiento completo está en `EXECUTION_GOLIVE.md`. No publiques contenido ni
+uses Metricool salvo petición explícita separada.
+
+## 7. Validación antes de entregar
 
 ```bash
 .venv/bin/pytest
@@ -229,10 +185,10 @@ git diff --check
 git status --short
 ```
 
-La suite tenía 261 pruebas pasando. Ruff global tenía 394 hallazgos heredados; no hacer
-un barrido masivo ajeno a la tarea. Exigir Ruff limpio en los Python modificados y
-registrar con precisión cualquier baseline que siga existiendo.
+Comprueba además que sólo `liga_mx_2026` y `nfl_2026` estén registrados y que no se
+versionen `.env`, SQLite generados, estados temporales, credenciales ni respuestas de
+cuenta. No cambies automáticamente el estado o los umbrales de una estrategia por el
+resultado de un único backtest.
 
-Antes de commit/push, revisar que no estén staged `.env`, SQLite, estado temporal,
-JSON autenticado ni secretos. Usar Conventional Commits y no habilitar live como parte
-de una tarea de documentación, análisis, ingesta o backtest.
+Tras validar un cambio solicitado, crea un commit descriptivo, sube la rama actual a
+`origin` e informa su SHA. Nunca uses force-push ni reescribas historia sin autorización.

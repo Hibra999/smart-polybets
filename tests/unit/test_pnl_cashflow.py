@@ -1,9 +1,4 @@
-"""PnL por flujo de caja: debe cuadrar con la UI de Polymarket (no con el snapshot).
-
-Regresión del bug del 2026-07-17: el método de snapshot daba -27.40 (sobreestimaba
-las pérdidas por ignorar el salvamento de cierres anticipados); el flujo de caja real
-da -19.58, idéntico a la UI. Ver docs/findings/2026-07-17-pnl-cashflow-vs-snapshot.md.
-"""
+"""PnL realizado por flujo de caja: ventas + redenciones - compras."""
 from __future__ import annotations
 
 import json
@@ -13,7 +8,7 @@ from pathlib import Path
 from portfolio.functions.pnl import realized_pnl_cashflow
 from portfolio.schemas.account import LiveRedemption, LiveTrade
 
-FIXTURE = Path(__file__).resolve().parent.parent / "fixtures" / "pnl_cashflow_wc2026.json"
+FIXTURE = Path(__file__).resolve().parent.parent / "fixtures" / "pnl_cashflow.json"
 
 
 def _load():
@@ -30,19 +25,16 @@ def _load():
     return trades, redeems, Decimal(data["expected_net_pnl"])
 
 
-def test_cashflow_matches_polymarket_ui():
+def test_cashflow_matches_fixture():
     trades, redeems, expected = _load()
     net = realized_pnl_cashflow(trades, redeems)
-    # cuadra con la UI de Polymarket (-19.58) al centavo
     assert net.quantize(Decimal("0.01")) == expected
 
 
-def test_cashflow_differs_from_snapshot_by_salvage():
-    """El flujo de caja NO es la suma naïve; el salvamento de las 5 ventas lo separa
-    del método de snapshot (-27.40)."""
+def test_cashflow_includes_early_sale():
     trades, redeems, _ = _load()
     net = realized_pnl_cashflow(trades, redeems)
-    assert net.quantize(Decimal("0.01")) != Decimal("-27.40")
+    assert net.quantize(Decimal("0.01")) != Decimal("-4.00")
 
 
 def test_empty_is_zero():

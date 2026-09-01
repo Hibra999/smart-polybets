@@ -189,7 +189,7 @@ def match_event(event, home: str, away: str) -> list[dict] | None:
         no corresponde al fixture dado.
     """
     title = str(getattr(event, "title", "") or "")
-    # Descartar subtítulo después de " - " (ej: "Netherlands vs. Sweden - WC 2026")
+    # Descartar subtítulo después de " - " (ej: "Necaxa vs. Atlante - More Markets")
     title = title.split(" - ")[0]
 
     m = re.match(r"^(.+?)\s+vs\.?\s+(.+?)\??$", title, re.I)

@@ -1,7 +1,7 @@
 """Digests de performance (semanal y final de torneo). Función pura.
 
 Recibe los datos ya agregados (decisiones/trades del período) y construye un
-WeeklyDigest. La narrativa la expande Claude; aquí se computan los números.
+WeeklyDigest. La narrativa la expande Codex; aquí se computan los números.
 """
 from __future__ import annotations
 

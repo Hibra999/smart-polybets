@@ -7,7 +7,7 @@ from typing import Callable
 from core.strategy import StrategyConfig
 from research.functions import calculate_edge, find_markets, get_event_prediction
 from research.functions.market_scanner import PolymarketMarket
-from research.functions.wc_strategy import build_worldcup_opportunity
+from research.functions.strategy_selection import build_strategy_opportunity
 from research.schemas.market_opportunity import MarketOpportunity
 from research.schemas.match_prediction import MatchPrediction
 
@@ -31,8 +31,8 @@ def scan_event(
 ) -> list[MarketOpportunity]:
     """Pipeline de research para un evento: predicción → mercados → oportunidades.
 
-    Si la predicción trae componentes por modelo (adapter worldcup), aplica la
-    estrategia de selección de lado migrada (`build_worldcup_opportunity`): elige
+    Si la predicción trae componentes por modelo, aplica la
+    estrategia de selección de lado migrada (`build_strategy_opportunity`): elige
     UN lado según `side_criterion` y respeta warmup + filtro Bayes. Si no, usa el
     camino genérico (una oportunidad por mercado).
     """
@@ -45,7 +45,7 @@ def scan_event(
         from research.functions.poisson_loader import match_result_probs
         poisson_result = (match_result_probs(strategy.tournament_id, prediction.event_id)
                           if strategy.bet_type == "double_chance" else None)
-        opp = build_worldcup_opportunity(prediction, markets, strategy, now=now,
+        opp = build_strategy_opportunity(prediction, markets, strategy, now=now,
                                          poisson_result=poisson_result)
         return [opp] if opp is not None else []
 

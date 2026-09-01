@@ -2,26 +2,23 @@
 
 Estrategia: comprar el **NO del favorito al kickoff** en mercados "Will X win"
 (resuelven a 90') y **salir vendiendo antes de la resolución**, capturando el
-decaimiento temporal mientras el partido siga cerrado. Evidencia y reglas:
-`tournaments/liga_mx_2026/strategies/theta_lay_v1/STRATEGY.md` y
-`docs/findings/2026-07-14-theta-trade-lay-favorito.md`.
+decaimiento temporal mientras el partido siga cerrado. Las reglas están en
+`tournaments/liga_mx_2026/strategies/theta_lay_v1/STRATEGY.md`.
 
-Funciona en **cualquier torneo registrado** con `polymarket_tag_id`
-(`--tournament liga_mx_2026 | fifa_world_cup_2026 | …`) y, vía `--token`,
-en **cualquier mercado de Polymarket** aunque no esté registrado.
+Sólo está documentada para `liga_mx_2026` y permanece en `draft`. Los ejemplos
+`--live` describen el mecanismo, pero no autorizan una operación.
 
 ## Paso 0 — Cómo obtener el id del mercado
 ```bash
-python scripts/theta_monitor.py --list                       # todos los winner abiertos (Liga MX)
+python scripts/theta_monitor.py --list                       # winner abiertos de Liga MX
 python scripts/theta_monitor.py --list necaxa                # filtrado por substring
-python scripts/theta_monitor.py --list --tournament fifa_world_cup_2026
+python scripts/theta_monitor.py --list --tournament liga_mx_2026
 ```
 Muestra kickoff, question, bid/ask live y el **TOKEN NO** de cada mercado.
 Con eso hay dos formas de apuntar al mercado:
 - `--market "<substring único de la question>"` — recomendado; resuelve token NO,
   tick y kickoff solo.
-- `--token <TOKEN_NO> --kickoff <ISO UTC>` — directo, para mercados fuera de los
-  torneos registrados o si el matching por texto falla.
+- `--token <TOKEN_NO> --kickoff <ISO UTC>` — directo si el matching por texto falla.
 
 ## Ciclo completo de un trade
 ```bash
@@ -69,14 +66,12 @@ python scripts/theta_monitor.py --market "Will FC Juárez win on 2026-07-17?" \
   `data/<torneo>/market_ticks.sqlite` (WAL — sobrevive cortes).
 - Si la venta falla tras los reintentos: imprime el resumen + instrucciones
   (`orders.py --list` para gestionar a mano) y todo queda en la DB.
-- **Post-trade**: la venta no pasa por el ledger → asentar la operación con
-  `scripts/backfill_manual_trades.py` (agregar la fila en KNOWN_MANUAL_OPS).
+- **Post-trade**: consultar la cuenta y reconciliar el estado antes de cerrar la sesión.
 
 ## Advertencias operativas
 1. El TP default (+5%) es **bruto**: el round-trip paga ~5% taker sobre ganancias.
    Calibrar el TP mínimo neto con los ticks grabados de J1 antes de dar tamaño.
-2. Gol temprano del favorito = gap en contra sin stop posible → sizing chico,
-   muchas repeticiones (el backtest WC: 16W-10L con colas de -0.46/share).
+2. Gol temprano del favorito = gap en contra sin stop posible → sizing chico.
 3. Liquidez in-play de Liga MX: SIN medir todavía — J1 es la prueba. Si el
    `sz` del bid que imprime el monitor es menor que tus shares, la salida
    será parcial: achicar el sizing.

@@ -1,0 +1,11 @@
+[features]
+hooks = true
+
+[[hooks.SessionStart]]
+matcher = "^(startup|resume|clear|compact)$"
+
+[[hooks.SessionStart.hooks]]
+type = "command"
+command = '"$(git rev-parse --show-toplevel)/.venv/bin/python" "$(git rev-parse --show-toplevel)/scripts/check_freshness.py"'
+timeout = 30
+statusMessage = "Checking Liga MX and NFL data freshness"

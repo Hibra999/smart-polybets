@@ -26,8 +26,9 @@ def build_daily_tweet(data: dict[str, Any], *, max_picks: int = 3) -> str:
     picks.sort(key=lambda r: r["edge"], reverse=True)
     picks = picks[:max_picks]
 
-    head = f"Señales WC {data.get('date','')} (Elo+Bayes+TrueSkill vs Polymarket):"
-    foot = "Análisis cuantitativo, no es consejo financiero. #WorldCup2026"
+    tournament = data.get("tournament_name", data.get("tournament_id", ""))
+    head = f"Señales {tournament} {data.get('date','')} (modelo vs Polymarket):"
+    foot = "Análisis cuantitativo, no es consejo financiero."
 
     if not picks:
         body = "Hoy el modelo no encuentra valor sobre el mercado. Sin señales accionables."

@@ -8,8 +8,6 @@ La lógica de matching/canonicalización vive ahora en `venue.matching`.
 """
 from __future__ import annotations
 
-from venue.matching import canon as _canon  # re-export para compat con scripts externos
-
 from research.functions.market_scanner import PolymarketMarket
 from research.schemas.match_prediction import MatchPrediction
 
@@ -17,16 +15,13 @@ from research.schemas.match_prediction import MatchPrediction
 # real (a nivel de módulo sólo se importa venue.matching), pero el import diferido evita
 # uno si en el futuro se agrega un import top-level de venue.gateway en este archivo.
 
-WORLD_CUP_TAG_ID = 102232
-
-
 class PolymarketLiveSource:
     """market_source que consulta Polymarket en vivo vía el gateway SDK (read-only)."""
 
     def __init__(
         self,
         *,
-        tag_id: int = WORLD_CUP_TAG_ID,
+        tag_id: int,
         accepting_only: bool = True,
         # Parámetros legacy (ignorados; se conservan para compatibilidad con código
         # existente que los pase positionally-or-by-name).

@@ -1,7 +1,7 @@
 """Narrativa cualitativa de un trade.
 
-La narrativa "rica" la redacta Claude en runtime; esta función produce un esqueleto
-determinístico (modo AUTO/REVIEW + por qué) que Claude puede expandir. Siempre
+La narrativa "rica" la redacta Codex en runtime; esta función produce un esqueleto
+determinístico (modo AUTO/REVIEW + por qué) que Codex puede expandir. Siempre
 indica si fue AUTO o REVIEW.
 """
 from __future__ import annotations

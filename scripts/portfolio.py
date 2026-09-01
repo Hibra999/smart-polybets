@@ -6,7 +6,7 @@ trades cerrados contra los resultados de los fixtures del SQLite del torneo.
 
     python scripts/portfolio.py                      # todo, bankroll por defecto
     python scripts/portfolio.py --bankroll 500
-    python scripts/portfolio.py --tournament fifa_world_cup_2026
+    python scripts/portfolio.py --tournament liga_mx_2026
     python scripts/portfolio.py --json               # salida JSON (para tooling)
 
 Estados:

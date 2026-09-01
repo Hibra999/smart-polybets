@@ -1,5 +1,4 @@
-"""Precondiciones de frescura de datos (funciones puras). Única fuente de verdad
-de 'qué está fresco'. Ver docs/superpowers/specs/2026-07-17-mandatory-dependency-hooks-design.md."""
+"""Precondiciones de frescura de datos para Liga MX y NFL."""
 from __future__ import annotations
 
 import os
@@ -16,6 +15,12 @@ REPO = Path(__file__).resolve().parent.parent
 GRACE_MINUTES = 150  # margen para no marcar partidos en juego como 'sin finalizar'
 
 _TRUTHY = ("1", "true", "yes", "on")
+_REFRESH_COMMANDS = {
+    "liga_mx_2026": (
+        "python data/liga_mx_2026/ingest/fetch_fixtures_pm.py --include-closed --apply"
+    ),
+    "nfl_2026": "python scripts/migrate_nfl_data.py --since 2022",
+}
 
 
 def db_path(tid: str) -> Path:
@@ -81,7 +86,7 @@ def check_placeholders_synced(tid: str, *, now: datetime | None = None,
     return PreconditionResult(
         name="placeholders_synced", ok=ok, severity="advisory", tournament_id=tid,
         detail=("placeholders al día" if ok else f"{n} fixture(s) próximos con equipo placeholder"),
-        remedy_cmd=None if ok else "python scripts/sync_upcoming_fixtures.py --apply")
+        remedy_cmd=None if ok else _REFRESH_COMMANDS.get(tid))
 
 
 def check_live_gates_ready() -> PreconditionResult:

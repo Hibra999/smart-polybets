@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """Colocación automática de apuestas para los partidos de una fecha.
 
 Corre el pipeline AUTO de punta a punta sobre los partidos programados de un día,
@@ -6,10 +5,10 @@ usando cuotas LIVE de Polymarket (Gamma) y el broker del CLOB. Idempotente (esta
 local: no re-apuesta). SEGURO POR DEFECTO: dry-run (no envía nada real).
 
     # dry-run (no toca la wallet) — muestra qué se colocaría
-    python scripts/place_bets.py --date 2026-06-20
+    python scripts/place_bets.py --tournament liga_mx_2026 --date YYYY-MM-DD --observe-draft
 
     # ejecución REAL (requiere credenciales + POLYMARKET_LIVE=1 en el entorno)
-    python scripts/place_bets.py --date 2026-06-20 --live
+    python scripts/place_bets.py --tournament nfl_2026 --date YYYY-MM-DD --live
 
 Veredictos: AUTO = se coloca; REVIEW = requiere aprobación humana (no se coloca);
 DISCARD/SKIP = no se opera. En dry-run, los AUTO muestran la orden simulada.
@@ -29,7 +28,7 @@ from core.env import load_env
 enable_utf8()  # consola Windows: stdout/stderr en UTF-8
 load_env(Path(__file__).resolve().parent.parent / ".env")  # sin esto, --live degradaba
 #                                                            silencioso a dry-run (gotcha
-#                                                            CLAUDE.md, fixed 2026-07-14)
+#                                                            AGENTS.md)
 
 from adapters.base import SQLiteReader
 from agent.workflows import full_analysis
@@ -39,7 +38,7 @@ from execution.functions import PolymarketBroker
 from research.functions import PolymarketLiveSource
 from tournaments.registry import get_config
 
-TID = "fifa_world_cup_2026"
+TID = "liga_mx_2026"
 
 
 def run(

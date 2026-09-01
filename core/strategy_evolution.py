@@ -1,5 +1,4 @@
-"""Registro de evolución de estrategias: parseo puro de STRATEGY.md/EVOLUTION.md +
-validación de drift. Ver docs/superpowers/specs/2026-07-18-strategy-evolution-log-design.md."""
+"""Registro de evolución de estrategias: parseo y validación de drift."""
 from __future__ import annotations
 
 import re

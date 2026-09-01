@@ -2,24 +2,23 @@
 
 Reúne los tres modelos para producir, por juego, la probabilidad de victoria del
 local según cada uno. Reutiliza las piezas puras ya portadas:
-  - Elo (con ventaja de localía + multiplicador de margen)  ← wc_models
-  - Bayes Beta-Bernoulli (fuerza latente → prob head-to-head) ← wc_models
-  - TrueSkill 1v1 (draw_probability=0 para NFL)              ← wc_trueskill
+  - Elo (con ventaja de localía + multiplicador de margen)
+  - Bayes Beta-Bernoulli (fuerza latente → prob head-to-head)
+  - TrueSkill 1v1 (draw_probability=0 para NFL)
 
-A diferencia del worldcup (que usaba Bayes solo para elegir lado), acá cada modelo
-emite una PROBABILIDAD para poder blendear y medir edge.
+Cada modelo emite una probabilidad para poder combinar señales y medir edge.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from adapters.football.wc_models import (
+from adapters.football.strength_models import (
     BayesianLeague,
     expected_score,
     margin_multiplier,
     match_scores,
 )
-from adapters.football.wc_trueskill import TrueSkillSystem
+from adapters.football.trueskill import TrueSkillSystem
 
 DEFAULT_ELO = 1500.0
 

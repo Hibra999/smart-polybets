@@ -12,7 +12,7 @@ from risk.functions.evaluate import evaluate
 from agent.tools import execution_tools
 from tournaments.registry import load_active_strategy
 
-STRATEGY = load_active_strategy("fifa_world_cup_2026")
+STRATEGY = load_active_strategy("liga_mx_2026", require_approved=False)
 
 
 def test_price_validator():
@@ -41,7 +41,7 @@ def test_auto_order_classified_no_approval(opportunity_factory, portfolio_state)
 
 
 def test_review_order_requires_approval(opportunity_factory, portfolio_state):
-    v = evaluate(opportunity_factory(event_phase="knockout"), STRATEGY, portfolio_state)
+    v = evaluate(opportunity_factory(event_phase="liguilla"), STRATEGY, portfolio_state)
     order = build_order(v)
     decision = classify(order, v)
     assert decision.requires_approval is True
@@ -49,7 +49,7 @@ def test_review_order_requires_approval(opportunity_factory, portfolio_state):
 
 
 def test_submit_blocked_on_review(opportunity_factory, portfolio_state):
-    v = evaluate(opportunity_factory(event_phase="knockout"), STRATEGY, portfolio_state)
+    v = evaluate(opportunity_factory(event_phase="liguilla"), STRATEGY, portfolio_state)
     order = build_order(v)
     decision = classify(order, v)
     with pytest.raises(AgentError):

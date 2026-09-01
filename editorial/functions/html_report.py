@@ -88,6 +88,7 @@ def build_daily_html(data: dict[str, Any]) -> str:
     crit = html.escape(str(data.get("side_criterion", "")))
     kelly = data.get("kelly_fraction")
     src = html.escape(str(data.get("source", "")))
+    tournament = html.escape(str(data.get("tournament_name", data.get("tournament_id", ""))))
     summary = (f'{counts["AUTO"]} auto, {counts["REVIEW"]} a revisar, '
                f'{counts["DISCARD"]} descartadas, {counts["SKIP"]} saltadas')
 
@@ -96,7 +97,7 @@ def build_daily_html(data: dict[str, Any]) -> str:
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sugerencias WC {date}</title>
+<title>Sugerencias {tournament} {date}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
@@ -152,7 +153,7 @@ def build_daily_html(data: dict[str, Any]) -> str:
 <body>
   <div class="wrap">
     <header class="top">
-      <div class="eyebrow">Sports Quant Trading, FIFA World Cup 2026</div>
+      <div class="eyebrow">Sports Quant Trading, {tournament}</div>
       <h1>Sugerencias del {date}</h1>
       <div class="meta">Estrategia <b>{strat}</b> ({crit}, Kelly x{kelly}), cuotas <b>{src}</b></div>
       <div class="summary">{summary}</div>

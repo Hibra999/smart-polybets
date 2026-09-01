@@ -35,9 +35,9 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
-from adapters.football.wc_models import EloSystem
-from adapters.football.wc_poisson import PoissonGoalsModel
-from adapters.football.wc_trueskill import TrueSkillSystem
+from adapters.football.strength_models import EloSystem
+from adapters.football.poisson import PoissonGoalsModel
+from adapters.football.trueskill import TrueSkillSystem
 from scripts.ligamx_backtest import (
     SeasonTracker,
     load_matches,

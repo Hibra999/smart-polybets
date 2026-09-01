@@ -38,7 +38,7 @@ class WeeklyDigest(BaseModel):
     best_trade: TradeReport | None = None
     worst_trade: TradeReport | None = None
 
-    # Narrativa generada por Claude
+    # Narrativa generada por Codex
     performance_narrative: str = ""
     lessons_learned: list[str] = Field(default_factory=list)
     next_week_outlook: str = ""

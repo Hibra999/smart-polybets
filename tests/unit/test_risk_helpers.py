@@ -7,12 +7,12 @@ from risk.functions.exposure import check_participant_exposure, projected_exposu
 
 def test_projected_exposure(portfolio_state):
     # 100 USDC sobre bankroll 1000 → 0.10
-    assert projected_exposure_pct(portfolio_state, "Argentina", 100) == Decimal("0.1")
+    assert projected_exposure_pct(portfolio_state, "Club America", 100) == Decimal("0.1")
 
 
 def test_check_exposure_within_limit(portfolio_state):
-    assert check_participant_exposure(portfolio_state, "Argentina", 100, Decimal("0.15")) is True
-    assert check_participant_exposure(portfolio_state, "Argentina", 200, Decimal("0.15")) is False
+    assert check_participant_exposure(portfolio_state, "Club America", 100, Decimal("0.15")) is True
+    assert check_participant_exposure(portfolio_state, "Club America", 200, Decimal("0.15")) is False
 
 
 def test_drawdown_stop_loss(portfolio_state):
@@ -31,7 +31,7 @@ def test_correlation_same_market(opportunity_factory):
     opp = opportunity_factory()
     pos = Position(
         condition_id="cond_1", token_id="t", outcome="YES",
-        tournament_id="fifa_world_cup_2026", participant="Brazil",
+        tournament_id="liga_mx_2026", participant="Seattle",
         size_usdc=Decimal("10"), entry_price=Decimal("0.5"),
         current_price=Decimal("0.5"), shares=Decimal("20"), opened_at=utcnow(),
     )

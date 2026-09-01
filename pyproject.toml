@@ -1,7 +1,7 @@
 [project]
 name = "sports-quant-trading"
 version = "0.3.0"
-description = "Hedge fund sintético asistido por Claude para mercados de predicción deportivos en Polymarket"
+description = "Predicciones de Liga MX y NFL en Polymarket, operadas con Codex"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
@@ -14,8 +14,7 @@ dependencies = [
 optimize = ["cvxpy>=1.4"]
 # live: ejecución real en Polymarket CLOB V2 (SDK oficial, colateral pUSD).
 # Sin esto, execution/ corre en dry-run. Instalar: pip install --pre polymarket-client
-# >=0.1.0b12: soporte de tick 0.0025 (mercados de totales WC) — ver
-# docs/findings/2026-07-09-totals-live-sdk-tick.md
+# >=0.1.0b12: soporte de ticks de precio pequeños.
 live = ["polymarket-client>=0.1.0b12"]
 nfl = ["pandas>=2.2"]
 dev = [

@@ -6,7 +6,7 @@ activa, el verdict se fuerza a REVIEW (un override NUNCA es AUTO) y queda en el
 ledger (`LocalState`) con la idempotency key estándar. La colocación es la ruta
 confiable existente: `orders.py --approve <key> --live --confirm <monto>`.
 
-Diseño: docs/superpowers/specs/2026-07-14-cio-override-lane-design.md
+El flujo obliga a pasar por riesgo, REVIEW e idempotencia.
 """
 from __future__ import annotations
 

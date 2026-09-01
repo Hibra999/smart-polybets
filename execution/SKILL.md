@@ -40,13 +40,11 @@ y clasifica si la orden procede en AUTO o necesita REVIEW final.
 - NUNCA hardcodear credenciales de Polymarket — siempre de variables de entorno
 - Si price_validator falla, NO re-intentar automáticamente — reportar al humano
 - SIEMPRE guardar el OrderResult en el LocalState antes de retornar (via LocalStateClient);
-  solo un fill `live` marca ejecutado — un dry_run NO (gotcha verificado, ver CLAUDE.md)
+  solo un fill `live` marca ejecutado — un dry_run NO (gotcha verificado, ver AGENTS.md)
 - La idempotency_key DEBE verificarse contra el LocalState antes de submit_order()
-- Apuestas fuera de estrategia (totales O/U, lado Poisson, sizing CIO): usar el carril
-  **CIO override** — `scripts/propose_bet.py` (riesgo + REVIEW forzado + ledger) y
-  colocar con `orders.py --approve` (ver CLAUDE.md § "Apuestas manuales"). El broker
-  directo (`place_totals_qf.py`) es solo escape hatch; requiere `polymarket-client
-  >= 0.1.0b12` (tick 0.0025) y asentarse después con `backfill_manual_trades.py`
+- Apuestas fuera de estrategia: usar el carril **CIO override** —
+  `scripts/propose_bet.py` (riesgo + REVIEW forzado + ledger) y colocar con
+  `orders.py --approve`. Nunca llamar al broker directo.
 
 ## ERRORES COMUNES
 - Llamar submit_order() en modo REVIEW (el error más costoso del sistema)

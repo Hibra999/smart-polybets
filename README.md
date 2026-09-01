@@ -1,88 +1,81 @@
-# Sports Quant Trading System
+# PEPA — Liga MX y NFL en Polymarket
 
-Un hedge fund sintético asistido por Claude para operar mercados de predicción
-deportivos en Polymarket. Extensible a cualquier torneo o liga: el torneo activo
-es configuración, no un supuesto hardcodeado.
-
-> Implementación del whitepaper `spec.md` (v0.3). Ver `CLAUDE.md` para el contexto
-> de operación y las reglas anti-deuda.
+Sistema cuantitativo operado exclusivamente con Codex para investigar, probar y, con
+autorización explícita, ejecutar estrategias sobre dos mercados: Liga MX y NFL.
 
 ## Arquitectura
 
-Tres pilares verticales por área: `functions/` (Python puro, testeable),
-`schemas/` (contratos Pydantic) y `SKILL.md` (briefing para Claude).
+Cada decisión recorre una sola dirección:
 
-Flujo unidireccional:
-
-```
+```text
 Research → Risk → Optimization → Execution → Portfolio → Editorial
 ```
 
-El estado (decisiones, órdenes, PnL) vive en `LocalState` (estado local del repo);
-Django fue retirado. Polymarket se lee live vía `venue/gateway` sobre el SDK oficial —
-**una sola librería**, sin scrapers.
+Las áreas exponen funciones puras, contratos Pydantic y un `SKILL.md`. El estado es
+local y todo acceso a Polymarket está centralizado en `venue/` sobre el SDK oficial.
 
-## Instalación
-
-```bash
-pip install -e ".[dev]"
-# opcional, para optimización por batch:
-pip install -e ".[optimize]"     # cvxpy
-pip install -e ".[live]"         # ejecución real (SDK Polymarket, polymarket-client)
-```
-
-## Construir la base de datos de un torneo
-
-Los `.sqlite` no se versionan (se construyen desde el DDL canónico), con UNA
-excepción: los exports de mercado por evento (`data/<torneo>/events/*/ticks.sqlite`)
-sí — son datasets finitos y cerrados para análisis.
+## Instalación completa
 
 ```bash
-python scripts/build_db.py --tournament fifa_world_cup_2026 --sport football
-python scripts/build_db.py --tournament liga_mx_2026 --sport football
-python scripts/build_db.py --tournament nfl_2026 --sport american_football
+python3.11 -m venv .venv
+.venv/bin/pip install --pre -e ".[dev,optimize,live,nfl]"
+.venv/bin/pip check
+cp .env.example .env
+chmod 600 .env
 ```
 
-Luego se pueblan con los scripts de `data/{tournament_id}/ingest/`.
+Mantén `POLYMARKET_LIVE=0` y `POLYMARKET_KILL_SWITCH=1` durante instalación,
+investigación, predicciones y backtests.
 
-## Torneos registrados
+## Mercados soportados
 
-| tournament_id | Estado | Estrategias |
+| ID | Modelo principal | Estado operativo |
 |---|---|---|
-| `fifa_world_cup_2026` | activo hasta 2026-07-19 | `match_winner_wc_v1` (approved) |
-| `liga_mx_2026` (Apertura) | activo desde 2026-07-16, **modo observación** | `match_winner_ligamx_v1` (draft), `theta_lay_v1` (draft, trading — `docs/theta-trade-manual.md`) |
-| `nfl_2026` | arranca 2026-09-06 | `game_winner_v1` |
+| `liga_mx_2026` | Elo + Bayes + TrueSkill; Poisson 1X2 | `draft`: observación y dry-run |
+| `nfl_2026` | TrueSkill; Elo/Bayes auxiliares | `approved`: dry-run por defecto |
 
-## Tests
+No se soporta ningún otro torneo. El registro canónico está en
+`tournaments/registry.py`.
+
+Liga MX no depende sólo de Poisson: el pipeline de fuerza calcula **Elo, Bayes y
+TrueSkill**, y Poisson corre aparte para goles, 1X2 y doble oportunidad. La estrategia
+actual elige el lado con un blend Elo+Bayes; cambiar esa combinación exige versionar la
+estrategia y volver a probarla. NFL calcula las tres señales de fuerza, pero su estrategia
+activa selecciona por TrueSkill.
+
+## Datos y predicciones
 
 ```bash
-pytest
+# Liga MX
+.venv/bin/python scripts/build_db.py --tournament liga_mx_2026 --sport football
+.venv/bin/python data/liga_mx_2026/ingest/fetch_fixtures_pm.py --include-closed --apply
+.venv/bin/python data/liga_mx_2026/ingest/load_history_fdcouk.py --apply
+.venv/bin/python scripts/update_results.py --tournament liga_mx_2026 --apply
+
+# NFL
+.venv/bin/python scripts/migrate_nfl_data.py --since 2022
+
+# Verificación y análisis read-only
+.venv/bin/python scripts/check_freshness.py
+.venv/bin/python scripts/scan_market.py --tournament liga_mx_2026 --hours 168 --observe-draft
+.venv/bin/python scripts/scan_market.py --tournament nfl_2026 --hours 240
+.venv/bin/python scripts/backtest_pipeline.py --tournament all --bankroll 1000
 ```
 
-## Dos modos de operación de Claude
+El backtest consolidado imprime en terminal (`--json` también usa stdout). Para guardar
+HTML usa `scripts/ligamx_backtest_html.py` o `scripts/nfl_backtest_report.py`; las rutas
+canónicas se documentan en `INIT.md`.
 
-| Modo | Condición | Acción |
-|---|---|---|
-| **AUTO** | workflow aprobado + reglas cuantitativas satisfechas | ejecuta sin intervención |
-| **REVIEW** | condición ambigua / componente cualitativo | redacta recomendación y espera aprobación |
+## Ayuda para Codex
 
-## Estado de integraciones
+Escribe `Codex, help`. Codex abrirá `docs/PROMPTS.md` y mostrará las solicitudes
+disponibles sin ejecutar ninguna. Las instrucciones completas están en `INIT.md`; los
+gates de ejecución real, en `EXECUTION_GOLIVE.md`.
 
-| Pieza | Estado |
-|---|---|
-| Áreas, schemas, adapters, agent, workflows | implementado |
-| Modelos Elo + Bayes + TrueSkill (football) | **migrados de `pypro_worldcup_betting`** (reales, puros) |
-| Estrategia blend+Kelly (FIFA WC 2026) | migrada → `match_winner_wc_v1` (activa) |
-| Cuotas / mercados Polymarket | live vía `venue/gateway` sobre el SDK (descubrimiento en `venue/discovery`) |
-| Modelo TrueSkill (NFL) | implementado (real, activo — `game_winner_v1` usa `side_criterion: trueskill`); Elo/Bayes disponibles como ensemble/alternativa |
-| Estrategia doble-oportunidad | `bet_type: double_chance` (rival no gana / 1X a 90', preciado por Poisson) |
-| Polymarket CLOB V2 (órdenes) | cableado vía `venue/gateway` (SDK oficial `polymarket-client`); dry-run por defecto, live gateado |
-| Estado | `LocalState` local (Django retirado); apuestas manuales por carril **CIO override** (`propose_bet.py`) con riesgo + ledger |
-| Datos `.sqlite` | DDL + builder + `migrate_worldcup_data.py` (WC) + ingest Polymarket/football-data (Liga MX) + `migrate_nfl_data.py` / `data/nfl_2026/ingest/` (NFL) |
-| Datos de mercado en tiempo real | `record_market_ticks.py` (1 snapshot/min: precios + book depth + score live) |
-| Trading intra-partido | theta trade (`theta_lay_v1` draft): monitor CLI con regla de salida + hard stop (`theta_monitor.py`) |
-| Precondiciones de frescura de datos | `core/preconditions.py` + `scripts/check_freshness.py`, hook `SessionStart`; guards bloquean los scripts de dinero ante datos viejos (`--force --reason` para override) — ver `docs/dependency-hooks.html` |
+## Validación
 
-## Agregar un torneo nuevo
-
-Ver `tournaments/README.md` (4 pasos, sin tocar el pipeline de áreas).
+```bash
+.venv/bin/pytest
+.venv/bin/ruff check .
+git diff --check
+```

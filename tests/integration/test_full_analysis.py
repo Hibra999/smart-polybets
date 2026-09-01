@@ -1,8 +1,7 @@
-"""E2E del workflow full_analysis con la estrategia MIGRADA (worldcup blend+Kelly).
+"""E2E del workflow full_analysis con la estrategia draft de Liga MX.
 
 Sin red: DATA_ROOT seeded (con partidos jugados → warmup OK) + DjangoClient falso +
-market_source inyectado. La estrategia activa es match_winner_wc_v1, así que el
-flujo usa la selección de lado (blend) + warmup + Kelly migrados.
+market_source inyectado. Los casos de análisis habilitan draft sólo en dry-run.
 """
 from __future__ import annotations
 
@@ -30,12 +29,13 @@ def _market_source(market_prob="0.40", outcome="HOME_WIN"):
 
 
 def test_full_analysis_auto(seeded_data_root, fake_client):
-    # ARG favorito (ganó 2 partidos) vs mercado 0.40 → edge alto → AUTO.
+    # AME favorito (ganó 2 partidos) vs mercado 0.40 → edge alto → AUTO.
     # Broker default = dry-run → la decisión queda `simulated`, NUNCA `executed`
     # (el bug de 2026-07-09 marcaba executed en dry-run y bloqueaba el run real).
     decisions = full_analysis.run(
-        "m1", "fifa_world_cup_2026",
+        "m1", "liga_mx_2026",
         client=fake_client, market_source=_market_source("0.40"),
+        allow_draft=True,
     )
     assert len(decisions) == 1
     assert decisions[0]["mode"] == "AUTO"
@@ -47,9 +47,10 @@ def test_full_analysis_auto(seeded_data_root, fake_client):
 
 def test_full_analysis_review_with_flag(seeded_data_root, fake_client):
     decisions = full_analysis.run(
-        "m1", "fifa_world_cup_2026",
+        "m1", "liga_mx_2026",
         client=fake_client, market_source=_market_source("0.40"),
         qualitative_flags=["QR-002: lesión reportada"],
+        allow_draft=True,
     )
     assert decisions[0]["mode"] == "REVIEW"
     assert "TRADE REVIEW REQUEST" in decisions[0]["report"]
@@ -59,18 +60,20 @@ def test_full_analysis_review_with_flag(seeded_data_root, fake_client):
 def test_full_analysis_discard_negative_edge(seeded_data_root, fake_client):
     # mercado 0.95 > prob del modelo → edge negativo → DISCARD.
     decisions = full_analysis.run(
-        "m1", "fifa_world_cup_2026",
+        "m1", "liga_mx_2026",
         client=fake_client, market_source=_market_source("0.95"),
+        allow_draft=True,
     )
     assert decisions[0]["mode"] == "DISCARD"
 
 
 def test_full_analysis_picks_home_side(seeded_data_root, fake_client):
-    # Si sólo hay mercado del lado AWAY (FRA), la estrategia (que elige HOME=ARG)
+    # Si sólo hay mercado del lado AWAY (CAZ), la estrategia (que elige HOME=AME)
     # no encuentra mercado para su lado → no genera oportunidad.
     decisions = full_analysis.run(
-        "m1", "fifa_world_cup_2026",
+        "m1", "liga_mx_2026",
         client=fake_client, market_source=_market_source("0.40", outcome="AWAY_WIN"),
+        allow_draft=True,
     )
     assert decisions == []
 
@@ -78,9 +81,10 @@ def test_full_analysis_picks_home_side(seeded_data_root, fake_client):
 def test_quick_scan_sorts_by_edge(seeded_data_root, fake_client):
     opps = quick_scan.run(
         client=fake_client,
-        active_tournaments=[{"tournament_id": "fifa_world_cup_2026"}],
-        event_ids_by_tournament={"fifa_world_cup_2026": ["m1"]},
+        active_tournaments=[{"tournament_id": "liga_mx_2026"}],
+        event_ids_by_tournament={"liga_mx_2026": ["m1"]},
         market_source=_market_source("0.40"),
+        allow_draft=True,
     )
     assert len(opps) == 1
     assert opps[0].outcome == "YES"
@@ -88,20 +92,21 @@ def test_quick_scan_sorts_by_edge(seeded_data_root, fake_client):
 
 
 def test_post_event_review_builds_digest(seeded_data_root):
-    out = post_event_review.run("m1", "fifa_world_cup_2026", decisions=[], save=False)
+    out = post_event_review.run("m1", "liga_mx_2026", decisions=[], save=False)
     assert "Post-Event Review" in out["report"]
     assert out["digest"].total_bets == 0
 
 
 def test_full_analysis_with_real_odds_source(seeded_data_root, fake_client):
     # Usa las cuotas reales migradas (SqliteOddsSource) en vez de un market_source
-    # sintético: ARG@0.30 en el mercado vs modelo ~0.64 → edge alto → AUTO.
+    # sintético: AME@0.30 en el mercado vs modelo ~0.64 → edge alto → AUTO.
     from research.functions import SqliteOddsSource
 
-    source = SqliteOddsSource("fifa_world_cup_2026", source="polymarket",
+    source = SqliteOddsSource("liga_mx_2026", source="polymarket",
                               data_root=str(seeded_data_root))
     decisions = full_analysis.run(
-        "m1", "fifa_world_cup_2026", client=fake_client, market_source=source,
+        "m1", "liga_mx_2026", client=fake_client, market_source=source,
+        allow_draft=True,
     )
     assert len(decisions) == 1
     assert decisions[0]["mode"] == "AUTO"

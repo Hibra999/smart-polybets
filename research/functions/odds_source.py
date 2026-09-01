@@ -1,9 +1,9 @@
-"""Fuente de mercados desde cuotas reales (migradas de pypro_worldcup_betting).
+"""Fuente de mercados desde cuotas históricas guardadas en SQLite.
 
 `SqliteOddsSource` es un `market_source` para `research.find_markets` /
 `research_tools.scan_event`: dado un MatchPrediction, busca las cuotas del fixture
-en la tabla `polymarket_odds` del SQLite del torneo (poblada por
-`scripts/migrate_worldcup_data.py`) y las convierte en PolymarketMarket por lado
+en la tabla `polymarket_odds` del SQLite del torneo y las convierte en
+PolymarketMarket por lado
 ("Will home win" / "Will away win").
 
 Las cuotas migradas traen la probabilidad implícita (home_prob/away_prob = 1/cuota

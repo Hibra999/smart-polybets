@@ -10,10 +10,10 @@ Para testear sin red/DB se puede inyectar `active_tournaments`,
 """
 from __future__ import annotations
 
-from typing import Callable
+from collections.abc import Callable
 
-from core.local_state import LocalStateClient
 from agent.tools import research_tools
+from core.local_state import LocalStateClient
 from research.schemas.market_opportunity import MarketOpportunity
 from tournaments.registry import get_adapter, load_active_strategy
 
@@ -44,6 +44,7 @@ def run(
     event_ids_by_tournament: dict[str, list[str]] | None = None,
     market_source: Callable | None = None,
     hours_ahead: int = 24,
+    allow_draft: bool = False,
 ) -> list[MarketOpportunity]:
     tournaments = active_tournaments
     if tournaments is None:
@@ -52,7 +53,7 @@ def run(
     all_opps: list[MarketOpportunity] = []
     for t in tournaments:
         tid = t["tournament_id"] if isinstance(t, dict) else t
-        strategy = load_active_strategy(tid)
+        strategy = load_active_strategy(tid, require_approved=not allow_draft)
         if strategy is None:
             continue
         if event_ids_by_tournament is not None:

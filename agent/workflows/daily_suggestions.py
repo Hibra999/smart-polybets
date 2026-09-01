@@ -2,24 +2,24 @@
 
 Corre el pipeline de análisis (modelo → selección de lado → cuotas → edge →
 veredicto → Kelly) sobre los partidos programados de una fecha y devuelve una
-lista de dicts. Lo consumen: el printer de consola (wc_suggestions), el reporte
-HTML (editorial) y el tweet.
+lista de dicts. Lo consumen el reporte HTML editorial y el resumen social.
 
 No coloca apuestas: sólo analiza y describe.
 """
 from __future__ import annotations
 
+from collections.abc import Callable
 from decimal import Decimal
-from typing import Any, Callable
+from typing import Any
 
 from adapters.football.db_reader import FootballDBReader
 from core.utils import utcnow
 from optimization.functions.bet_sizer import size_single
 from portfolio.schemas.portfolio_state import PortfolioState
-from research.functions import build_worldcup_opportunity, get_event_prediction, pick_side
+from research.functions import build_strategy_opportunity, get_event_prediction, pick_side
 from research.functions.odds_source import SqliteOddsSource
 from risk.functions.evaluate import evaluate
-from tournaments.registry import load_active_strategy
+from tournaments.registry import get_config, load_active_strategy
 
 
 def _f(x) -> float | None:
@@ -28,21 +28,22 @@ def _f(x) -> float | None:
 
 def compute(
     date: str,
-    tournament_id: str = "fifa_world_cup_2026",
+    tournament_id: str = "liga_mx_2026",
     *,
     market_source: Callable | None = None,
     bankroll: float = 1000.0,
     source_name: str = "polymarket",
+    allow_draft: bool = False,
 ) -> dict[str, Any]:
     """Devuelve {strategy, date, generated_at, rows:[...]} con una fila por partido."""
-    strat = load_active_strategy(tournament_id)
+    strat = load_active_strategy(tournament_id, require_approved=not allow_draft)
     if strat is None:
         raise ValueError(f"No hay estrategia activa aprobada para {tournament_id}")
 
     reader = FootballDBReader(tournament_id)
     odds = market_source or SqliteOddsSource(tournament_id, source=source_name)
     portfolio = PortfolioState(
-        bankroll_usdc=Decimal(str(bankroll)), drawdown_7d=Decimal("0"),
+        bankroll_usdc=Decimal(str(bankroll)), drawdown_7d=Decimal(0),
         open_positions=[], exposure_by_participant={}, as_of=utcnow(),
     )
 
@@ -87,7 +88,7 @@ def compute(
         from research.functions.poisson_loader import match_result_probs
         poisson_result = (match_result_probs(strat.tournament_id, pred.event_id)
                           if strat.bet_type == "double_chance" else None)
-        opp = build_worldcup_opportunity(pred, markets, strat, poisson_result=poisson_result)
+        opp = build_strategy_opportunity(pred, markets, strat, poisson_result=poisson_result)
         if opp is None:
             row.update({"verdict": "SKIP", "reason": "warmup / filtro Bayes",
                         "model_prob": _f(pk["model_prob"]), "market_prob": None,
@@ -115,6 +116,7 @@ def compute(
         "side_criterion": strat.side_criterion,
         "kelly_fraction": _f(strat.kelly_fraction),
         "tournament_id": tournament_id,
+        "tournament_name": get_config(tournament_id).display_name,
         "date": date,
         "bankroll": bankroll,
         "source": source_name,

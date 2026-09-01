@@ -42,7 +42,7 @@ Es la primera área del pipeline — nada se ejecuta sin pasar por aquí.
 
 ## EJEMPLO DE USO
 ```python
-prediction = model_loader.get_event_prediction("match_123", "fifa_world_cup_2026")
+prediction = model_loader.get_event_prediction("match_123", "liga_mx_2026")
 markets = market_scanner.find_markets(prediction, strategy)
 opps = [edge_screener.calculate_edge(prediction, m, strategy) for m in markets]
 ```

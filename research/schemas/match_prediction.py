@@ -30,7 +30,7 @@ class MatchPrediction(BaseModel):
 
     probabilities: dict[str, Decimal] = Field(default_factory=dict)
 
-    # Componentes por modelo para estrategias multi-criterio (migración worldcup):
+    # Componentes por modelo para estrategias multi-criterio:
     # {"elo": {"HOME_WIN": .., "AWAY_WIN": ..}, "bayes": {...}, "trueskill": {...}}
     components: dict[str, dict[str, Decimal]] = Field(default_factory=dict)
     # Nº de aparición de cada participante (para reglas de warmup como start_match_no).

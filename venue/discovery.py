@@ -1,7 +1,7 @@
 """Descubrimiento de eventos/partidos de Polymarket vía el SDK (sin scraper Gamma).
 
 Fetch UNIFICADO que reemplaza los loops de `requests` a Gamma que estaban duplicados
-en varios scripts (update_results, fix_kickoffs, sync_upcoming_fixtures). Todo pasa por
+en los scripts de ingesta, resultados y monitoreo. Todo pasa por
 el `PublicClient` del SDK (cacheado por proceso en `core.polymarket_client`).
 
   list_events(...)  -> eventos crudos del SDK (para leer sus markets, ej. goles).
@@ -16,13 +16,11 @@ from datetime import datetime
 from core.polymarket_client import build_public_client
 from venue.matching import canon
 
-WORLD_CUP_TAG_ID = 102232
-
-_VS = re.compile(r"^(.+?)\s+vs\.?\s+(.+?)\??$", re.I)
-_WILL_WIN = re.compile(r"\s*will\s+(.+?)\s+win\b", re.I)
+_VS = re.compile(r"^(.+?)\s+vs\.?\s+(.+?)\??$", re.IGNORECASE)
+_WILL_WIN = re.compile(r"\s*will\s+(.+?)\s+win\b", re.IGNORECASE)
 
 
-def list_events(tag_id: int = WORLD_CUP_TAG_ID, *, closed: bool = False,
+def list_events(tag_id: int, *, closed: bool = False,
                 limit: int = 1400) -> list:
     """Eventos de Polymarket para un tag, vía el PublicClient del SDK (read-only)."""
     out: list = []
@@ -51,7 +49,7 @@ class MatchEvent:
     event: object  # evento crudo del SDK (para leer sus markets)
 
 
-def match_events(tag_id: int = WORLD_CUP_TAG_ID, *, closed: bool = False,
+def match_events(tag_id: int, *, closed: bool = False,
                  limit: int = 1400) -> list[MatchEvent]:
     """Eventos de PARTIDO ('X vs Y') normalizados: nombres canónicos + kickoff.
 
