@@ -71,9 +71,7 @@ jobs:
           git add editorial/reports/_system/published
           git diff --cached --quiet || git commit -m "reports: refresh current Liga MX and NFL dashboards [skip ci]"
           git push
-      - uses: actions/configure-pages@v5
-        with:
-          enablement: true
+      - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v4
         with:
           path: _site

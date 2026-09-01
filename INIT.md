@@ -139,6 +139,8 @@ El workflow diario publica copias fechadas y versionadas en:
 Por eso esas dos copias sí aparecen después de `git pull`. Las URLs web estables son
 `https://hibra999.github.io/smart-polybets/` y
 `https://hibra999.github.io/smart-polybets/backtest.html`.
+La primera activación requiere elegir **Settings → Pages → Source: GitHub Actions**;
+`GITHUB_TOKEN` no puede crear el sitio. Después, el deploy es automático.
 
 Para reproducir otro corte sin editar código:
 

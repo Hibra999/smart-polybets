@@ -76,6 +76,8 @@ rutas canónicas se documentan en `INIT.md`. Los últimos snapshots versionados 
 con `git pull` bajo `editorial/reports/_system/published/`; GitHub Pages expone
 [predicciones](https://hibra999.github.io/smart-polybets/) y
 [backtest](https://hibra999.github.io/smart-polybets/backtest.html) con URLs estables.
+Antes del primer deploy, selecciona **Settings → Pages → Source: GitHub Actions** una
+sola vez; luego el workflow diario se encarga del resto.
 La revisión de evidencia, benchmarks y límites está en
 [`docs/findings/2026-09-01-sota-ligamx-nfl.md`](docs/findings/2026-09-01-sota-ligamx-nfl.md).
 
