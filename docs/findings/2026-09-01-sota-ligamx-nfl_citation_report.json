@@ -1,0 +1,89 @@
+{
+  "total_dois": 18,
+  "verified": [
+    "10.1016/j.mlwa.2024.100539",
+    "10.21314/JCF.2016.322",
+    "10.1111/1467-9876.00065",
+    "10.1016/j.ijforecast.2018.10.011",
+    "10.1016/j.ijforecast.2019.01.001",
+    "10.1016/j.mlwa.2024.100539",
+    "10.1177/22150218261416681",
+    "10.1111/1467-9876.00065",
+    "10.1016/j.ijforecast.2018.10.011",
+    "10.1371/journal.pone.0282295",
+    "10.21314/JCF.2016.322",
+    "10.1371/journal.pone.0282295",
+    "10.21314/JCF.2016.322",
+    "10.1111/1467-9876.00065",
+    "10.1016/j.ijforecast.2019.01.001",
+    "10.1016/j.ijforecast.2018.10.011",
+    "10.1016/j.mlwa.2024.100539",
+    "10.1177/22150218261416681"
+  ],
+  "failed": [],
+  "metadata": {
+    "10.1016/j.mlwa.2024.100539": {
+      "title": "Machine learning for sports betting: Should model selection be based on accuracy or calibration?",
+      "authors": "Walsh, C., Joshi, A.",
+      "year": "2024",
+      "journal": "Machine Learning with Applications",
+      "volume": "16",
+      "pages": "100539",
+      "doi": "10.1016/j.mlwa.2024.100539"
+    },
+    "10.21314/JCF.2016.322": {
+      "title": "The probability of backtest overfitting",
+      "authors": "Bailey, D., Borwein, J., L\u00f3pez de Prado, M., et al.",
+      "year": "2016",
+      "journal": "The Journal of Computational Finance",
+      "volume": "",
+      "pages": "",
+      "doi": "10.21314/JCF.2016.322"
+    },
+    "10.1111/1467-9876.00065": {
+      "title": "Modelling Association Football Scores and Inefficiencies in the Football Betting Market",
+      "authors": "Dixon, M., Coles, S.",
+      "year": "1997",
+      "journal": "Journal of the Royal Statistical Society Series C: Applied Statistics",
+      "volume": "46",
+      "pages": "265-280",
+      "doi": "10.1111/1467-9876.00065"
+    },
+    "10.1016/j.ijforecast.2018.10.011": {
+      "title": "Forecasting football match results in national league competitions using score-driven time series models",
+      "authors": "Koopman, S., Lit, R.",
+      "year": "2019",
+      "journal": "International Journal of Forecasting",
+      "volume": "35",
+      "pages": "797-809",
+      "doi": "10.1016/j.ijforecast.2018.10.011"
+    },
+    "10.1016/j.ijforecast.2019.01.001": {
+      "title": "Exploiting sports-betting market using machine learning",
+      "authors": "Hub\u00e1\u010dek, O., \u0160ourek, G., \u017delezn\u00fd, F.",
+      "year": "2019",
+      "journal": "International Journal of Forecasting",
+      "volume": "35",
+      "pages": "783-796",
+      "doi": "10.1016/j.ijforecast.2019.01.001"
+    },
+    "10.1177/22150218261416681": {
+      "title": "Can simple models predict football \u2014 and beat the odds? Lessons from the German Bundesliga",
+      "authors": "Wilkens, S.",
+      "year": "2026",
+      "journal": "Journal of Sports Analytics",
+      "volume": "12",
+      "pages": "",
+      "doi": "10.1177/22150218261416681"
+    },
+    "10.1371/journal.pone.0282295": {
+      "title": "Expected goals in football: Improving model performance and demonstrating value",
+      "authors": "Mead, J., O\u2019Hare, A., McMenemy, P.",
+      "year": "2023",
+      "journal": "PLOS ONE",
+      "volume": "18",
+      "pages": "e0282295",
+      "doi": "10.1371/journal.pone.0282295"
+    }
+  }
+}

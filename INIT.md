@@ -32,7 +32,7 @@ Requiere Python 3.11. Los SQLite, `.env`, `.venv` y estados locales no se versio
 
 ```bash
 python3.11 -m venv .venv
-.venv/bin/pip install --pre -e ".[dev,optimize,live,nfl]"
+.venv/bin/pip install --pre -e ".[dev,optimize,live,nfl,research]"
 .venv/bin/pip check
 cp .env.example .env
 chmod 600 .env
@@ -70,11 +70,16 @@ aplica 80 puntos de localía y Poisson usa `neutral=False`.
 ### NFL 2026
 
 ```bash
-.venv/bin/python scripts/migrate_nfl_data.py --since 2022
+.venv/bin/python data/nfl_2026/ingest/fetch_schedule.py --since 2022
+.venv/bin/python data/nfl_2026/ingest/fetch_game_stats.py --since 2022 --through 2026
+.venv/bin/python data/nfl_2026/ingest/fetch_rosters.py --season 2026
 ```
 
-La migración descarga nflverse, crea el esquema y reemplaza el SQLite local con juegos
-desde 2022 y calendario 2026. Después de cualquier ingesta:
+El primer comando descarga nflverse y reemplaza el SQLite local; por eso stats y roster
+siempre se ejecutan después. La ingesta agrega EPA, success rate, jugadas explosivas,
+pass rate, PROE y depth chart. nflverse aún no publica un asset de injuries 2026 para
+este pipeline: `ingest_log` queda `partial`, no se imputan estados y una decisión live
+sensible a QB requiere comprobación externa. Después de cualquier ingesta:
 
 ```bash
 .venv/bin/python scripts/check_freshness.py
@@ -87,11 +92,11 @@ usa tras autorización explícita y deja una justificación auditable.
 
 Modelos disponibles:
 
-- Liga MX: Elo, Bayes y TrueSkill forman el pipeline de fuerza; Poisson es un cuarto
-  componente independiente para goles/1X2. La estrategia `draft` actual selecciona el
-  lado con blend Elo+Bayes.
-- NFL: Elo, Bayes y TrueSkill están disponibles; la estrategia aprobada selecciona por
-  TrueSkill.
+- Liga MX: Elo, Bayes y TrueSkill forman el pipeline de fuerza; Poisson y Dixon-Coles
+  temporal son componentes independientes. La estrategia `draft` actual selecciona el
+  lado con blend Elo+Bayes; Dixon-Coles no participa en el sizing.
+- NFL: Elo, Bayes, TrueSkill y features EPA están disponibles; la estrategia aprobada
+  selecciona por TrueSkill. EPA permanece challenger porque falló el holdout 2025.
 
 Todo este bloque es read-only o dry-run:
 
@@ -101,6 +106,10 @@ Todo este bloque es read-only o dry-run:
 
 # Ambos torneos
 .venv/bin/python scripts/backtest_pipeline.py --tournament all --bankroll 1000
+
+# Experimentos challenger: nunca promocionan una estrategia por sí solos
+.venv/bin/python scripts/ligamx_ml_experiment.py
+.venv/bin/python scripts/nfl_sota_experiment.py
 
 # Liga MX: la estrategia es draft, por eso exige observe-draft
 .venv/bin/python scripts/scan_market.py --tournament liga_mx_2026 \
@@ -142,9 +151,23 @@ públicos live, corre tests y conserva el último snapshot bueno si una fuente f
 `scripts/backtest_pipeline.py` conserva su salida de terminal y acepta el mismo corte
 mediante `--as-of`.
 
+El backtest automático descuenta la comisión taker Sports vigente usada como escenario
+(500 bps en la fórmula de Polymarket) y reporta `fees`; no dispone de order books
+históricos, por lo que declara que el slippage no fue reconstruido. La tasa live se
+consulta por token y no debe reemplazarse por un valor fijo.
+
 Después de cada backtest, Codex debe informar: comando, torneo/temporada, bankroll,
 fuente de precios, ROI, win rate, drawdown, cumplimiento de targets y ruta exacta del
 reporte. Si no se generó HTML, debe decir claramente “sólo terminal; sin archivo”.
+
+### Evaluación SOTA
+
+La revisión técnica y el diagrama viven en
+`docs/findings/2026-09-01-sota-ligamx-nfl.md`. El holdout NFL machine-readable está en
+`editorial/reports/nfl_2026/2026-09-01_sota-evaluation.json`. Un resultado `FAIL` deja
+la estrategia intacta. Un challenger sólo llega a revisión si mejora `market-only` con
+IC bootstrap positivo, Brier/ECE no peores y rendimiento neto de fees/slippage; nunca
+se promociona automáticamente.
 
 Obtén `YYYY-MM-DD` desde la base actual, no desde ejemplos históricos:
 

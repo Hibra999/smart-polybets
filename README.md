@@ -18,7 +18,7 @@ local y todo acceso a Polymarket está centralizado en `venue/` sobre el SDK ofi
 
 ```bash
 python3.11 -m venv .venv
-.venv/bin/pip install --pre -e ".[dev,optimize,live,nfl]"
+.venv/bin/pip install --pre -e ".[dev,optimize,live,nfl,research]"
 .venv/bin/pip check
 cp .env.example .env
 chmod 600 .env
@@ -31,17 +31,17 @@ investigación, predicciones y backtests.
 
 | ID | Modelo principal | Estado operativo |
 |---|---|---|
-| `liga_mx_2026` | Elo + Bayes + TrueSkill; Poisson 1X2 | `draft`: observación y dry-run |
-| `nfl_2026` | TrueSkill; Elo/Bayes auxiliares | `approved`: dry-run por defecto |
+| `liga_mx_2026` | Elo + Bayes + TrueSkill; Poisson y Dixon-Coles | `draft`: observación y dry-run |
+| `nfl_2026` | TrueSkill activo; Elo/Bayes/EPA challengers | `approved`: dry-run por defecto |
 
 No se soporta ningún otro torneo. El registro canónico está en
 `tournaments/registry.py`.
 
 Liga MX no depende sólo de Poisson: el pipeline de fuerza calcula **Elo, Bayes y
-TrueSkill**, y Poisson corre aparte para goles, 1X2 y doble oportunidad. La estrategia
-actual elige el lado con un blend Elo+Bayes; cambiar esa combinación exige versionar la
-estrategia y volver a probarla. NFL calcula las tres señales de fuerza, pero su estrategia
-activa selecciona por TrueSkill.
+TrueSkill**; Poisson y Dixon-Coles temporal corren aparte. La estrategia actual elige el
+lado con un blend Elo+Bayes; Dixon-Coles es visible como challenger, no cambia el pick.
+NFL calcula las tres señales de fuerza e ingiere EPA, pero su estrategia activa sigue
+seleccionando por TrueSkill porque el challenger EPA no superó el holdout.
 
 ## Datos y predicciones
 
@@ -52,14 +52,18 @@ activa selecciona por TrueSkill.
 .venv/bin/python data/liga_mx_2026/ingest/load_history_fdcouk.py --apply
 .venv/bin/python scripts/update_results.py --tournament liga_mx_2026 --apply
 
-# NFL
-.venv/bin/python scripts/migrate_nfl_data.py --since 2022
+# NFL: fetch_schedule reconstruye el SQLite; siempre corre stats/rosters después
+.venv/bin/python data/nfl_2026/ingest/fetch_schedule.py --since 2022
+.venv/bin/python data/nfl_2026/ingest/fetch_game_stats.py --since 2022 --through 2026
+.venv/bin/python data/nfl_2026/ingest/fetch_rosters.py --season 2026
 
 # Verificación y análisis read-only
 .venv/bin/python scripts/check_freshness.py
 .venv/bin/python scripts/scan_market.py --tournament liga_mx_2026 --hours 168 --observe-draft
 .venv/bin/python scripts/scan_market.py --tournament nfl_2026 --hours 240
 .venv/bin/python scripts/backtest_pipeline.py --tournament all --bankroll 1000
+.venv/bin/python scripts/ligamx_ml_experiment.py
+.venv/bin/python scripts/nfl_sota_experiment.py
 .venv/bin/python scripts/generate_reports.py
 .venv/bin/python scripts/generate_reports.py --live \
   --publish-dir editorial/reports/_system/published
@@ -72,6 +76,8 @@ rutas canónicas se documentan en `INIT.md`. Los últimos snapshots versionados 
 con `git pull` bajo `editorial/reports/_system/published/`; GitHub Pages expone
 [predicciones](https://hibra999.github.io/smart-polybets/) y
 [backtest](https://hibra999.github.io/smart-polybets/backtest.html) con URLs estables.
+La revisión de evidencia, benchmarks y límites está en
+[`docs/findings/2026-09-01-sota-ligamx-nfl.md`](docs/findings/2026-09-01-sota-ligamx-nfl.md).
 
 ## Ayuda para Codex
 
