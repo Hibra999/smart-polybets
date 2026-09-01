@@ -3,7 +3,9 @@ from __future__ import annotations
 
 import argparse
 import sqlite3
+from datetime import UTC, datetime
 from pathlib import Path
+from urllib.error import HTTPError
 
 import pandas as pd
 
@@ -52,7 +54,9 @@ def _negative_mean(series: pd.Series) -> float | None:
     return -value if value is not None else None
 
 
-def upsert_team_stats(db: Path, records: list[dict]) -> int:
+def upsert_team_stats(
+    db: Path, records: list[dict], unavailable_years: tuple[int, ...] = (),
+) -> int:
     connection = sqlite3.connect(db)
     valid = {
         row[0] for row in connection.execute(
@@ -69,19 +73,38 @@ def upsert_team_stats(db: Path, records: list[dict]) -> int:
         + ",".join(f"{column}=excluded.{column}" for column in columns[2:]),
         [tuple(row[column] for column in columns) for row in rows],
     )
+    status = "partial" if unavailable_years else "ok"
+    note = (f"play-by-play no publicado: {', '.join(map(str, unavailable_years))}"
+            if unavailable_years else None)
     connection.execute(
-        "INSERT INTO ingest_log(tournament_id,source,entity_type,records_inserted,status) "
-        "VALUES('nfl_2026','nflverse-pbp','match_team_stat',?,'ok')", (len(rows),))
+        "INSERT INTO ingest_log(tournament_id,source,entity_type,records_inserted,status,error_msg) "
+        "VALUES('nfl_2026','nflverse-pbp','match_team_stat',?,?,?)",
+        (len(rows), status, note))
     connection.commit()
     connection.close()
     return len(rows)
 
 
+def load_pbp(since: int, through: int) -> tuple[pd.DataFrame, tuple[int, ...]]:
+    frames = []
+    unavailable = []
+    current_year = datetime.now(UTC).year
+    for year in range(since, through + 1):
+        try:
+            frames.append(pd.read_csv(
+                PBP_URL.format(year=year), usecols=USECOLS, low_memory=False))
+        except HTTPError as error:
+            if error.code != 404 or year < current_year:
+                raise
+            unavailable.append(year)
+    if not frames:
+        raise RuntimeError("nflverse no publicó ningún año solicitado de play-by-play")
+    return pd.concat(frames, ignore_index=True), tuple(unavailable)
+
+
 def run(db: Path, since: int, through: int) -> int:
-    frames = [pd.read_csv(PBP_URL.format(year=year), usecols=USECOLS, low_memory=False)
-              for year in range(since, through + 1)]
-    records = aggregate_team_stats(pd.concat(frames, ignore_index=True))
-    return upsert_team_stats(db, records)
+    pbp, unavailable = load_pbp(since, through)
+    return upsert_team_stats(db, aggregate_team_stats(pbp), unavailable)
 
 
 def main() -> None:

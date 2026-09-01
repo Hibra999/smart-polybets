@@ -1,10 +1,15 @@
 import sqlite3
 from pathlib import Path
+from urllib.error import HTTPError
 
 import pandas as pd
 import pytest
 
-from data.nfl_2026.ingest.fetch_game_stats import aggregate_team_stats, upsert_team_stats
+from data.nfl_2026.ingest.fetch_game_stats import (
+    aggregate_team_stats,
+    load_pbp,
+    upsert_team_stats,
+)
 from data.nfl_2026.ingest.fetch_rosters import player_records, upsert_players
 
 DDL = (Path(__file__).resolve().parents[2] / "data" / "_schema" / "american_football.sql"
@@ -59,6 +64,20 @@ def test_pbp_aggregation_and_idempotent_upsert(tmp_path):
     connection = sqlite3.connect(db)
     assert connection.execute("SELECT count(*) FROM match_team_stat").fetchone()[0] == 2
     connection.close()
+
+
+def test_pbp_loader_marks_unpublished_current_year_partial(monkeypatch):
+    pbp = pd.DataFrame([{"game_id": "g1"}])
+
+    def read_csv(url, **_kwargs):
+        if "2026" in url:
+            raise HTTPError(url, 404, "not found", {}, None)
+        return pbp
+
+    monkeypatch.setattr(pd, "read_csv", read_csv)
+    loaded, unavailable = load_pbp(2025, 2026)
+    assert loaded.equals(pbp)
+    assert unavailable == (2026,)
 
 
 def test_roster_latest_week_depth_and_partial_injury_log(tmp_path):

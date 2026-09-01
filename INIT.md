@@ -77,9 +77,11 @@ aplica 80 puntos de localía y Poisson usa `neutral=False`.
 
 El primer comando descarga nflverse y reemplaza el SQLite local; por eso stats y roster
 siempre se ejecutan después. La ingesta agrega EPA, success rate, jugadas explosivas,
-pass rate, PROE y depth chart. nflverse aún no publica un asset de injuries 2026 para
-este pipeline: `ingest_log` queda `partial`, no se imputan estados y una decisión live
-sensible a QB requiere comprobación externa. Después de cualquier ingesta:
+pass rate, PROE y depth chart hasta el último asset publicado. Si el play-by-play del
+año actual aún no existe, `ingest_log` queda `partial` y conserva los años anteriores.
+nflverse tampoco publica aún injuries 2026 para este pipeline: no se imputan estados y
+una decisión live sensible a QB requiere comprobación externa. Después de cualquier
+ingesta:
 
 ```bash
 .venv/bin/python scripts/check_freshness.py

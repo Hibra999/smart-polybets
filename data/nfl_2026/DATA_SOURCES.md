@@ -26,4 +26,6 @@
 ## Notas
 - La ausencia de injury report debe bloquear una decisión live sensible a QB; nunca se rellena
 - `fetch_game_stats.py` es idempotente por `(fixture_id, team_id)`
+- si nflverse aún no publicó el play-by-play del año actual, lo registra como `partial`
+  y conserva los años disponibles; un `404` de un año histórico sigue siendo fatal
 - Los ratings Elo se calculan post-partido por los modelos del repo

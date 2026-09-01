@@ -182,8 +182,8 @@ el holdout para retocar hiperparámetros.
 - El de-vig `power`, log-loss, Brier y ECE tienen implementaciones puras y pruebas.
 - La tasa por token y la fórmula de fees oficiales están centralizadas; el backtest
   reporta fees y declara que no dispone de slippage histórico.
-- NFL ingiere calendario, roster/depth chart y 2022-2026 play-by-play; agrega EPA,
-  success rate, explosivas, pass rate y PROE de forma idempotente.
+- NFL ingiere calendario, roster/depth chart y play-by-play 2022-2025 (2026 aún no está
+  publicado); agrega EPA, success rate, explosivas, pass rate y PROE de forma idempotente.
 - El experimento NFL usa train 2022-23, calibración 2024, holdout 2025, bootstrap y un
   gate explícito. Su resultado `FAIL` queda versionado.
 - Los paneles HTML actuales se regeneran automáticamente y GitHub Pages publica el
