@@ -121,7 +121,15 @@ CREATE TABLE match_team_stat (
     red_zone_pct    REAL,
     sacks_allowed   INTEGER,
     penalties       INTEGER,
-    penalty_yards   INTEGER
+    penalty_yards   INTEGER,
+    plays           INTEGER,
+    offensive_epa_per_play REAL,
+    defensive_epa_per_play REAL,          -- EPA evitado por jugada; mayor = mejor
+    success_rate    REAL,
+    explosive_play_rate REAL,             -- proporción de jugadas con 20+ yardas
+    pass_rate       REAL,
+    proe            REAL,                 -- pass rate over expected de nflverse
+    UNIQUE(fixture_id, team_id)
 );
 
 -- ─────────────────────────────────────────────

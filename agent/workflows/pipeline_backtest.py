@@ -11,6 +11,7 @@ from adapters.football.model_pipeline import FootballModelPipeline
 from agent.workflows.nfl_backtest import american_to_decimal
 from core.strategy import StrategyConfig
 from core.types import ModelConfidence
+from execution.functions.fees import taker_fee_usdc
 from optimization.functions import size_single
 from portfolio.schemas.portfolio_state import PortfolioState
 from research.functions.market_scanner import PolymarketMarket
@@ -23,6 +24,7 @@ from tournaments.registry import get_config, load_active_strategy
 HOME = "HOME_WIN"
 AWAY = "AWAY_WIN"
 DRAW = "DRAW"
+CURRENT_SPORTS_TAKER_FEE_BPS = 500
 
 
 def _decimal(value: float) -> Decimal:
@@ -115,6 +117,7 @@ def simulate_games(
     *,
     bankroll: float = 1000.0,
     price_source: str,
+    taker_fee_rate_bps: int = 0,
 ) -> dict[str, Any]:
     """Simula juegos normalizados; los no target sólo actualizan el modelo."""
     initial = Decimal(str(bankroll))
@@ -122,6 +125,7 @@ def simulate_games(
     peak = initial
     max_drawdown = Decimal(0)
     staked = Decimal(0)
+    total_fees = Decimal(0)
     equity_points: list[tuple[datetime, Decimal]] = []
     bets: list[dict[str, Any]] = []
     decisions = {"AUTO": 0, "REVIEW": 0, "DISCARD": 0, "SKIP": 0}
@@ -172,21 +176,29 @@ def simulate_games(
                     decisions[mode] += 1
                     if mode == "AUTO":
                         sizing = size_single(verdict, strategy)
-                        if sizing.skipped or sizing.size_usdc > bank:
+                        price = opportunity.market_probability
+                        fee = (
+                            taker_fee_usdc(sizing.size_usdc / price, price, taker_fee_rate_bps)
+                            if taker_fee_rate_bps and price > 0 else Decimal(0)
+                        )
+                        if sizing.skipped or sizing.size_usdc + fee > bank:
                             decisions["AUTO"] -= 1
                             decisions["SKIP"] += 1
                         else:
-                            price = opportunity.market_probability
                             won = game["winner"] == opportunity.model_outcome
                             if opportunity.outcome == "NO":
                                 won = won or game["winner"] == DRAW
                             stake = sizing.size_usdc
-                            pnl = stake * (Decimal(1) - price) / price if won else -stake
+                            gross_pnl = (
+                                stake * (Decimal(1) - price) / price if won else -stake
+                            )
+                            pnl = gross_pnl - fee
                             bank += pnl
                             peak = max(peak, bank)
                             drawdown = (peak - bank) / peak if peak else Decimal(0)
                             max_drawdown = max(max_drawdown, drawdown)
                             staked += stake
+                            total_fees += fee
                             equity_points.append((prediction.generated_at, bank))
                             bets.append(
                                 {
@@ -198,6 +210,7 @@ def simulate_games(
                                     "market_probability": float(price),
                                     "edge": float(opportunity.edge),
                                     "stake": float(stake),
+                                    "fee": float(fee),
                                     "won": won,
                                     "pnl": float(round(pnl, 2)),
                                     "bankroll": float(round(bank, 2)),
@@ -245,6 +258,7 @@ def simulate_games(
             "losses": len(bets) - wins,
             "win_rate": observed["win_rate"],
             "staked": float(round(staked, 2)),
+            "fees": float(round(total_fees, 2)),
             "max_drawdown": observed["max_drawdown"],
         },
         "targets": {
@@ -266,6 +280,10 @@ def simulate_games(
             "precio histórico de cierre como proxy de Polymarket",
             "volumen no disponible: se asume exactamente el mínimo de la estrategia",
             "posiciones liquidadas secuencialmente; drawdown de 7 días usa el bankroll simulado",
+            *(
+                [f"comisión taker aplicada: {taker_fee_rate_bps} bps; slippage no disponible"]
+                if taker_fee_rate_bps else ["comisiones y slippage no aplicados"]
+            ),
             *(
                 ["Liga MX regresa ratings 20% a la media en cada torneo corto"]
                 if any(game.get("rating_regression") is not None for game in games)
@@ -343,6 +361,7 @@ def _liga_mx(
         strategy,
         bankroll=bankroll,
         price_source="football-data.co.uk AvgC closing odds (vig included)",
+        taker_fee_rate_bps=CURRENT_SPORTS_TAKER_FEE_BPS,
     )
     result.update(
         {
@@ -422,6 +441,7 @@ def _nfl(
         strategy,
         bankroll=bankroll,
         price_source="nflverse closing moneyline (vig included)",
+        taker_fee_rate_bps=CURRENT_SPORTS_TAKER_FEE_BPS,
     )
     result.update(
         {

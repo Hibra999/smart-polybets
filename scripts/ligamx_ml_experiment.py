@@ -1,14 +1,11 @@
-#!/usr/bin/env python
-"""Experimento ML multiclase (H/D/A) para Liga MX — ¿un Random Forest sobre
-nuestros features (Elo, TrueSkill, Poisson) mejora al Poisson? ¿Le agrega algo
-al cierre?
+"""Experimento challenger multiclase Liga MX contra el cierre de mercado.
 
 Diseño (walk-forward, sin lookahead):
   - Features de cada partido calculados SOLO con partidos anteriores (replay
     cronológico de Elo con localía+ρ, TrueSkill y Poisson expansivo).
-  - Train: 2022/23-2024/25 · Test: 2025/26 (mismo objetivo que el backtest).
-  - Modelos: RandomForest calibrado (isotónica), Logística multinomial,
-    y las referencias Poisson 1X2 y mercado (cierre promedio devigged).
+  - Warmup 2022/23 · train 2023/24 · calibración 2024/25 · holdout 2025/26.
+  - Modelos: HistGradientBoosting y logística, calibrados por Platt multinomial,
+    con referencias Poisson, Dixon-Coles y mercado de-vig.
   - Test de información incremental: Logística sobre [prob. del mercado] vs
     [mercado + nuestros features] — si no mejora, los features NO agregan nada
     por encima del precio (no hay edge de modelo contra el cierre).
@@ -17,7 +14,6 @@ Diseño (walk-forward, sin lookahead):
 """
 from __future__ import annotations
 
-import math
 import sys
 from pathlib import Path
 
@@ -29,14 +25,13 @@ from core.console import enable_utf8
 
 enable_utf8()
 
-from sklearn.calibration import CalibratedClassifierCV
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
+from adapters.football.poisson import PoissonGoalsModel, TimeDecayDixonColesModel
 from adapters.football.strength_models import EloSystem
-from adapters.football.poisson import PoissonGoalsModel
 from adapters.football.trueskill import TrueSkillSystem
 from scripts.ligamx_backtest import (
     SeasonTracker,
@@ -48,6 +43,8 @@ from scripts.ligamx_backtest import (
 HOME_ADV, RHO = 80.0, 0.80
 SEASONS = {"2022/2023", "2023/2024", "2024/2025", "2025/2026"}
 TEST_SEASON = "2025/2026"
+TRAIN_SEASON = "2023/2024"
+CALIBRATION_SEASON = "2024/2025"
 REFIT_EVERY = 9
 
 
@@ -59,7 +56,9 @@ def build_dataset():
     ts = TrueSkillSystem()
     ts.seed_from_elo({})  # arranca vacío: mu=25 default por get
     seen: list[tuple[str, str, int, int]] = []
+    dated_seen = []
     poisson = PoissonGoalsModel(neutral=False).fit(seen)
+    dixon_coles = TimeDecayDixonColesModel(neutral=False)
     since_fit = 0
 
     X, y, mkt, seasons = [], [], [], []
@@ -74,6 +73,7 @@ def build_dataset():
         sig_a = ra.sigma if ra else 8.333
         fc = poisson.forecast(m["home"], m["away"])
         pr = fc.prob_result()
+        dc = dixon_coles.forecast(m["home"], m["away"]).prob_result()
         feats = [
             elo.get(m["home"]) + HOME_ADV, elo.get(m["away"]),
             elo.get(m["home"]) + HOME_ADV - elo.get(m["away"]),
@@ -83,6 +83,7 @@ def build_dataset():
             fc.lambda_home, fc.lambda_away, fc.expected_total,
             abs(fc.lambda_home - fc.lambda_away),
             pr["home"], pr["draw"], pr["away"],
+            dc["home"], dc["draw"], dc["away"],
         ]
         X.append(feats)
         y.append(outcome_idx(m["hg"], m["ag"]))
@@ -93,9 +94,12 @@ def build_dataset():
         ts.update_match(m["home"], m["away"], m["hg"], m["ag"])
         tracker.on_match_end(m)
         seen.append((m["home"], m["away"], m["hg"], m["ag"]))
+        dated_seen.append((m["date"], m["home"], m["away"], m["hg"], m["ag"]))
         since_fit += 1
         if since_fit >= REFIT_EVERY:
             poisson = PoissonGoalsModel(neutral=False).fit(seen)
+            dixon_coles = TimeDecayDixonColesModel(neutral=False).fit(
+                dated_seen, as_of=m["date"])
             since_fit = 0
     return (np.array(X), np.array(y), np.array(mkt, dtype=float), np.array(seasons))
 
@@ -113,42 +117,49 @@ def scores(p: np.ndarray, y: np.ndarray) -> tuple[float, float]:
 def main() -> None:
     print("Construyendo dataset walk-forward…")
     X, y, mkt, seasons = build_dataset()
-    tr = seasons != TEST_SEASON
+    tr = seasons == TRAIN_SEASON
+    cal = seasons == CALIBRATION_SEASON
     te = (seasons == TEST_SEASON) & ~np.isnan(mkt).any(axis=1)
-    # burn-in: descartar la primera temporada del train (features fríos)
-    tr = tr & (seasons != "2022/2023")
-    print(f"train={tr.sum()}  test={te.sum()}  features={X.shape[1]}")
+    print(f"train={tr.sum()}  calibration={cal.sum()}  test={te.sum()}  features={X.shape[1]}")
 
     results: dict[str, tuple[float, float]] = {}
 
     # referencias
-    poisson_p = X[te][:, -3:]  # últimas 3 columnas = probs Poisson
+    poisson_p = X[te][:, 13:16]
+    dixon_coles_p = X[te][:, 16:19]
     results["Poisson 1X2"] = scores(poisson_p, y[te])
+    results["Dixon-Coles temporal"] = scores(dixon_coles_p, y[te])
     results["Mercado (cierre devig)"] = scores(mkt[te], y[te])
 
-    # RF calibrado
-    rf = CalibratedClassifierCV(
-        RandomForestClassifier(n_estimators=500, min_samples_leaf=20,
-                               max_features="sqrt", random_state=7, n_jobs=-1),
-        method="isotonic", cv=5)
-    rf.fit(X[tr], y[tr])
-    results["Random Forest (calibrado)"] = scores(rf.predict_proba(X[te]), y[te])
+    def calibrated(model, train_x, train_y, calibration_x, calibration_y, test_x):
+        model.fit(train_x, train_y)
+        platt = LogisticRegression(max_iter=2000, C=1000)
+        platt.fit(np.log(np.clip(model.predict_proba(calibration_x), 1e-6, 1)), calibration_y)
+        return platt.predict_proba(np.log(np.clip(model.predict_proba(test_x), 1e-6, 1)))
+
+    boost = HistGradientBoostingClassifier(
+        max_iter=250, max_leaf_nodes=15, min_samples_leaf=20,
+        l2_regularization=1.0, random_state=7)
+    results["Gradient boosting (calibrado)"] = scores(
+        calibrated(boost, X[tr], y[tr], X[cal], y[cal], X[te]), y[te])
 
     # logística multinomial (baseline lineal sobre los mismos features, escalados)
     lr = make_pipeline(StandardScaler(), LogisticRegression(max_iter=2000, C=1.0))
-    lr.fit(X[tr], y[tr])
-    results["Logística multinomial"] = scores(lr.predict_proba(X[te]), y[te])
+    results["Logística (calibrada)"] = scores(
+        calibrated(lr, X[tr], y[tr], X[cal], y[cal], X[te]), y[te])
 
     # ── test de información incremental sobre el MERCADO ────────────────────
     tr_odds = tr & ~np.isnan(mkt).any(axis=1)
+    cal_odds = cal & ~np.isnan(mkt).any(axis=1)
     logit_mkt = np.log(np.clip(mkt, 1e-6, 1))  # log-probs del mercado
     lr_m = LogisticRegression(max_iter=2000)
-    lr_m.fit(logit_mkt[tr_odds], y[tr_odds])
-    results["Logística: solo mercado"] = scores(lr_m.predict_proba(logit_mkt[te]), y[te])
+    results["Logística: solo mercado"] = scores(calibrated(
+        lr_m, logit_mkt[tr_odds], y[tr_odds], logit_mkt[cal_odds], y[cal_odds],
+        logit_mkt[te]), y[te])
     both = np.hstack([logit_mkt, X])
     lr_b = make_pipeline(StandardScaler(), LogisticRegression(max_iter=2000))
-    lr_b.fit(both[tr_odds], y[tr_odds])
-    results["Logística: mercado + features"] = scores(lr_b.predict_proba(both[te]), y[te])
+    results["Logística: mercado + features"] = scores(calibrated(
+        lr_b, both[tr_odds], y[tr_odds], both[cal_odds], y[cal_odds], both[te]), y[te])
 
     print(f"\n=== Test 2025/26 (n={te.sum()}) — log-loss / Brier3 (menor = mejor) ===")
     for name, (ll, br) in results.items():

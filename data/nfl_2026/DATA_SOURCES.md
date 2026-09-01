@@ -5,22 +5,25 @@
 |---|---|---|---|---|
 | tournament | Manual | 100% | Una vez | — |
 | team | Manual / nflverse | 100% | Una vez | fetch_rosters.py |
-| player | nflverse rosters | 95% | Semanal | fetch_rosters.py |
-| week / fixture | ESPN / nflverse schedule | 100% | Semanal | fetch_schedule.py |
-| match_team_stat | nflverse | Post-partido | Por partido | fetch_game_stats.py |
-| match_player_stat | nflverse | Post-partido | Por partido | fetch_game_stats.py |
-| injury_report | NFL injury report (jueves) | 100% | Semanal | fetch_rosters.py |
+| player | nflverse weekly rosters + depth charts | Plantel publicado | Semanal | fetch_rosters.py |
+| week / fixture | nflverse games | 100% | Diario | fetch_schedule.py |
+| match_team_stat | nflverse play-by-play | EPA, success, explosivas, pass rate y PROE | Por partido | fetch_game_stats.py |
+| match_player_stat | Sin fuente conectada | 0% | — | — |
+| injury_report | Sin asset nflverse 2026 | 0%; se registra `partial`, sin imputar | Jueves | — |
 | elo_rating_history | Calculado localmente | 100% | Post-partido | calculado por el modelo |
 
-## Fuentes pendientes de confirmar
+## Fuentes pendientes
 - Líneas de Vegas (spread/total/moneyline): evaluar The Odds API
 - snap counts: nflverse participation data
+- Injury report vigente: conectar una fuente oficial con licencia y timestamp auditable
 
 ## Cómo actualizar antes de un partido
-1. `python data/nfl_2026/ingest/fetch_schedule.py` — actualiza el calendario
-2. `python data/nfl_2026/ingest/fetch_rosters.py` — rosters + injury report (sale jueves)
-3. Verificar status de QBs titulares en `injury_report` (activa QR-201)
+1. `python data/nfl_2026/ingest/fetch_schedule.py --since 2022` — reconstruye DB y calendario
+2. `python data/nfl_2026/ingest/fetch_game_stats.py --since 2022 --through 2026`
+3. `python data/nfl_2026/ingest/fetch_rosters.py --season 2026`
+4. Verificar externamente el injury report y QB titular antes de operar; la DB no lo tiene aún
 
 ## Notas
-- El injury report del jueves es mandatorio en NFL — siempre revisar antes de operar
+- La ausencia de injury report debe bloquear una decisión live sensible a QB; nunca se rellena
+- `fetch_game_stats.py` es idempotente por `(fixture_id, team_id)`
 - Los ratings Elo se calculan post-partido por los modelos del repo

@@ -69,3 +69,13 @@ def test_pipeline_backtest_does_not_bet_review_zone():
 
     assert result["decisions"]["REVIEW"] == 1
     assert result["performance"]["bets"] == 0
+
+
+def test_pipeline_backtest_deducts_explicit_taker_fee():
+    strategy = load_active_strategy("nfl_2026")
+    result = simulate_games(
+        "nfl_2026", [_game(0.50)], _warmed_pipeline(), strategy,
+        bankroll=1000, price_source="test", taker_fee_rate_bps=500,
+    )
+    assert result["performance"]["fees"] > 0
+    assert result["bets"][0]["pnl"] < result["bets"][0]["stake"]

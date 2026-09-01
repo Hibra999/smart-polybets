@@ -17,6 +17,7 @@ optimize = ["cvxpy>=1.4"]
 # >=0.1.0b12: soporte de ticks de precio pequeños.
 live = ["polymarket-client>=0.1.0b12"]
 nfl = ["pandas>=2.2"]
+research = ["numpy>=1.26", "scikit-learn>=1.5"]
 dev = [
     "pytest>=8.0",
     "pytest-cov>=5.0",
