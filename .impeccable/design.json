@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-01T00:00:00Z",
+  "title": "Design System: PEPA",
+  "extensions": {
+    "colorMeta": {
+      "operator-blue": {"role": "primary", "displayName": "Operator Blue", "canonical": "#2563EB", "tonalRamp": ["#07142F", "#0D2860", "#153D91", "#1D51C2", "#2563EB", "#5C88F0", "#9BB4F6", "#DCE5FD"]},
+      "signal-cyan": {"role": "secondary", "displayName": "Signal Cyan", "canonical": "#22D3EE", "tonalRamp": ["#062A31", "#0B535F", "#117D8E", "#18A6BC", "#22D3EE", "#61DFF2", "#A1ECF7", "#E0F9FC"]},
+      "night": {"role": "neutral", "displayName": "Noche Operativa", "canonical": "#0F1117", "tonalRamp": ["#090A0E", "#0F1117", "#242731", "#414653", "#686E7D", "#989DA9", "#CACDD4", "#F1F2F4"]},
+      "analysis-surface": {"role": "neutral", "displayName": "Mesa de Análisis", "canonical": "#1A1D27", "tonalRamp": ["#0D0F14", "#1A1D27", "#303440", "#4E5361", "#747A88", "#A1A6B1", "#D0D3D9", "#F4F5F6"]}
+    },
+    "typographyMeta": {
+      "headline": {"displayName": "Headline", "purpose": "Título único del reporte."},
+      "body": {"displayName": "Body", "purpose": "Narrativa y contexto operativo."},
+      "numeric": {"displayName": "Numeric", "purpose": "Probabilidades, dinero, fechas y muestras."}
+    },
+    "shadows": [],
+    "motion": [
+      {"name": "state", "value": "180ms cubic-bezier(0.22, 1, 0.36, 1)", "purpose": "Sólo feedback de estado; sin coreografía de carga."}
+    ],
+    "breakpoints": [
+      {"name": "compact", "value": "520px"},
+      {"name": "wide", "value": "900px"}
+    ]
+  },
+  "components": [
+    {
+      "name": "Report Card",
+      "kind": "card",
+      "refersTo": "report-card",
+      "description": "Superficie principal para un partido o bloque de rendimiento.",
+      "html": "<article class=\"ds-report-card\"><strong>Partido</strong><p>Datos y veredicto</p></article>",
+      "css": ".ds-report-card{background:#1A1D27;color:#E2E8F0;border:1px solid #2D3340;border-radius:12px;padding:20px;font:400 16px/1.6 Inter,system-ui,sans-serif}.ds-report-card:focus-within{border-color:#22D3EE}"
+    },
+    {
+      "name": "Model Chip",
+      "kind": "chip",
+      "refersTo": "model-chip",
+      "description": "Etiqueta compacta para modelo y probabilidad.",
+      "html": "<span class=\"ds-model-chip\">Elo <b>62.4%</b></span>",
+      "css": ".ds-model-chip{display:inline-flex;gap:6px;background:#22262F;color:#94A3B8;border-radius:8px;padding:3px 10px;font:600 12px/1.4 Inter,system-ui,sans-serif}.ds-model-chip b{color:#E2E8F0;font-family:'JetBrains Mono',ui-monospace,monospace}"
+    },
+    {
+      "name": "Status Badge",
+      "kind": "chip",
+      "description": "Estado textual con color semántico secundario.",
+      "html": "<span class=\"ds-status\">Revisar</span>",
+      "css": ".ds-status{display:inline-flex;color:#F59E0B;border:1px solid #F59E0B55;border-radius:8px;padding:4px 12px;font:600 12px/1.2 Inter,system-ui,sans-serif}"
+    }
+  ],
+  "narrative": {
+    "northStar": "La Mesa Nocturna",
+    "overview": "PEPA es una mesa cuantitativa nocturna: silenciosa, concentrada y densa en evidencia. La creatividad sólo aparece cuando explica consenso, trayectoria o distancia contra un target.",
+    "keyCharacteristics": ["Capas tonales sin sombras decorativas", "Inter para lectura y JetBrains Mono para datos", "Estado expresado con texto", "Una estructura para predicción y backtest"],
+    "rules": [
+      {"name": "Rare Signal", "body": "Cyan y azul juntos ocupan menos del 15% de la superficie.", "section": "colors"},
+      {"name": "Numeric Truth", "body": "Ningún adjetivo sustituye el valor, la muestra o el corte temporal.", "section": "typography"},
+      {"name": "No Casino Glow", "body": "No se usa resplandor, blur o neón para simular importancia.", "section": "elevation"}
+    ],
+    "dos": ["Do mostrar torneo, temporada, fecha de corte, fuente y muestra.", "Do acompañar el color semántico con texto."],
+    "donts": ["Don't hacer que parezca un casino, una casa de apuestas promocional ni un dashboard de neón.", "Don't usar gradientes decorativos, glassmorphism o animación gratuita.", "Don't depender sólo del color."]
+  }
+}

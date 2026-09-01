@@ -60,11 +60,13 @@ activa selecciona por TrueSkill.
 .venv/bin/python scripts/scan_market.py --tournament liga_mx_2026 --hours 168 --observe-draft
 .venv/bin/python scripts/scan_market.py --tournament nfl_2026 --hours 240
 .venv/bin/python scripts/backtest_pipeline.py --tournament all --bankroll 1000
+.venv/bin/python scripts/generate_reports.py
 ```
 
-El backtest consolidado imprime en terminal (`--json` también usa stdout). Para guardar
-HTML usa `scripts/ligamx_backtest_html.py` o `scripts/nfl_backtest_report.py`; las rutas
-canónicas se documentan en `INIT.md`.
+`generate_reports.py` toma hoy UTC como corte, detecta la próxima fecha de cada mercado
+y actualiza dos HTML: predicciones conjuntas Liga MX/NFL y backtest conjunto hasta
+hoy. También se ejecuta automáticamente al iniciar o reanudar una sesión de Codex. Las
+rutas canónicas se documentan en `INIT.md`.
 
 ## Ayuda para Codex
 

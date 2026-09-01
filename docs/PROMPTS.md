@@ -18,6 +18,7 @@ catálogo; no ejecuta sus ejemplos.
 - `Codex, escanea Liga MX durante las próximas 168 horas en modo observación.`
 - `Codex, calcula Poisson para Liga MX en la fecha YYYY-MM-DD.`
 - `Codex, escanea NFL durante las próximas 240 horas.`
+- `Codex, regenera los HTML automáticos de próximos partidos y backtest hasta hoy y dime sus rutas.`
 - `Codex, corre el backtest de Liga MX y NFL con bankroll de 1000, compáralos y dime la ruta exacta de cada reporte.`
 - `Codex, genera los reportes HTML de backtest de Liga MX y NFL y dime comando, datos, métricas y rutas.`
 - `Codex, simula las decisiones de Liga MX para YYYY-MM-DD sin tocar la wallet.`

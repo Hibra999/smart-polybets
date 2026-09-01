@@ -32,8 +32,10 @@
 
   <h2>Codex</h2>
   <p><code>.codex/config.toml</code> define un hook <code>SessionStart</code> para
-  startup, resume, clear y compact. Ejecuta el checker con el Python del entorno
-  virtual y sólo añade contexto; no actualiza datos ni coloca órdenes.</p>
+  startup, resume, clear y compact. Primero ejecuta el checker y luego
+  <code>scripts/generate_reports.py</code>, que actualiza los HTML locales de próximos
+  partidos y backtest hasta hoy. No actualiza fuentes, publica contenido ni coloca
+  órdenes.</p>
 
   <div class="warn"><code>--force --reason</code> no es un atajo normal. Sólo se usa
   con autorización explícita y deja la razón visible.</div>

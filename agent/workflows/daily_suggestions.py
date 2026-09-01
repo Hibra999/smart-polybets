@@ -12,14 +12,13 @@ from collections.abc import Callable
 from decimal import Decimal
 from typing import Any
 
-from adapters.football.db_reader import FootballDBReader
 from core.utils import utcnow
 from optimization.functions.bet_sizer import size_single
 from portfolio.schemas.portfolio_state import PortfolioState
 from research.functions import build_strategy_opportunity, get_event_prediction, pick_side
 from research.functions.odds_source import SqliteOddsSource
 from risk.functions.evaluate import evaluate
-from tournaments.registry import get_config, load_active_strategy
+from tournaments.registry import get_adapter, get_config, load_active_strategy
 
 
 def _f(x) -> float | None:
@@ -40,7 +39,10 @@ def compute(
     if strat is None:
         raise ValueError(f"No hay estrategia activa aprobada para {tournament_id}")
 
-    reader = FootballDBReader(tournament_id)
+    cfg = get_config(tournament_id)
+    reader = getattr(get_adapter(tournament_id), "reader", None)
+    if reader is None:
+        raise ValueError(f"El adapter de {tournament_id} no expone un reader")
     odds = market_source or SqliteOddsSource(tournament_id, source=source_name)
     portfolio = PortfolioState(
         bankroll_usdc=Decimal(str(bankroll)), drawdown_7d=Decimal(0),
@@ -63,6 +65,11 @@ def compute(
         side = pk["side"]
         pick_team = pred.participant_home if side == "HOME_WIN" else pred.participant_away
         comp = pred.components
+        poisson_result = None
+        if cfg.sport == "football":
+            from research.functions.poisson_loader import match_result_probs
+
+            poisson_result = match_result_probs(tournament_id, pred.event_id)
 
         row: dict[str, Any] = {
             "fixture_id": f["id"],
@@ -76,6 +83,12 @@ def compute(
             "elo": _f(comp.get("elo", {}).get(side)),
             "bayes": _f(comp.get("bayes", {}).get(side)),
             "trueskill": _f(comp.get("trueskill", {}).get(side)),
+            "poisson": (
+                _f(poisson_result["home" if side == "HOME_WIN" else "away"])
+                if poisson_result
+                else None
+            ),
+            "poisson_draw": _f(poisson_result["draw"]) if poisson_result else None,
         }
 
         if not markets:
@@ -85,10 +98,8 @@ def compute(
             rows.append(row)
             continue
 
-        from research.functions.poisson_loader import match_result_probs
-        poisson_result = (match_result_probs(strat.tournament_id, pred.event_id)
-                          if strat.bet_type == "double_chance" else None)
-        opp = build_strategy_opportunity(pred, markets, strat, poisson_result=poisson_result)
+        target_probs = poisson_result if strat.bet_type == "double_chance" else None
+        opp = build_strategy_opportunity(pred, markets, strat, poisson_result=target_probs)
         if opp is None:
             row.update({"verdict": "SKIP", "reason": "warmup / filtro Bayes",
                         "model_prob": _f(pk["model_prob"]), "market_prob": None,
@@ -116,7 +127,7 @@ def compute(
         "side_criterion": strat.side_criterion,
         "kelly_fraction": _f(strat.kelly_fraction),
         "tournament_id": tournament_id,
-        "tournament_name": get_config(tournament_id).display_name,
+        "tournament_name": cfg.display_name,
         "date": date,
         "bankroll": bankroll,
         "source": source_name,

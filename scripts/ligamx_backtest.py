@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """Backtest Liga MX sobre football-data.co.uk (MEX.csv) — calibración + modelos + apuestas.
 
 Tres partes (todas walk-forward, sin lookahead):
@@ -21,7 +20,7 @@ import csv
 import math
 import re
 import sys
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -30,8 +29,8 @@ from core.console import enable_utf8
 
 enable_utf8()
 
-from adapters.football.strength_models import EloSystem
 from adapters.football.poisson import PoissonGoalsModel
+from adapters.football.strength_models import EloSystem
 from adapters.football.trueskill import TrueSkillSystem
 
 CSV = Path(__file__).resolve().parent.parent / "data" / "liga_mx_2026" / "ingest" / "MEX.csv"
@@ -53,20 +52,21 @@ def slug(name: str) -> str:
     return TEAM_MAP.get(name) or re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_")
 
 
-def load_matches(seasons: set[str]) -> list[dict]:
+def load_matches(seasons: set[str] | None = None) -> list[dict]:
     rows = []
-    for r in csv.DictReader(open(CSV, encoding="utf-8-sig")):
-        if r["Season"] not in seasons or not r["HG"] or not r["AG"]:
-            continue
-        rows.append({
-            "date": datetime.strptime(r["Date"], "%d/%m/%Y"),
-            "season": r["Season"],
-            "home": slug(r["Home"]), "away": slug(r["Away"]),
-            "hg": int(float(r["HG"])), "ag": int(float(r["AG"])),
-            "oh": float(r["AvgCH"]) if r.get("AvgCH") else None,
-            "od": float(r["AvgCD"]) if r.get("AvgCD") else None,
-            "oa": float(r["AvgCA"]) if r.get("AvgCA") else None,
-        })
+    with CSV.open(encoding="utf-8-sig") as source:
+        for r in csv.DictReader(source):
+            if (seasons is not None and r["Season"] not in seasons) or not r["HG"] or not r["AG"]:
+                continue
+            rows.append({
+                "date": datetime.strptime(r["Date"], "%d/%m/%Y").replace(tzinfo=UTC),
+                "season": r["Season"],
+                "home": slug(r["Home"]), "away": slug(r["Away"]),
+                "hg": int(float(r["HG"])), "ag": int(float(r["AG"])),
+                "oh": float(r["AvgCH"]) if r.get("AvgCH") else None,
+                "od": float(r["AvgCD"]) if r.get("AvgCD") else None,
+                "oa": float(r["AvgCA"]) if r.get("AvgCA") else None,
+            })
     rows.sort(key=lambda m: m["date"])
     return rows
 
@@ -324,7 +324,7 @@ def main() -> None:
     print(f"=== A. Calibración localía (replay {len(cal_matches)} partidos, "
           f"burn-in {burn}) ===")
     grid = calibrate_home_adv(cal_matches, burn)
-    best_adv, best_brier = min(grid, key=lambda t: t[1])
+    best_adv, _best_brier = min(grid, key=lambda t: t[1])
     for adv, brier in grid:
         mark = "  <-- óptimo" if adv == best_adv else ""
         if adv % 20 == 0 or adv == best_adv:

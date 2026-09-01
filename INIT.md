@@ -96,6 +96,9 @@ Modelos disponibles:
 Todo este bloque es read-only o dry-run:
 
 ```bash
+# Predicciones de la próxima fecha + backtest al día, sin indicar fechas manualmente
+.venv/bin/python scripts/generate_reports.py
+
 # Ambos torneos
 .venv/bin/python scripts/backtest_pipeline.py --tournament all --bankroll 1000
 
@@ -111,17 +114,22 @@ Todo este bloque es read-only o dry-run:
 
 ### Salida y reportes de backtest
 
-`scripts/backtest_pipeline.py` imprime el resultado consolidado en terminal; `--json`
-imprime JSON en stdout y no guarda un archivo automáticamente. Los reportes visuales se
-generan así:
+`scripts/generate_reports.py` usa hoy UTC, elige la próxima fecha programada de cada
+mercado y la última temporada con cuotas disponible. Genera exactamente dos paneles:
+
+- `editorial/reports/_system/<hoy>_next-predictions.html`
+- `editorial/reports/_system/<hoy>_backtest-to-date.html`
+
+Para reproducir otro corte sin editar código:
 
 ```bash
-# Liga MX → editorial/reports/liga_mx_2026/ligamx-backtest.html
-.venv/bin/python scripts/ligamx_backtest_html.py
-
-# NFL → editorial/reports/nfl_2026/YYYY-MM-DD_backtest_2025.html
-.venv/bin/python scripts/nfl_backtest_report.py --season 2025 --bankroll 1000
+.venv/bin/python scripts/generate_reports.py --as-of YYYY-MM-DD --bankroll 1000
 ```
+
+Codex ejecuta el generador en `SessionStart` después del chequeo de frescura. Los HTML
+son artefactos locales regenerables y no se versionan; el generador, las plantillas y las
+reglas sí se versionan. `scripts/backtest_pipeline.py` conserva su salida de terminal y
+acepta el mismo corte mediante `--as-of`.
 
 Después de cada backtest, Codex debe informar: comando, torneo/temporada, bankroll,
 fuente de precios, ROI, win rate, drawdown, cumplimiento de targets y ruta exacta del

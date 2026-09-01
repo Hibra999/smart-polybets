@@ -48,6 +48,9 @@ bloqueo; nunca fuerces ni reescribas historia sin autorización explícita.
 Después de cada backtest indica siempre torneo, temporada, bankroll, fuente de precios,
 métricas principales y ruta exacta del reporte. Si el comando sólo imprimió a terminal,
 di expresamente que no guardó archivo y ofrece el generador HTML correspondiente.
+El generador canónico es `scripts/generate_reports.py`: sin argumentos toma hoy UTC,
+detecta las próximas fechas de Liga MX/NFL y actualiza los HTML bajo
+`editorial/reports/`. `SessionStart` lo ejecuta automáticamente después de freshness.
 
 ## Seguridad
 

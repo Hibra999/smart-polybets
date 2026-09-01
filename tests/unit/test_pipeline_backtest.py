@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 
 from adapters.american_football.nfl_pipeline import NFLPipeline
-from agent.workflows.pipeline_backtest import AWAY, HOME, simulate_games
+from agent.workflows.pipeline_backtest import AWAY, HOME, _cutoff, simulate_games
 from tournaments.registry import load_active_strategy
 
 
@@ -27,6 +27,12 @@ def _warmed_pipeline() -> NFLPipeline:
         pipeline.process_match("H", f"X{index}", 24, 10)
         pipeline.process_match("A", f"Y{index}", 10, 24)
     return pipeline
+
+
+def test_date_cutoff_includes_the_complete_day():
+    assert _cutoff("2026-09-01") == datetime.max.replace(
+        year=2026, month=9, day=1, tzinfo=UTC
+    )
 
 
 def test_pipeline_backtest_places_only_auto_and_settles_bankroll():

@@ -23,7 +23,6 @@ from tournaments.registry import get_config, load_active_strategy
 HOME = "HOME_WIN"
 AWAY = "AWAY_WIN"
 DRAW = "DRAW"
-_LIGA_SEASONS = {"2022/2023", "2023/2024", "2024/2025", "2025/2026"}
 
 
 def _decimal(value: float) -> Decimal:
@@ -33,6 +32,14 @@ def _decimal(value: float) -> Decimal:
 def _as_utc(value: str | datetime) -> datetime:
     dt = datetime.fromisoformat(value) if isinstance(value, str) else value
     return dt.replace(tzinfo=UTC) if dt.tzinfo is None else dt.astimezone(UTC)
+
+
+def _cutoff(value: str | datetime | None) -> datetime:
+    if value is None:
+        return datetime.now(UTC)
+    if isinstance(value, str) and len(value) == 10:
+        return datetime.combine(datetime.fromisoformat(value).date(), time.max, tzinfo=UTC)
+    return _as_utc(value)
 
 
 def _confidence(sport: str, played: int) -> ModelConfidence:
@@ -184,6 +191,8 @@ def simulate_games(
                             bets.append(
                                 {
                                     "event_id": game["id"],
+                                    "match": f"{game['home']} vs {game['away']}",
+                                    "kickoff_utc": prediction.event_start_utc.isoformat(),
                                     "pick": opportunity.model_outcome,
                                     "model_probability": float(opportunity.model_probability),
                                     "market_probability": float(price),
@@ -267,14 +276,30 @@ def simulate_games(
     }
 
 
-def _liga_mx(season: str, bankroll: float) -> dict[str, Any]:
+def _liga_mx(
+    season: str | None,
+    bankroll: float,
+    as_of: datetime,
+) -> dict[str, Any]:
     strategy = load_active_strategy("liga_mx_2026", require_approved=False)
     assert strategy is not None
     cfg = get_config("liga_mx_2026")
-    matches = load_matches(_LIGA_SEASONS)
-    target = [match for match in matches if match["season"] == season]
+    available = [match for match in load_matches() if match["date"].date() <= as_of.date()]
+    season_dates: dict[str, datetime] = {}
+    for match in available:
+        season_dates[match["season"]] = max(
+            match["date"], season_dates.get(match["season"], match["date"])
+        )
+    ordered_seasons = sorted(season_dates, key=season_dates.get)
+    selected = season or (ordered_seasons[-1] if ordered_seasons else None)
+    if selected not in season_dates:
+        raise ValueError(f"Sin partidos de Liga MX hasta {as_of.date()}")
+    selected_index = ordered_seasons.index(selected)
+    training_window = set(ordered_seasons[max(0, selected_index - 3): selected_index + 1])
+    matches = [match for match in available if match["season"] in training_window]
+    target = [match for match in matches if match["season"] == selected]
     if not target:
-        raise ValueError(f"Sin partidos de Liga MX para la temporada {season}")
+        raise ValueError(f"Sin partidos de Liga MX para la temporada {selected}")
     pipeline = FootballModelPipeline(home_adv_elo=cfg.home_adv_elo)
     for match in matches:
         if match["date"] >= target[0]["date"]:
@@ -311,7 +336,7 @@ def _liga_mx(season: str, bankroll: float) -> dict[str, Any]:
             }
         )
         short_tournament = current_short_tournament
-    return simulate_games(
+    result = simulate_games(
         "liga_mx_2026",
         games,
         pipeline,
@@ -319,17 +344,46 @@ def _liga_mx(season: str, bankroll: float) -> dict[str, Any]:
         bankroll=bankroll,
         price_source="football-data.co.uk AvgC closing odds (vig included)",
     )
+    result.update(
+        {
+            "season": selected,
+            "as_of": as_of.isoformat(),
+            "latest_event_utc": max(game["kickoff_utc"] for game in games).isoformat(),
+        }
+    )
+    return result
 
 
-def _nfl(season: int, bankroll: float) -> dict[str, Any]:
+def _nfl(
+    season: int | None,
+    bankroll: float,
+    as_of: datetime,
+) -> dict[str, Any]:
     strategy = load_active_strategy("nfl_2026", require_approved=False)
     assert strategy is not None
     reader = AmericanFootballDBReader("nfl_2026")
     rows = reader.query(
         "SELECT id,home_team_id,away_team_id,home_score,away_score,winner_team_id,"
         "moneyline_home,moneyline_away,week_id,kickoff_utc FROM fixture "
-        "WHERE status='finished' AND home_score IS NOT NULL ORDER BY kickoff_utc"
+        "WHERE status='finished' AND home_score IS NOT NULL AND datetime(kickoff_utc) <= datetime(?) "
+        "ORDER BY kickoff_utc",
+        (as_of.isoformat(),),
     )
+    seasons = sorted(
+        {
+            int(row["week_id"][:4])
+            for row in rows
+            if row.get("week_id") and row["week_id"][:4].isdigit()
+            and row.get("moneyline_home") is not None
+            and row.get("moneyline_away") is not None
+        }
+    )
+    selected = season or (seasons[-1] if seasons else None)
+    if selected not in seasons:
+        raise ValueError(
+            f"Sin partidos NFL con moneyline para la temporada {selected} "
+            f"hasta {as_of.date()}"
+        )
     games = []
     for row in rows:
         home_decimal = (
@@ -358,10 +412,10 @@ def _nfl(season: int, bankroll: float) -> dict[str, Any]:
                 "phase": "regular_season",
                 "market_home": 1 / home_decimal if home_decimal else None,
                 "market_away": 1 / away_decimal if away_decimal else None,
-                "target": (row["week_id"] or "").startswith(f"{season}_REG"),
+                "target": (row["week_id"] or "").startswith(f"{selected}_REG"),
             }
         )
-    return simulate_games(
+    result = simulate_games(
         "nfl_2026",
         games,
         NFLPipeline(),
@@ -369,6 +423,16 @@ def _nfl(season: int, bankroll: float) -> dict[str, Any]:
         bankroll=bankroll,
         price_source="nflverse closing moneyline (vig included)",
     )
+    result.update(
+        {
+            "season": str(selected),
+            "as_of": as_of.isoformat(),
+            "latest_event_utc": max(
+                game["kickoff_utc"] for game in games if game["target"]
+            ),
+        }
+    )
+    return result
 
 
 def run(
@@ -376,11 +440,13 @@ def run(
     *,
     season: str | None = None,
     bankroll: float = 1000.0,
+    as_of: str | datetime | None = None,
 ) -> dict[str, Any]:
     """Despacha el backtest para cualquier torneo registrado soportado."""
     get_config(tournament_id)
+    cutoff = _cutoff(as_of)
     if tournament_id == "liga_mx_2026":
-        return _liga_mx(season or "2025/2026", bankroll)
+        return _liga_mx(season, bankroll, cutoff)
     if tournament_id == "nfl_2026":
-        return _nfl(int(season or 2025), bankroll)
+        return _nfl(int(season) if season else None, bankroll, cutoff)
     raise ValueError(f"Backtest no implementado para {tournament_id}")

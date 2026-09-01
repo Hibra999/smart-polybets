@@ -20,7 +20,10 @@ def _print(result: dict) -> None:
     perf = result["performance"]
     coverage = result["coverage"]
     decisions = result["decisions"]
-    print(f"\n=== {result['tournament_id']} · {result['strategy']} ===")
+    print(
+        f"\n=== {result['tournament_id']} · {result['strategy']} "
+        f"· season={result.get('season', 'n/d')} · as_of={str(result.get('as_of', ''))[:10]} ==="
+    )
     print(
         f"  cobertura: {coverage['with_price']}/{coverage['games']} · "
         f"AUTO={decisions['AUTO']} REVIEW={decisions['REVIEW']} "
@@ -44,6 +47,7 @@ def main() -> None:
     parser.add_argument("--tournament", default="all", choices=["all", *TOURNAMENTS])
     parser.add_argument("--season", default=None)
     parser.add_argument("--bankroll", type=float, default=1000.0)
+    parser.add_argument("--as-of", default=None, help="fecha de corte YYYY-MM-DD; default: hoy UTC")
     parser.add_argument("--json", action="store_true", dest="as_json")
     args = parser.parse_args()
 
@@ -52,7 +56,12 @@ def main() -> None:
     for tournament_id in tournament_ids:
         try:
             results.append(
-                run(tournament_id, season=args.season, bankroll=args.bankroll)
+                run(
+                    tournament_id,
+                    season=args.season,
+                    bankroll=args.bankroll,
+                    as_of=args.as_of,
+                )
             )
         except (AgentError, FileNotFoundError, ValueError) as exc:
             results.append({"tournament_id": tournament_id, "available": False, "reason": str(exc)})
