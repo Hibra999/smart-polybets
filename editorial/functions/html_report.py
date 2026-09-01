@@ -140,7 +140,7 @@ def _document(
 def _model_chips(row: dict[str, Any]) -> str:
     values = []
     chips = []
-    for name in ("elo", "bayes", "trueskill", "poisson"):
+    for name in ("elo", "bayes", "trueskill", "poisson", "dixon_coles"):
         value = row.get(name)
         if value is not None:
             values.append(float(value))
@@ -222,7 +222,7 @@ def build_daily_html(data: dict[str, Any]) -> str:
         "Una predicción sin cuota sigue siendo una lectura de modelo, no una apuesta."
     )
     models = (
-        "Elo, Bayes, TrueSkill y Poisson"
+        "Elo, Bayes, TrueSkill, Poisson y Dixon-Coles"
         if any(row.get("poisson") is not None for row in rows)
         else "TrueSkill"
     )
@@ -275,7 +275,8 @@ def build_next_predictions_html(reports: list[dict[str, Any]], *, as_of: str) ->
         meta=f'Corte automático <b class="num">{html.escape(as_of)}</b> · sólo lectura',
         summary=(
             f"<b>{total_matches}</b> partidos en la próxima fecha disponible. "
-            "Elo, Bayes, TrueSkill y Poisson se muestran por separado; sin cuota local "
+            "Elo, Bayes, TrueSkill, Poisson y Dixon-Coles se muestran por separado; "
+            "sin cuota local "
             "no se propone apuesta."
         ),
         body="".join(sections) or '<p class="muted">Sin partidos programados.</p>',

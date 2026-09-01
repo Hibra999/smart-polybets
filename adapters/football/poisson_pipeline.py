@@ -8,7 +8,7 @@ FootballModelPipeline (Elo/Bayes/TrueSkill). Sólo lee la DB (read-only) vía el
 from __future__ import annotations
 
 from adapters.football.db_reader import FootballDBReader
-from adapters.football.poisson import GoalsForecast, PoissonGoalsModel
+from adapters.football.poisson import GoalsForecast, PoissonGoalsModel, TimeDecayDixonColesModel
 
 
 def load_goal_matches(tournament_id: str) -> list[tuple[str, str, int, int]]:
@@ -42,6 +42,33 @@ def load_goal_matches(tournament_id: str) -> list[tuple[str, str, int, int]]:
     return matches
 
 
+def load_dated_goal_matches(tournament_id: str) -> list[tuple[str, str, str, int, int]]:
+    """Partidos reales fechados para ajuste temporal, sin usar fixtures futuros."""
+    reader = FootballDBReader(tournament_id)
+    matches: list[tuple[str, str, str, int, int]] = []
+    if reader.query(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='historical_match'"
+    ):
+        matches += [
+            (r["match_date"], r["home_team_id"], r["away_team_id"],
+             r["home_goals"], r["away_goals"])
+            for r in reader.query(
+                "SELECT match_date, home_team_id, away_team_id, home_goals, away_goals "
+                "FROM historical_match ORDER BY match_date"
+            )
+        ]
+    matches += [
+        (r["kickoff_utc"], r["home_team_id"], r["away_team_id"],
+         r["home_goals"], r["away_goals"])
+        for r in reader.query(
+            "SELECT kickoff_utc, home_team_id, away_team_id, home_goals, away_goals "
+            "FROM fixture WHERE status='finished' AND home_goals IS NOT NULL "
+            "AND away_goals IS NOT NULL ORDER BY kickoff_utc"
+        )
+    ]
+    return matches
+
+
 class FootballPoissonPipeline:
     """Ajusta el modelo una vez y pronostica goles de cualquier emparejamiento."""
 
@@ -53,6 +80,27 @@ class FootballPoissonPipeline:
 
     def fit(self) -> FootballPoissonPipeline:
         self.model.fit(load_goal_matches(self.tournament_id))
+        self._fitted = True
+        return self
+
+    def forecast(self, home: str, away: str) -> GoalsForecast:
+        if not self._fitted:
+            self.fit()
+        return self.model.forecast(home, away)
+
+
+class FootballDixonColesPipeline:
+    """Challenger temporal; sólo lectura y separado de la estrategia activa."""
+
+    def __init__(self, tournament_id: str, *, shrink_k: float = 5.0,
+                 neutral: bool = False, half_life_days: float = 365.0) -> None:
+        self.tournament_id = tournament_id
+        self.model = TimeDecayDixonColesModel(
+            shrink_k=shrink_k, neutral=neutral, half_life_days=half_life_days)
+        self._fitted = False
+
+    def fit(self) -> FootballDixonColesPipeline:
+        self.model.fit(load_dated_goal_matches(self.tournament_id))
         self._fitted = True
         return self
 

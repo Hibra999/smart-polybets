@@ -1,7 +1,12 @@
 """Tests del modelo Poisson de goles (adapters.football.poisson). Puros."""
 import math
 
-from adapters.football.poisson import PoissonGoalsModel, poisson_pmf
+from adapters.football.poisson import (
+    PoissonGoalsModel,
+    TimeDecayDixonColesModel,
+    dixon_coles_tau,
+    poisson_pmf,
+)
 
 # Liga de juguete: A es ofensivo y fuerte, C débil. Suficientes partidos para que
 # el shrinkage no aplaste todo al promedio.
@@ -89,3 +94,17 @@ def test_confidence_scales_with_data():
     fc = m.forecast("a", "b")
     assert fc.confidence(high_at=3, low_below=1) == "HIGH"     # >=3 partidos cada uno
     assert fc.confidence(high_at=99, low_below=1) == "MEDIUM"
+
+
+def test_dixon_coles_is_normalized_and_time_weighted():
+    dated = [
+        ("2024-01-01", "a", "b", 0, 0),
+        ("2026-01-01", "a", "b", 4, 0),
+        ("2026-01-08", "b", "a", 0, 3),
+    ]
+    model = TimeDecayDixonColesModel(shrink_k=0.5, half_life_days=30).fit(dated)
+    forecast = model.forecast("a", "b")
+    assert forecast.lambda_home > forecast.lambda_away
+    assert -0.2 <= forecast.rho <= 0.2
+    assert abs(sum(map(sum, forecast.score_matrix())) - 1.0) < 1e-12
+    assert dixon_coles_tau(2, 1, 1.2, 0.8, -0.1) == 1.0

@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass, field
+from datetime import date, datetime
 
 # Cota superior de goles por equipo para construir la grilla de marcadores. P(>10)
 # bajo cualquier lambda realista de futbol es despreciable.
@@ -53,6 +54,7 @@ class GoalsForecast:
     lambda_away: float
     matches_home: int
     matches_away: int
+    rho: float = 0.0
 
     @property
     def expected_total(self) -> float:
@@ -61,7 +63,13 @@ class GoalsForecast:
     def score_matrix(self, max_goals: int = MAX_GOALS) -> list[list[float]]:
         ph = [poisson_pmf(self.lambda_home, i) for i in range(max_goals + 1)]
         pa = [poisson_pmf(self.lambda_away, j) for j in range(max_goals + 1)]
-        return [[ph[i] * pa[j] for j in range(max_goals + 1)] for i in range(max_goals + 1)]
+        matrix = [[ph[i] * pa[j] * dixon_coles_tau(
+            i, j, self.lambda_home, self.lambda_away, self.rho
+        ) for j in range(max_goals + 1)] for i in range(max_goals + 1)]
+        if not self.rho:
+            return matrix
+        mass = sum(map(sum, matrix))
+        return [[p / mass for p in row] for row in matrix] if mass > 0 else matrix
 
     def prob_over(self, line: float = 2.5, max_goals: int = MAX_GOALS) -> float:
         """P(goles totales > line). line típico .5 (over) evita empates de línea."""
@@ -75,6 +83,10 @@ class GoalsForecast:
 
     def prob_btts(self) -> float:
         """P(ambos equipos anotan) = (1 - P(home=0)) * (1 - P(away=0))."""
+        if self.rho:
+            matrix = self.score_matrix()
+            return sum(matrix[i][j] for i in range(1, len(matrix))
+                       for j in range(1, len(matrix[i])))
         return (1.0 - math.exp(-self.lambda_home)) * (1.0 - math.exp(-self.lambda_away))
 
     def prob_result(self, max_goals: int = MAX_GOALS) -> dict[str, float]:
@@ -179,3 +191,107 @@ class PoissonGoalsModel:
             lambda_home=lam_home, lambda_away=lam_away,
             matches_home=rh.matches, matches_away=ra.matches,
         )
+
+
+def dixon_coles_tau(home_goals: int, away_goals: int,
+                    lambda_home: float, lambda_away: float, rho: float) -> float:
+    """Corrección Dixon-Coles para marcadores bajos; 1 fuera de 0/1 goles."""
+    if home_goals == 0 and away_goals == 0:
+        return 1.0 - lambda_home * lambda_away * rho
+    if home_goals == 0 and away_goals == 1:
+        return 1.0 + lambda_home * rho
+    if home_goals == 1 and away_goals == 0:
+        return 1.0 + lambda_away * rho
+    if home_goals == 1 and away_goals == 1:
+        return 1.0 - rho
+    return 1.0
+
+
+def _as_date(value: date | datetime | str) -> date:
+    if isinstance(value, datetime):
+        return value.date()
+    if isinstance(value, date):
+        return value
+    return date.fromisoformat(value[:10])
+
+
+@dataclass
+class TimeDecayDixonColesModel(PoissonGoalsModel):
+    """Poisson con decaimiento temporal y corrección de empates/marcadores bajos."""
+
+    half_life_days: float = 365.0
+    rho: float = 0.0
+
+    def fit(self, matches: list[tuple[date | datetime | str, str, str, int, int]],
+            *, as_of: date | datetime | str | None = None) -> TimeDecayDixonColesModel:
+        played = [(_as_date(d), h, a, hg, ag) for d, h, a, hg, ag in matches
+                  if hg is not None and ag is not None]
+        if not played:
+            self.fitted = True
+            return self
+        if self.half_life_days <= 0:
+            raise ValueError("half_life_days debe ser positivo")
+
+        ref = _as_date(as_of) if as_of is not None else max(m[0] for m in played)
+        weighted = [
+            (0.5 ** (max(0, (ref - d).days) / self.half_life_days), h, a, hg, ag)
+            for d, h, a, hg, ag in played if d <= ref
+        ]
+        if not weighted:
+            self.fitted = True
+            return self
+
+        total_weight = sum(w for w, *_ in weighted)
+        sum_home = sum(w * hg for w, _, _, hg, _ in weighted)
+        sum_away = sum(w * ag for w, _, _, _, ag in weighted)
+        self.base = (sum_home + sum_away) / (2 * total_weight)
+        self.home_factor = sum_home / sum_away if sum_away > 0 else 1.0
+
+        scored: dict[str, float] = {}
+        conceded: dict[str, float] = {}
+        weights: dict[str, float] = {}
+        counts: dict[str, int] = {}
+        for w, home, away, hg, ag in weighted:
+            scored[home] = scored.get(home, 0.0) + w * hg
+            conceded[home] = conceded.get(home, 0.0) + w * ag
+            scored[away] = scored.get(away, 0.0) + w * ag
+            conceded[away] = conceded.get(away, 0.0) + w * hg
+            weights[home] = weights.get(home, 0.0) + w
+            weights[away] = weights.get(away, 0.0) + w
+            counts[home] = counts.get(home, 0) + 1
+            counts[away] = counts.get(away, 0) + 1
+
+        base, k = self.base or 1.0, self.shrink_k
+        self.rates = {
+            team: TeamRates(
+                attack=(scored[team] + k * base) / (weights[team] + k) / base,
+                defense=(conceded[team] + k * base) / (weights[team] + k) / base,
+                matches=counts[team],
+            )
+            for team in weights
+        }
+        self.rho = self._fit_rho(weighted)
+        self.fitted = True
+        return self
+
+    def _fit_rho(self, matches: list[tuple[float, str, str, int, int]]) -> float:
+        best_rho, best_score = 0.0, -math.inf
+        for step in range(-40, 41):
+            rho = step / 200.0
+            score = 0.0
+            valid = True
+            for weight, home, away, hg, ag in matches:
+                fc = super().forecast(home, away)
+                tau = dixon_coles_tau(hg, ag, fc.lambda_home, fc.lambda_away, rho)
+                if tau <= 0:
+                    valid = False
+                    break
+                score += weight * math.log(tau)
+            if valid and score > best_score:
+                best_rho, best_score = rho, score
+        return best_rho
+
+    def forecast(self, home: str, away: str) -> GoalsForecast:
+        fc = super().forecast(home, away)
+        fc.rho = self.rho
+        return fc

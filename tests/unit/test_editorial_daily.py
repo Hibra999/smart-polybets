@@ -22,7 +22,7 @@ SAMPLE = {
         {"home": "Tigres", "away": "Monterrey", "kickoff": "2026-06-20T15:00:00+00:00",
          "phase": "Group Stage", "pick_side": "HOME_WIN", "pick_team": "Tigres",
          "confidence": "LOW", "elo": 0.70, "bayes": 0.63, "trueskill": 0.47,
-         "poisson": 0.58, "poisson_draw": 0.24,
+         "poisson": 0.58, "poisson_draw": 0.24, "dixon_coles": 0.56,
          "verdict": "REVIEW", "reason": "model_confidence LOW",
          "model_prob": 0.70, "market_prob": 0.575, "edge": 0.125, "stake": 50.0},
         {"home": "Pumas", "away": "Toluca", "kickoff": "2026-06-20T14:00:00+00:00",
@@ -57,7 +57,7 @@ def test_html_structure():
     assert "Revisar" in h and "Descartar" in h     # labels de veredicto
     assert "#0F1117" in h                           # token del design system
     assert "Toluca" in h                           # escape de acentos OK
-    assert "empate Poisson" in h and "modelos en desacuerdo" in h
+    assert "empate Poisson" in h and "dixon_coles" in h and "modelos en desacuerdo" in h
 
 
 def test_combined_predictions_html_keeps_both_markets():

@@ -13,7 +13,11 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
+import requests
+
 from core.polymarket_client import build_public_client
+
+CLOB_URL = "https://clob.polymarket.com"
 
 
 def order_book(token_id: str):
@@ -44,3 +48,16 @@ def best_prices(book) -> tuple[float | None, float | None, float | None]:
     ba = float(asks[0]["price"]) if asks else None
     bsz = float(bids[0]["size"]) if bids else None
     return bb, ba, bsz
+
+
+def fee_rate_bps(token_id: str, *, session=requests) -> int:
+    """Tasa vigente de un token; la API oficial la devuelve en basis points."""
+    if not token_id:
+        raise ValueError("token_id es obligatorio")
+    response = session.get(
+        f"{CLOB_URL}/fee-rate", params={"token_id": token_id}, timeout=10)
+    response.raise_for_status()
+    value = int(response.json()["base_fee"])
+    if value < 0:
+        raise ValueError("base_fee inválido")
+    return value

@@ -66,10 +66,15 @@ def compute(
         pick_team = pred.participant_home if side == "HOME_WIN" else pred.participant_away
         comp = pred.components
         poisson_result = None
+        dixon_coles_result = None
         if cfg.sport == "football":
-            from research.functions.poisson_loader import match_result_probs
+            from research.functions.poisson_loader import (
+                dixon_coles_result_probs,
+                match_result_probs,
+            )
 
             poisson_result = match_result_probs(tournament_id, pred.event_id)
+            dixon_coles_result = dixon_coles_result_probs(tournament_id, pred.event_id)
 
         row: dict[str, Any] = {
             "fixture_id": f["id"],
@@ -89,6 +94,10 @@ def compute(
                 else None
             ),
             "poisson_draw": _f(poisson_result["draw"]) if poisson_result else None,
+            "dixon_coles": (
+                _f(dixon_coles_result["home" if side == "HOME_WIN" else "away"])
+                if dixon_coles_result else None
+            ),
         }
 
         if not markets:

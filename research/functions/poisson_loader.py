@@ -9,14 +9,16 @@ from __future__ import annotations
 import logging
 
 from adapters.football.db_reader import FootballDBReader
-from adapters.football.poisson_pipeline import FootballPoissonPipeline
+from adapters.football.poisson_pipeline import FootballDixonColesPipeline, FootballPoissonPipeline
 from tournaments.registry import get_config
 
 logger = logging.getLogger(__name__)
 
 _PIPELINE_CLS = FootballPoissonPipeline   # indirección para tests
+_DIXON_COLES_PIPELINE_CLS = FootballDixonColesPipeline
 _READER_CLS = FootballDBReader
 _CACHE: dict[str, object] = {}
+_DIXON_COLES_CACHE: dict[str, object] = {}
 
 
 def _pipeline(tournament_id: str):
@@ -31,12 +33,31 @@ def _pipeline(tournament_id: str):
 
 
 def match_result_probs(tournament_id: str, event_id: str) -> dict[str, float] | None:
+    return _result_probs(tournament_id, event_id, _pipeline)
+
+
+def _dixon_coles_pipeline(tournament_id: str):
+    pipe = _DIXON_COLES_CACHE.get(tournament_id)
+    if pipe is None:
+        pipe = _DIXON_COLES_PIPELINE_CLS(
+            tournament_id,
+            neutral=get_config(tournament_id).neutral_venue,
+        ).fit()
+        _DIXON_COLES_CACHE[tournament_id] = pipe
+    return pipe
+
+
+def dixon_coles_result_probs(tournament_id: str, event_id: str) -> dict[str, float] | None:
+    return _result_probs(tournament_id, event_id, _dixon_coles_pipeline)
+
+
+def _result_probs(tournament_id: str, event_id: str, pipeline_getter) -> dict[str, float] | None:
     try:
         fx = _READER_CLS(tournament_id).get_fixture(event_id)
         if fx is None:
             return None
         home_id, away_id = fx["home_team_id"], fx["away_team_id"]
-        r = _pipeline(tournament_id).forecast(home_id, away_id).prob_result()
+        r = pipeline_getter(tournament_id).forecast(home_id, away_id).prob_result()
         total = float(r.get("home", 0)) + float(r.get("draw", 0)) + float(r.get("away", 0))
         if total <= 0:
             return None

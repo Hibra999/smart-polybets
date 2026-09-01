@@ -38,3 +38,11 @@ def test_match_result_probs_no_fixture(monkeypatch):
     monkeypatch.setattr(poisson_loader, "_PIPELINE_CLS", _FakePipe)
     monkeypatch.setattr(poisson_loader, "_READER_CLS", _FakeReader)
     assert poisson_loader.match_result_probs("liga_mx_2026", "nope") is None
+
+
+def test_dixon_coles_result_probs_ok(monkeypatch):
+    poisson_loader._DIXON_COLES_CACHE.clear()
+    monkeypatch.setattr(poisson_loader, "_DIXON_COLES_PIPELINE_CLS", _FakePipe)
+    monkeypatch.setattr(poisson_loader, "_READER_CLS", _FakeReader)
+    assert poisson_loader.dixon_coles_result_probs("liga_mx_2026", "match_1") == {
+        "home": 0.5, "draw": 0.3, "away": 0.2}
