@@ -120,16 +120,27 @@ mercado y la última temporada con cuotas disponible. Genera exactamente dos pan
 - `editorial/reports/_system/<hoy>_next-predictions.html`
 - `editorial/reports/_system/<hoy>_backtest-to-date.html`
 
+El workflow diario publica copias fechadas y versionadas en:
+
+- `editorial/reports/_system/published/<hoy>_next-predictions.html`
+- `editorial/reports/_system/published/<hoy>_backtest-to-date.html`
+
+Por eso esas dos copias sí aparecen después de `git pull`. Las URLs web estables son
+`https://hibra999.github.io/smart-polybets/` y
+`https://hibra999.github.io/smart-polybets/backtest.html`.
+
 Para reproducir otro corte sin editar código:
 
 ```bash
 .venv/bin/python scripts/generate_reports.py --as-of YYYY-MM-DD --bankroll 1000
 ```
 
-Codex ejecuta el generador en `SessionStart` después del chequeo de frescura. Los HTML
-son artefactos locales regenerables y no se versionan; el generador, las plantillas y las
-reglas sí se versionan. `scripts/backtest_pipeline.py` conserva su salida de terminal y
-acepta el mismo corte mediante `--as-of`.
+Codex ejecuta el generador local en `SessionStart` después del chequeo de frescura. Los
+HTML directos de `_system/` siguen siendo locales; sólo los snapshots fechados de
+`_system/published/` se versionan. GitHub Actions reconstruye los SQLite, usa precios
+públicos live, corre tests y conserva el último snapshot bueno si una fuente falla.
+`scripts/backtest_pipeline.py` conserva su salida de terminal y acepta el mismo corte
+mediante `--as-of`.
 
 Después de cada backtest, Codex debe informar: comando, torneo/temporada, bankroll,
 fuente de precios, ROI, win rate, drawdown, cumplimiento de targets y ruta exacta del

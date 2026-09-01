@@ -21,6 +21,9 @@ editorial/reports/**/*.md
 editorial/reports/**/*_suggestions.html
 editorial/reports/_system/*_next-predictions.html
 editorial/reports/_system/*_backtest-to-date.html
+# Snapshots publicados: fechados, versionados y desplegados por GitHub Pages.
+!editorial/reports/_system/published/
+!editorial/reports/_system/published/*.html
 
 # Reports NFL 2025 con data embebida ENORME (>100MB) — GitHub rechaza archivos
 # >100MB. Se regeneran con scripts/nfl_*_report.py; NUNCA versionar (2026-08-22).

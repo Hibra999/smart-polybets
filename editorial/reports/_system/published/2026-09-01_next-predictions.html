@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>Próximos partidos hasta 2026-09-01</title>
+<style>
+  :root {
+    --bg:#0F1117; --surface:#1A1D27; --surface-alt:#22262F; --border:#2D3340;
+    --text:#E2E8F0; --muted:#94A3B8; --blue:#2563EB; --cyan:#22D3EE;
+    --success:#10B981; --warning:#F59E0B; --danger:#EF4444;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text);
+    font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif; line-height:1.6;
+    -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:1040px; margin:0 auto; padding:48px 24px 64px; }
+  .num { font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Consolas,monospace;
+    font-variant-numeric:tabular-nums; }
+  .muted { color:var(--muted); }
+  header.top { border-bottom:1px solid var(--border); padding-bottom:24px; margin-bottom:32px; }
+  .eyebrow { font-size:.75rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--cyan); }
+  h1 { font-size:2.25rem; line-height:1.2; font-weight:700; letter-spacing:-.015em;
+    margin:.25rem 0 .5rem; text-wrap:balance; }
+  h2 { font-size:1.25rem; line-height:1.3; margin:36px 0 12px; text-wrap:balance; }
+  .meta { color:var(--muted); font-size:.875rem; }
+  .meta b { color:var(--text); font-weight:600; }
+  .summary { margin-top:16px; max-width:72ch; font-size:.9375rem; text-wrap:pretty; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(360px,1fr));
+    gap:16px; margin-top:8px; }
+  .card, .report-block { background:var(--surface); border:1px solid var(--border);
+    border-radius:12px; padding:20px; }
+  .card-h, .section-h { display:flex; align-items:flex-start; justify-content:space-between;
+    gap:12px; }
+  .match { font-size:1.125rem; font-weight:600; }
+  .vs { color:var(--muted); font-weight:400; font-size:.875rem; }
+  .badge { display:inline-flex; align-items:center; font-size:.7rem; font-weight:600;
+    letter-spacing:.06em; text-transform:uppercase; border:1px solid;
+    border-radius:9999px; padding:4px 12px; white-space:nowrap; }
+  .badges, .models, .targets { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+  .kick, .source, .reason { color:var(--muted); font-size:.8125rem; }
+  .kick { margin:8px 0 16px; }
+  .reason { margin-top:12px; }
+  .grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px; }
+  .cell, .metric { display:flex; flex-direction:column; gap:2px; min-width:0; }
+  .k { font-size:.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+  .val { font-weight:600; overflow-wrap:anywhere; }
+  .models { margin-top:14px; border-top:1px solid var(--border); padding-top:12px; }
+  .chip { font-size:.75rem; color:var(--muted); background:var(--surface-alt);
+    border-radius:8px; padding:3px 10px; }
+  .chip b { color:var(--text); }
+  .consensus { margin-left:auto; color:var(--muted); font-size:.75rem; }
+  .metrics { display:grid; grid-template-columns:repeat(auto-fit,minmax(125px,1fr));
+    gap:1px; margin:16px 0; background:var(--border); border-radius:8px; overflow:hidden; }
+  .metric { background:var(--surface-alt); padding:12px; }
+  .metric strong { font-size:1.05rem; }
+  .target { font-size:.75rem; border:1px solid var(--border); border-radius:8px; padding:4px 10px; }
+  .target.ok { color:var(--success); border-color:#10B98155; }
+  .target.fail { color:var(--danger); border-color:#EF444455; }
+  .equity { margin:16px 0 8px; background:var(--bg); border-radius:8px; padding:8px; }
+  .equity svg { display:block; width:100%; height:auto; }
+  .table-wrap { overflow-x:auto; margin-top:16px; }
+  table { width:100%; border-collapse:collapse; font-size:.8125rem; }
+  th, td { padding:9px 10px; border-bottom:1px solid var(--border); text-align:left; }
+  th { color:var(--muted); font-size:.7rem; letter-spacing:.04em; text-transform:uppercase; }
+  td:nth-last-child(-n+3), th:nth-last-child(-n+3) { text-align:right; }
+  footer { margin-top:40px; color:var(--muted); font-size:.8125rem;
+    border-top:1px solid var(--border); padding-top:20px; }
+  @media (max-width:620px) {
+    .wrap { padding:28px 16px 40px; }
+    h1 { font-size:1.75rem; }
+    .cards { grid-template-columns:1fr; }
+    .grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .card-h, .section-h { flex-direction:column; }
+    .consensus { margin-left:0; width:100%; }
+  }
+  @media print {
+    :root { --bg:#FFFFFF; --surface:#FFFFFF; --surface-alt:#F3F4F6; --border:#CBD5E1;
+      --text:#111827; --muted:#475569; }
+    .wrap { max-width:none; padding:16px; }
+  }
+</style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="top">
+      <div class="eyebrow">Sports Quant Trading, Liga MX + NFL</div>
+      <h1>Próximos partidos</h1>
+      <div class="meta">Corte automático <b class="num">2026-09-01</b> · sólo lectura</div>
+      <div class="summary"><b>5</b> partidos en la próxima fecha disponible. Elo, Bayes, TrueSkill y Poisson se muestran por separado; sin cuota local no se propone apuesta.</div>
+    </header>
+    
+            <section aria-labelledby="liga_mx_2026-title">
+              <header class="section-h">
+                <div>
+                  <h2 id="liga_mx_2026-title">Liga MX Apertura 2026</h2>
+                  <div class="source">Próxima fecha <b class="num">2026-09-05</b> ·
+                    estrategia match_winner_ligamx_v1 · cuotas
+                    polymarket-live</div>
+                </div>
+                <span class="badge" style="color:var(--cyan);border-color:#22D3EE55">
+                  4 partidos</span>
+              </header>
+              <div class="cards">
+      <article class="card" aria-label="Predicción Puebla contra Toluca">
+        <header class="card-h">
+          <div class="match">Puebla <span class="vs">vs</span> Toluca</div>
+          <span class="badge" style="color:#EF4444;border-color:#EF444455">Descartar</span>
+        </header>
+        <div class="kick">Kickoff 01:00 UTC, fase Fase regular,
+          confianza Alta</div>
+        <div class="grid">
+          <div class="cell"><span class="k">Pick</span><span class="val">Toluca</span></div>
+          <div class="cell"><span class="k">Modelo</span><span class="num">66.3%</span></div>
+          <div class="cell"><span class="k">Mercado</span><span class="num">59.0%</span></div>
+          <div class="cell"><span class="k">Edge</span><span class="num" style="color:var(--cyan)">+7.3%</span></div>
+          <div class="cell"><span class="k">Sugerido</span><span class="num muted">sin apuesta</span></div>
+        </div>
+        <div class="models"><span class="chip">elo <b class="num">66.3%</b></span><span class="chip">bayes <b class="num">69.2%</b></span><span class="chip">trueskill <b class="num">79.3%</b></span><span class="chip">poisson <b class="num">62.9%</b></span><span class="chip">empate Poisson <b class="num">20.7%</b></span><span class="consensus">dispersión media · rango <b class="num">16.4%</b></span></div>
+        <div class="reason">Motivo: DISCARD: volumen 53.443332 &lt; min 500</div>
+      </article>
+      <article class="card" aria-label="Predicción Juárez contra Pachuca">
+        <header class="card-h">
+          <div class="match">Juárez <span class="vs">vs</span> Pachuca</div>
+          <span class="badge" style="color:#EF4444;border-color:#EF444455">Descartar</span>
+        </header>
+        <div class="kick">Kickoff 03:00 UTC, fase Fase regular,
+          confianza Alta</div>
+        <div class="grid">
+          <div class="cell"><span class="k">Pick</span><span class="val">Pachuca</span></div>
+          <div class="cell"><span class="k">Modelo</span><span class="num">59.4%</span></div>
+          <div class="cell"><span class="k">Mercado</span><span class="num">48.5%</span></div>
+          <div class="cell"><span class="k">Edge</span><span class="num" style="color:var(--cyan)">+10.9%</span></div>
+          <div class="cell"><span class="k">Sugerido</span><span class="num muted">sin apuesta</span></div>
+        </div>
+        <div class="models"><span class="chip">elo <b class="num">59.4%</b></span><span class="chip">bayes <b class="num">44.2%</b></span><span class="chip">trueskill <b class="num">83.6%</b></span><span class="chip">poisson <b class="num">40.2%</b></span><span class="chip">empate Poisson <b class="num">25.9%</b></span><span class="consensus">modelos en desacuerdo · rango <b class="num">43.3%</b></span></div>
+        <div class="reason">Motivo: DISCARD: volumen 5 &lt; min 500</div>
+      </article>
+      <article class="card" aria-label="Predicción Atlético San Luis contra Guadalajara">
+        <header class="card-h">
+          <div class="match">Atlético San Luis <span class="vs">vs</span> Guadalajara</div>
+          <span class="badge" style="color:#EF4444;border-color:#EF444455">Descartar</span>
+        </header>
+        <div class="kick">Kickoff 23:00 UTC, fase Fase regular,
+          confianza Alta</div>
+        <div class="grid">
+          <div class="cell"><span class="k">Pick</span><span class="val">Guadalajara</span></div>
+          <div class="cell"><span class="k">Modelo</span><span class="num">52.4%</span></div>
+          <div class="cell"><span class="k">Mercado</span><span class="num">54.5%</span></div>
+          <div class="cell"><span class="k">Edge</span><span class="num" style="color:var(--muted)">-2.1%</span></div>
+          <div class="cell"><span class="k">Sugerido</span><span class="num muted">sin apuesta</span></div>
+        </div>
+        <div class="models"><span class="chip">elo <b class="num">52.4%</b></span><span class="chip">bayes <b class="num">64.0%</b></span><span class="chip">trueskill <b class="num">64.5%</b></span><span class="chip">poisson <b class="num">42.1%</b></span><span class="chip">empate Poisson <b class="num">24.1%</b></span><span class="consensus">modelos en desacuerdo · rango <b class="num">22.5%</b></span></div>
+        <div class="reason">Motivo: DISCARD: edge -0.021382 &lt; discard 0.0; volumen 40.77868 &lt; min 500</div>
+      </article>
+      <article class="card" aria-label="Predicción Querétaro contra Monterrey">
+        <header class="card-h">
+          <div class="match">Querétaro <span class="vs">vs</span> Monterrey</div>
+          <span class="badge" style="color:#EF4444;border-color:#EF444455">Descartar</span>
+        </header>
+        <div class="kick">Kickoff 23:00 UTC, fase Fase regular,
+          confianza Alta</div>
+        <div class="grid">
+          <div class="cell"><span class="k">Pick</span><span class="val">Querétaro</span></div>
+          <div class="cell"><span class="k">Modelo</span><span class="num">68.7%</span></div>
+          <div class="cell"><span class="k">Mercado</span><span class="num">27.5%</span></div>
+          <div class="cell"><span class="k">Edge</span><span class="num" style="color:var(--cyan)">+41.2%</span></div>
+          <div class="cell"><span class="k">Sugerido</span><span class="num muted">sin apuesta</span></div>
+        </div>
+        <div class="models"><span class="chip">elo <b class="num">68.7%</b></span><span class="chip">bayes <b class="num">53.7%</b></span><span class="chip">trueskill <b class="num">75.6%</b></span><span class="chip">poisson <b class="num">39.4%</b></span><span class="chip">empate Poisson <b class="num">25.2%</b></span><span class="consensus">modelos en desacuerdo · rango <b class="num">36.2%</b></span></div>
+        <div class="reason">Motivo: DISCARD: volumen 91.89 &lt; min 500</div>
+      </article></div>
+            </section>
+            <section aria-labelledby="nfl_2026-title">
+              <header class="section-h">
+                <div>
+                  <h2 id="nfl_2026-title">NFL 2026 Season</h2>
+                  <div class="source">Próxima fecha <b class="num">2026-09-09</b> ·
+                    estrategia game_winner_v1 · cuotas
+                    polymarket-live</div>
+                </div>
+                <span class="badge" style="color:var(--cyan);border-color:#22D3EE55">
+                  1 partido</span>
+              </header>
+              <div class="cards">
+      <article class="card" aria-label="Predicción Seahawks contra Patriots">
+        <header class="card-h">
+          <div class="match">Seahawks <span class="vs">vs</span> Patriots</div>
+          <span class="badge" style="color:#94A3B8;border-color:#94A3B855">Saltar</span>
+        </header>
+        <div class="kick">Kickoff 20:20 UTC, fase regular_season,
+          confianza Alta</div>
+        <div class="grid">
+          <div class="cell"><span class="k">Pick</span><span class="val">Seahawks</span></div>
+          <div class="cell"><span class="k">Modelo</span><span class="num">65.2%</span></div>
+          <div class="cell"><span class="k">Mercado</span><span class="num">n/d</span></div>
+          <div class="cell"><span class="k">Edge</span><span class="num muted">n/d</span></div>
+          <div class="cell"><span class="k">Sugerido</span><span class="num muted">sin apuesta</span></div>
+        </div>
+        <div class="models"><span class="chip">trueskill <b class="num">65.2%</b></span></div>
+        <div class="reason">Motivo: sin cuota de mercado</div>
+      </article></div>
+            </section>
+    <footer>Datos locales SQLite. Panel informativo: no es consejo financiero y no se enviaron órdenes.</footer>
+  </main>
+</body>
+</html>

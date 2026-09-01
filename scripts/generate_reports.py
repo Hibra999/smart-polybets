@@ -23,6 +23,7 @@ from editorial.functions import (
     build_next_predictions_html,
     save_report,
 )
+from editorial.functions.report_builder import REPORTS_ROOT
 from tournaments.registry import TOURNAMENTS, get_adapter, get_config
 
 
@@ -71,31 +72,61 @@ def data_horizon(tournament_id: str, as_of: date) -> dict:
     }
 
 
-def generate(*, as_of: date, bankroll: float) -> list[Path]:
+def _report_location(output_dir: Path | None) -> tuple[Path | None, str]:
+    """Convierte un directorio editorial explícito al contrato de ``save_report``."""
+    if output_dir is None:
+        return None, "_system"
+    resolved = output_dir.resolve()
+    reports_root = REPORTS_ROOT.resolve()
+    if not resolved.is_relative_to(reports_root):
+        raise ValueError(f"--publish-dir debe vivir bajo {reports_root}")
+    return resolved.parent, resolved.name
+
+
+def generate(
+    *,
+    as_of: date,
+    bankroll: float,
+    output_dir: Path | None = None,
+    live: bool = False,
+) -> list[Path]:
     paths: list[Path] = []
     horizons = [data_horizon(tournament_id, as_of) for tournament_id in TOURNAMENTS]
+    report_root, report_bucket = _report_location(output_dir)
 
     predictions = []
     for tournament_id in TOURNAMENTS:
         fixture_date = next_fixture_date(tournament_id, as_of)
         if fixture_date is None:
             continue
+        market_source = None
+        source_name = "polymarket"
+        if live:
+            from research.functions import PolymarketLiveSource
+
+            tag_id = get_config(tournament_id).polymarket_tag_id
+            if tag_id is None:
+                raise ValueError(f"{tournament_id} no tiene polymarket_tag_id")
+            market_source = PolymarketLiveSource(tag_id=tag_id)
+            source_name = "polymarket-live"
         predictions.append(
             daily_suggestions.compute(
                 fixture_date,
                 tournament_id,
                 bankroll=bankroll,
-                source_name="polymarket",
+                market_source=market_source,
+                source_name=source_name,
                 allow_draft=True,
             )
         )
     paths.append(
         save_report(
-            "_system",
+            report_bucket,
             build_next_predictions_html(predictions, as_of=as_of.isoformat()),
             suffix="next-predictions",
             ext="html",
             date=as_of.isoformat(),
+            root=report_root,
         )
     )
 
@@ -114,11 +145,12 @@ def generate(*, as_of: date, bankroll: float) -> list[Path]:
     }
     paths.append(
         save_report(
-            "_system",
+            report_bucket,
             build_backtest_to_date_html(report_data),
             suffix="backtest-to-date",
             ext="html",
             date=as_of.isoformat(),
+            root=report_root,
         )
     )
     return paths
@@ -128,8 +160,23 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--as-of", help="fecha de corte YYYY-MM-DD; default: hoy UTC")
     parser.add_argument("--bankroll", type=float, default=1000.0)
+    parser.add_argument(
+        "--publish-dir",
+        type=Path,
+        help="directorio versionable bajo editorial/reports/ (ej. _system/published)",
+    )
+    parser.add_argument(
+        "--live",
+        action="store_true",
+        help="leer mejores asks públicos de Polymarket; nunca envía órdenes",
+    )
     args = parser.parse_args()
-    for path in generate(as_of=_day(args.as_of), bankroll=args.bankroll):
+    for path in generate(
+        as_of=_day(args.as_of),
+        bankroll=args.bankroll,
+        output_dir=args.publish_dir,
+        live=args.live,
+    ):
         print(f"HTML: {path}")
 
 

@@ -61,12 +61,17 @@ activa selecciona por TrueSkill.
 .venv/bin/python scripts/scan_market.py --tournament nfl_2026 --hours 240
 .venv/bin/python scripts/backtest_pipeline.py --tournament all --bankroll 1000
 .venv/bin/python scripts/generate_reports.py
+.venv/bin/python scripts/generate_reports.py --live \
+  --publish-dir editorial/reports/_system/published
 ```
 
 `generate_reports.py` toma hoy UTC como corte, detecta la próxima fecha de cada mercado
 y actualiza dos HTML: predicciones conjuntas Liga MX/NFL y backtest conjunto hasta
 hoy. También se ejecuta automáticamente al iniciar o reanudar una sesión de Codex. Las
-rutas canónicas se documentan en `INIT.md`.
+rutas canónicas se documentan en `INIT.md`. Los últimos snapshots versionados llegan
+con `git pull` bajo `editorial/reports/_system/published/`; GitHub Pages expone
+[predicciones](https://hibra999.github.io/smart-polybets/) y
+[backtest](https://hibra999.github.io/smart-polybets/backtest.html) con URLs estables.
 
 ## Ayuda para Codex
 

@@ -1,0 +1,80 @@
+name: Current reports
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 12 * * *"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/reports.yml"
+      - "adapters/**"
+      - "agent/**"
+      - "data/**"
+      - "editorial/**"
+      - "research/**"
+      - "scripts/**"
+      - "tournaments/**"
+      - "pyproject.toml"
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: current-reports
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    if: github.event_name != 'push' || github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install project
+        run: python -m pip install --upgrade pip && python -m pip install --pre -e ".[dev,nfl,live]"
+      - name: Rebuild public datasets
+        run: |
+          python scripts/build_db.py --tournament liga_mx_2026 --sport football --overwrite
+          python data/liga_mx_2026/ingest/fetch_fixtures_pm.py --apply --include-closed
+          python data/liga_mx_2026/ingest/load_history_fdcouk.py --apply
+          python scripts/update_results.py --tournament liga_mx_2026 --apply
+          python scripts/migrate_nfl_data.py --since 2022
+          python scripts/check_freshness.py
+      - name: Test and generate
+        run: |
+          pytest
+          python scripts/generate_reports.py --live \
+            --publish-dir editorial/reports/_system/published
+      - name: Assemble Pages artifact
+        run: |
+          mkdir -p _site
+          report_date="$(date -u +%F)"
+          cp "editorial/reports/_system/published/${report_date}_next-predictions.html" _site/index.html
+          cp "editorial/reports/_system/published/${report_date}_backtest-to-date.html" _site/backtest.html
+      - name: Commit report snapshots
+        run: |
+          git config user.name Hibra999
+          git config user.email miarsito1@gmail.com
+          git add editorial/reports/_system/published
+          git diff --cached --quiet || git commit -m "reports: refresh current Liga MX and NFL dashboards [skip ci]"
+          git push
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+      - name: Deploy Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
