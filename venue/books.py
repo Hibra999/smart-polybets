@@ -25,7 +25,10 @@ def order_book(token_id: str):
 
 
 def order_books(token_ids: Sequence[str]):
-    return build_public_client().get_order_books(token_ids=list(token_ids))
+    requested = list(token_ids)
+    books = build_public_client().get_order_books(token_ids=requested)
+    by_token = {str(book.token_id): book for book in books}
+    return [by_token[token_id] for token_id in requested]
 
 
 def price_history(token_id: str, *, start_ts: int | None = None,

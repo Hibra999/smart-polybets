@@ -1,13 +1,16 @@
 from decimal import Decimal
-from research.functions.strategy_selection import resolve_bet_market, HOME_WIN, AWAY_WIN
-from research.functions.market_scanner import PolymarketMarket
-from core.strategy import StrategyConfig
 
-def _mk(model_outcome, yes_prob, no_token="N", no_prob="0.0", no_ask="0.0"):
+from core.strategy import StrategyConfig
+from research.functions.market_scanner import PolymarketMarket
+from research.functions.strategy_selection import AWAY_WIN, HOME_WIN, resolve_bet_market
+
+
+def _mk(model_outcome, yes_prob, no_token="N", no_prob="0.0", no_ask="0.0", yes_ask=None):
     return PolymarketMarket(
         condition_id="c", token_id="Y"+model_outcome, outcome="YES",
         model_outcome=model_outcome, market_probability=Decimal(yes_prob),
-        volume_usdc=Decimal("100"), liquidity_usdc=Decimal("50"),
+        volume_usdc=Decimal(100), liquidity_usdc=Decimal(50),
+        best_ask=Decimal(yes_ask) if yes_ask is not None else None,
         no_token_id=no_token, no_probability=Decimal(no_prob), no_best_ask=Decimal(no_ask))
 
 def _strat(bet_type):
@@ -16,16 +19,17 @@ def _strat(bet_type):
                           edge_threshold_auto=Decimal("0.05"),
                           edge_threshold_review=Decimal("0.03"),
                           edge_threshold_discard=Decimal("0.00"),
-                          min_market_volume_usdc=Decimal("1000"),
+                          min_market_volume_usdc=Decimal(1000),
                           max_hours_to_event=48.0,
                           min_hours_to_event=0.5)
 
-MARKETS = [_mk(HOME_WIN, "0.60"), _mk(AWAY_WIN, "0.25", no_token="No_away",
+MARKETS = [_mk(HOME_WIN, "0.60", yes_ask="0.62"), _mk(AWAY_WIN, "0.25", no_token="No_away",
                                      no_prob="0.75", no_ask="0.76")]
 
 def test_win_mode_picks_own_yes_market():
     t = resolve_bet_market(HOME_WIN, Decimal("0.60"), MARKETS, _strat("win"), None)
     assert t.market.model_outcome == HOME_WIN and t.market.outcome == "YES"
+    assert t.market.market_probability == Decimal("0.62")
     assert t.model_probability == Decimal("0.60")
 
 def test_double_chance_picks_opponent_no_market():
@@ -34,6 +38,7 @@ def test_double_chance_picks_opponent_no_market():
     t = resolve_bet_market(HOME_WIN, Decimal("0.60"), MARKETS, _strat("double_chance"), pr)
     assert t.market.outcome == "NO"
     assert t.market.token_id == "No_away"
+    assert t.market.market_probability == Decimal("0.76")
     assert t.market.model_outcome == HOME_WIN          # el NO resuelve a favor del pick
     # model_prob = P(home)+P(draw) = 0.80
     assert abs(float(t.model_probability) - 0.80) < 1e-9
@@ -44,6 +49,6 @@ def test_double_chance_skips_without_poisson():
 def test_double_chance_skips_without_no_token():
     mk = [_mk(HOME_WIN, "0.60"), PolymarketMarket(condition_id="c", token_id="Ya",
            outcome="YES", model_outcome=AWAY_WIN, market_probability=Decimal("0.25"),
-           volume_usdc=Decimal("1"), liquidity_usdc=Decimal("1"))]  # sin no_token_id
+           volume_usdc=Decimal(1), liquidity_usdc=Decimal(1))]  # sin no_token_id
     pr = {"home": 0.55, "draw": 0.25, "away": 0.20}
     assert resolve_bet_market(HOME_WIN, Decimal("0.6"), mk, _strat("double_chance"), pr) is None

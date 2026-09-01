@@ -9,7 +9,7 @@ from research.functions.calibration import (
     multiclass_log_loss,
     power_devig,
 )
-from venue.books import fee_rate_bps
+from venue.books import fee_rate_bps, order_books
 
 
 def test_probability_calibration_metrics():
@@ -39,3 +39,18 @@ def test_polymarket_fee_formula_and_rate_lookup():
             return Response()
 
     assert fee_rate_bps("token", session=Session()) == 500
+
+
+def test_order_books_follows_requested_token_order(monkeypatch):
+    class Book:
+        def __init__(self, token_id):
+            self.token_id = token_id
+
+    class Client:
+        def get_order_books(self, *, token_ids):
+            assert token_ids == ["a", "b"]
+            return [Book("b"), Book("a")]
+
+    monkeypatch.setattr("venue.books.build_public_client", lambda: Client())
+
+    assert [book.token_id for book in order_books(["a", "b"])] == ["a", "b"]

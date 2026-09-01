@@ -45,12 +45,17 @@ def resolve_bet_market(pick_side, pick_model_prob, markets, strategy, poisson_re
             return None
         key = "home" if pick_side == HOME_WIN else "away"
         one_x = Decimal(str(poisson_result[key] + poisson_result["draw"]))
+        no_price = (
+            opp.no_best_ask
+            if opp.no_best_ask is not None
+            else (opp.no_probability if opp.no_probability is not None
+                  else Decimal(1) - opp.market_probability)
+        )
         no_market = opp.model_copy(update={
             "token_id": opp.no_token_id,
             "outcome": "NO",
             "model_outcome": pick_side,   # el NO resuelve a favor de "el pick no pierde"
-            "market_probability": (opp.no_probability if opp.no_probability is not None
-                                   else Decimal(1) - opp.market_probability),
+            "market_probability": no_price,
             "best_ask": opp.no_best_ask,
         })
         return BetTarget(market=no_market, model_probability=one_x)
@@ -59,6 +64,8 @@ def resolve_bet_market(pick_side, pick_model_prob, markets, strategy, poisson_re
     mk = next((m for m in markets if m.model_outcome == pick_side), None)
     if mk is None:
         return None
+    if mk.best_ask is not None:
+        mk = mk.model_copy(update={"market_probability": mk.best_ask})
     return BetTarget(market=mk, model_probability=pick_model_prob)
 
 
