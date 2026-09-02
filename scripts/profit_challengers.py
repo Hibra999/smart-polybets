@@ -5,9 +5,12 @@ import argparse
 import json
 import math
 import sqlite3
+import sys
 from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from agent.workflows.nfl_backtest import american_to_decimal
 from execution.functions.fees import taker_fee_usdc
