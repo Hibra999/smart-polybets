@@ -8,6 +8,8 @@ No consulta cuentas, no publica y no coloca órdenes.
 from __future__ import annotations
 
 import argparse
+import csv
+import json
 import sys
 from datetime import UTC, date, datetime, time
 from pathlib import Path
@@ -25,6 +27,15 @@ from editorial.functions import (
 )
 from editorial.functions.report_builder import REPORTS_ROOT
 from tournaments.registry import TOURNAMENTS, get_adapter, get_config
+
+SNAPSHOT_FIELDS = (
+    "snapshot_date", "snapshot_utc", "tournament_id", "fixture_id", "kickoff_utc",
+    "home", "away", "pick_side", "condition_id", "token_id", "outcome", "source",
+    "model_probability", "market_probability", "best_ask", "best_ask_size",
+    "ask_levels_json", "volume_usdc", "liquidity_usdc", "fee_rate_bps", "tick_size",
+    "min_order_size", "evaluated_stake", "expected_avg_price", "slippage_pct",
+    "fee_usdc", "net_edge", "verdict", "action", "settlement",
+)
 
 
 def _day(value: str | None) -> date:
@@ -83,11 +94,86 @@ def _report_location(output_dir: Path | None) -> tuple[Path | None, str]:
     return resolved.parent, resolved.name
 
 
+def _settlement(tournament_id: str, fixture_id: str, pick_side: str) -> str:
+    fixture = _reader(tournament_id).query_one(
+        "SELECT status,home_team_id,away_team_id,winner_team_id FROM fixture WHERE id=?",
+        (fixture_id,),
+    )
+    if not fixture or fixture["status"] != "finished" or pick_side not in {"HOME_WIN", "AWAY_WIN"}:
+        return ""
+    picked = fixture["home_team_id"] if pick_side == "HOME_WIN" else fixture["away_team_id"]
+    return "WON" if fixture["winner_team_id"] == picked else "LOST"
+
+
+def write_market_snapshots(predictions: list[dict], root: Path, snapshot_date: date) -> list[Path]:
+    """Upsert diario de la recomendación y reconcilia resultados ya finalizados."""
+    paths = []
+    for prediction in predictions:
+        tournament_id = prediction["tournament_id"]
+        path = root / tournament_id / "ingest" / "market_snapshots.csv"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        records: dict[tuple[str, str, str], dict] = {}
+        if path.exists():
+            with path.open(encoding="utf-8", newline="") as source:
+                for record in csv.DictReader(source):
+                    key = (record["snapshot_date"], record["fixture_id"], record["pick_side"])
+                    records[key] = record
+
+        for record in records.values():
+            record["settlement"] = _settlement(
+                tournament_id, record["fixture_id"], record["pick_side"]
+            )
+        for row in prediction["rows"]:
+            record = {
+                "snapshot_date": snapshot_date.isoformat(),
+                "snapshot_utc": prediction["generated_at"],
+                "tournament_id": tournament_id,
+                "fixture_id": row["fixture_id"],
+                "kickoff_utc": row["kickoff"],
+                "home": row["home"],
+                "away": row["away"],
+                "pick_side": row["pick_side"],
+                "condition_id": row.get("condition_id"),
+                "token_id": row.get("token_id"),
+                "outcome": row.get("outcome"),
+                "source": prediction["source"],
+                "model_probability": row.get("model_prob"),
+                "market_probability": row.get("market_prob"),
+                "best_ask": row.get("best_ask"),
+                "best_ask_size": row.get("best_ask_size"),
+                "ask_levels_json": json.dumps(row.get("top_asks") or [], separators=(",", ":")),
+                "volume_usdc": row.get("volume_usdc"),
+                "liquidity_usdc": row.get("liquidity_usdc"),
+                "fee_rate_bps": row.get("base_fee_bps"),
+                "tick_size": row.get("tick_size"),
+                "min_order_size": row.get("min_order_size"),
+                "evaluated_stake": row.get("evaluated_stake"),
+                "expected_avg_price": row.get("expected_avg_price"),
+                "slippage_pct": row.get("slippage_pct"),
+                "fee_usdc": row.get("fee_usdc"),
+                "net_edge": row.get("net_edge"),
+                "verdict": row.get("verdict"),
+                "action": row.get("action"),
+                "settlement": _settlement(tournament_id, row["fixture_id"], row["pick_side"]),
+            }
+            records[(record["snapshot_date"], record["fixture_id"], record["pick_side"])] = record
+
+        with path.open("w", encoding="utf-8", newline="") as destination:
+            writer = csv.DictWriter(destination, fieldnames=SNAPSHOT_FIELDS)
+            writer.writeheader()
+            writer.writerows(
+                records[key] for key in sorted(records, key=lambda item: (item[0], item[1], item[2]))
+            )
+        paths.append(path)
+    return paths
+
+
 def generate(
     *,
     as_of: date,
     bankroll: float,
     output_dir: Path | None = None,
+    snapshot_root: Path | None = None,
     live: bool = False,
 ) -> list[Path]:
     paths: list[Path] = []
@@ -119,6 +205,8 @@ def generate(
                 allow_draft=True,
             )
         )
+    if snapshot_root is not None:
+        paths.extend(write_market_snapshots(predictions, snapshot_root, as_of))
     paths.append(
         save_report(
             report_bucket,
@@ -170,14 +258,22 @@ def main() -> None:
         action="store_true",
         help="leer mejores asks públicos de Polymarket; nunca envía órdenes",
     )
+    parser.add_argument(
+        "--snapshot-dir",
+        type=Path,
+        help="guardar snapshots públicos diarios por torneo (requiere --live)",
+    )
     args = parser.parse_args()
+    if args.snapshot_dir is not None and not args.live:
+        parser.error("--snapshot-dir requiere --live")
     for path in generate(
         as_of=_day(args.as_of),
         bankroll=args.bankroll,
         output_dir=args.publish_dir,
+        snapshot_root=args.snapshot_dir,
         live=args.live,
     ):
-        print(f"HTML: {path}")
+        print(f"{'HTML' if path.suffix == '.html' else 'SNAPSHOT'}: {path}")
 
 
 if __name__ == "__main__":

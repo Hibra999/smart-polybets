@@ -11,6 +11,7 @@
 | match_player_stat | Sin fuente conectada | 0% | — | — |
 | injury_report | Sin asset nflverse 2026 | 0%; se registra `partial`, sin imputar | Jueves | — |
 | elo_rating_history | Calculado localmente | 100% | Post-partido | calculado por el modelo |
+| snapshots Polymarket | Ask, top-3, profundidad, fee y decisión pública | Próxima fecha disponible | Diario | `generate_reports.py --live --snapshot-dir data` |
 
 ## Fuentes pendientes
 - Líneas de Vegas (spread/total/moneyline): evaluar The Odds API
@@ -22,6 +23,7 @@
 2. `python data/nfl_2026/ingest/fetch_game_stats.py --since 2010 --through 2026`
 3. `python data/nfl_2026/ingest/fetch_rosters.py --season 2026`
 4. Verificar externamente el injury report y QB titular antes de operar; la DB no lo tiene aún
+5. El workflow diario actualiza `ingest/market_snapshots.csv` y reconcilia `WON/LOST`
 
 ## Notas
 - La ausencia de injury report debe bloquear una decisión live sensible a QB; nunca se rellena

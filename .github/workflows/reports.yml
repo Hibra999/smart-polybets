@@ -58,7 +58,8 @@ jobs:
         run: |
           pytest
           python scripts/generate_reports.py --live \
-            --publish-dir editorial/reports/_system/published
+            --publish-dir editorial/reports/_system/published \
+            --snapshot-dir data
       - name: Assemble Pages artifact
         run: |
           mkdir -p _site
@@ -69,7 +70,7 @@ jobs:
         run: |
           git config user.name Hibra999
           git config user.email miarsito1@gmail.com
-          git add editorial/reports/_system/published
+          git add editorial/reports/_system/published data/*/ingest/market_snapshots.csv
           git diff --cached --quiet || git commit -m "reports: refresh current Liga MX and NFL dashboards [skip ci]"
           git push
       - uses: actions/configure-pages@v6
