@@ -64,6 +64,7 @@ ALIASES: dict[str, str] = {
 }
 
 _WILL_WIN_RE = re.compile(r"\s*will\s+(.+?)\s+win\b", re.IGNORECASE)
+_DRAW_RE = re.compile(r"\bend\s+in\s+a\s+draw\b", re.IGNORECASE)
 
 
 def canon(name: str) -> str:
@@ -177,7 +178,7 @@ def match_event(event, home: str, away: str) -> list[dict] | None:
 
     El título del evento debe ser del tipo "X vs. Y" (case-insensitive, acentos
     normalizados). Itera sobre los mercados del evento buscando "Will X win?"
-    para determinar HOME_WIN / AWAY_WIN.
+    para determinar HOME_WIN / DRAW / AWAY_WIN.
 
     Args:
         event:  Objeto con .title (str) y .markets (iterable de Market-like).
@@ -212,21 +213,19 @@ def match_event(event, home: str, away: str) -> list[dict] | None:
     results: list[dict] = []
     for mkt in (getattr(event, "markets", None) or []):
         q = str(getattr(mkt, "question", "") or "")
-        # Descartar mercados de empate
-        if "draw" in q.lower():
-            continue
-        wm = _WILL_WIN_RE.match(q)
-        if not wm:
-            continue
-        team_k = canon(wm.group(1))
-
-        # Asignar outcome según el par (home, away) de NUESTRA predicción
-        if team_k == req_home_k:
-            outcome = "HOME_WIN"
-        elif team_k == req_away_k:
-            outcome = "AWAY_WIN"
+        if _DRAW_RE.search(q):
+            outcome = "DRAW"
         else:
-            continue
+            wm = _WILL_WIN_RE.match(q)
+            if not wm:
+                continue
+            team_k = canon(wm.group(1))
+            if team_k == req_home_k:
+                outcome = "HOME_WIN"
+            elif team_k == req_away_k:
+                outcome = "AWAY_WIN"
+            else:
+                continue
 
         info = _extract_yes_token(mkt)
         if info:

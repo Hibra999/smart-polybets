@@ -335,7 +335,7 @@ class PolymarketGateway:
             page_size: Tamaño de página en la paginación del SDK.
 
         Returns:
-            Lista de PolymarketMarket con model_outcome HOME_WIN o AWAY_WIN.
+            Lista de PolymarketMarket con model_outcome HOME_WIN, DRAW o AWAY_WIN.
         """
         pub = self._ensure_pub_client()
         kwargs: dict = {"closed": closed, "page_size": page_size}

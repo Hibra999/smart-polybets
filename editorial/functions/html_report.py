@@ -231,6 +231,16 @@ def _prediction_card(row: dict[str, Any]) -> str:
     action = html.escape(str(row.get("action", "NO_TRADE")))
     reason = html.escape(str(row.get("reason", "")))
     reason_html = f'<div class="reason">Motivo: {reason}</div>' if reason else ""
+    complete_set_html = ""
+    if row.get("complete_set_status"):
+        asks = row.get("complete_set_asks") or {}
+        ask_label = " + ".join(f"{float(asks[key]):.2f}" for key in ("HOME_WIN", "DRAW", "AWAY_WIN") if key in asks)
+        complete_set_html = (
+            '<div class="reason">Complete set H/D/A: '
+            f'asks {html.escape(ask_label or "incompletos")}; all-in '
+            f'<span class="num">{row.get("complete_set_all_in", "n/d")}</span>/share; '
+            f'{html.escape(str(row["complete_set_status"]))}. Sólo observación.</div>'
+        )
     contract_html = _contract_details(row)
     return f"""
       <article class="card" aria-label="Predicción {home} contra {away}">
@@ -249,7 +259,7 @@ def _prediction_card(row: dict[str, Any]) -> str:
             {stake_html}</div>
         </div>
         <div class="models">{_model_chips(row)}</div>
-        {reason_html}{contract_html}
+        {reason_html}{complete_set_html}{contract_html}
       </article>"""
 
 

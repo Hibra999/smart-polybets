@@ -32,6 +32,9 @@ SAMPLE = {
          "liquidity_usdc": 3000.0, "tick_size": 0.001, "min_order_size": 5.0,
          "base_fee_bps": 0, "slippage_pct": 0.001, "expected_avg_price": 0.576,
          "fee_usdc": 0.0, "net_edge": 0.124, "sample_size": 12,
+         "complete_set_status": "NO_EDGE",
+         "complete_set_asks": {"HOME_WIN": 0.30, "DRAW": 0.28, "AWAY_WIN": 0.45},
+         "complete_set_all_in": 1.03,
          "model_version": "test", "execution_reason": "veredicto REVIEW: requiere NO_TRADE"},
         {"home": "Pumas", "away": "Toluca", "kickoff": "2026-06-20T14:00:00+00:00",
          "phase": "Group Stage", "pick_side": "HOME_WIN", "pick_team": "Pumas",
@@ -67,6 +70,7 @@ def test_html_structure():
     assert "Toluca" in h                           # escape de acentos OK
     assert "empate Poisson" in h and "dixon_coles" in h and "modelos en desacuerdo" in h
     assert "NO_TRADE" in h and "condition-1" in h and "Top asks" in h
+    assert "Complete set H/D/A" in h and "NO_EDGE" in h
     assert all(line.rstrip() == line for line in h.splitlines())
 
 
@@ -190,3 +194,24 @@ def test_execution_plan_requires_auto_and_complete_costs():
     assert auto["action"] == "SIMULATED_BUY" and auto["stake"] == 100.0
     assert auto["net_edge"] == 0.1
     assert review["action"] == "NO_TRADE" and review["stake"] == 0.0
+
+
+def test_complete_set_quote_requires_positive_all_in_edge():
+    markets = [
+        SimpleNamespace(
+            model_outcome=outcome,
+            best_ask=Decimal(price),
+            best_ask_size=Decimal(10),
+            min_order_size=Decimal(5),
+            fee_rate_bps=0,
+        )
+        for outcome, price in (
+            ("HOME_WIN", "0.20"), ("DRAW", "0.25"), ("AWAY_WIN", "0.50")
+        )
+    ]
+
+    quote = daily_suggestions._complete_set_quote(markets)
+
+    assert quote["complete_set_status"] == "CANDIDATE_REVIEW"
+    assert quote["complete_set_all_in"] == 0.95
+    assert quote["complete_set_profit"] == 0.25

@@ -35,6 +35,8 @@ SNAPSHOT_FIELDS = (
     "ask_levels_json", "volume_usdc", "liquidity_usdc", "fee_rate_bps", "tick_size",
     "min_order_size", "evaluated_stake", "expected_avg_price", "slippage_pct",
     "fee_usdc", "net_edge", "verdict", "action", "settlement",
+    "complete_set_asks_json", "complete_set_ask_sum", "complete_set_all_in",
+    "complete_set_shares", "complete_set_profit", "complete_set_status",
 )
 
 
@@ -155,6 +157,14 @@ def write_market_snapshots(predictions: list[dict], root: Path, snapshot_date: d
                 "verdict": row.get("verdict"),
                 "action": row.get("action"),
                 "settlement": _settlement(tournament_id, row["fixture_id"], row["pick_side"]),
+                "complete_set_asks_json": json.dumps(
+                    row.get("complete_set_asks") or {}, separators=(",", ":")
+                ),
+                "complete_set_ask_sum": row.get("complete_set_ask_sum"),
+                "complete_set_all_in": row.get("complete_set_all_in"),
+                "complete_set_shares": row.get("complete_set_shares"),
+                "complete_set_profit": row.get("complete_set_profit"),
+                "complete_set_status": row.get("complete_set_status"),
             }
             records[(record["snapshot_date"], record["fixture_id"], record["pick_side"])] = record
 

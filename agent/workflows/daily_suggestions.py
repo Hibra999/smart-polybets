@@ -27,6 +27,40 @@ def _f(x) -> float | None:
     return float(x) if x is not None else None
 
 
+def _complete_set_quote(markets) -> dict[str, Any]:
+    """Coste ejecutable mínimo de cubrir H/D/A; nunca propone una orden."""
+    required = ("HOME_WIN", "DRAW", "AWAY_WIN")
+    by_outcome = {market.model_outcome: market for market in markets}
+    if any(outcome not in by_outcome for outcome in required):
+        return {}
+    legs = [by_outcome[outcome] for outcome in required]
+    if any(
+        leg.best_ask is None or leg.best_ask_size is None
+        or leg.min_order_size is None or leg.fee_rate_bps is None
+        for leg in legs
+    ):
+        return {"complete_set_status": "INCOMPLETE"}
+    shares = max(leg.min_order_size for leg in legs)
+    asks = {outcome: leg.best_ask for outcome, leg in zip(required, legs, strict=True)}
+    if shares <= 0 or any(leg.best_ask_size < shares for leg in legs):
+        return {"complete_set_status": "INCOMPLETE", "complete_set_asks": asks}
+    ask_sum = sum(asks.values(), Decimal(0))
+    fees = sum(
+        (taker_fee_usdc(shares, leg.best_ask, leg.fee_rate_bps) for leg in legs),
+        Decimal(0),
+    )
+    all_in = ask_sum + fees / shares
+    profit = shares * (Decimal(1) - all_in)
+    return {
+        "complete_set_status": "CANDIDATE_REVIEW" if profit > 0 else "NO_EDGE",
+        "complete_set_asks": {outcome: _f(price) for outcome, price in asks.items()},
+        "complete_set_ask_sum": _f(ask_sum),
+        "complete_set_all_in": _f(all_in),
+        "complete_set_shares": _f(shares),
+        "complete_set_profit": _f(profit),
+    }
+
+
 def _execution_plan(opp, verdict: str, sizing) -> dict[str, Any]:
     """Valora costes públicos; sólo AUTO completo se convierte en compra simulada."""
     plan: dict[str, Any] = {
@@ -158,6 +192,7 @@ def compute(
                 _f(dixon_coles_result["home" if side == "HOME_WIN" else "away"])
                 if dixon_coles_result else None
             ),
+            **(_complete_set_quote(markets) if cfg.sport == "football" else {}),
         }
 
         if not markets:

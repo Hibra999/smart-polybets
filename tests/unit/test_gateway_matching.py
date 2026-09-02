@@ -207,17 +207,14 @@ def test_match_event_no_match_returns_none():
     assert match_event(ev, "Tigres", "Monterrey") is None
 
 
-def test_match_event_only_win_markets():
-    """A market without 'Will X win' pattern is ignored."""
-    draw_mkt = _FakeMarket("Will there be a draw?", "tok-draw")
+def test_match_event_includes_standard_draw_market():
+    draw_mkt = _FakeMarket("Will Tigres vs. Monterrey end in a draw?", "tok-draw")
     win_mkt = _FakeMarket("Will Tigres win?", "tok-ned")
     ev = _FakeEvent("Tigres vs. Monterrey", [draw_mkt, win_mkt])
 
     results = match_event(ev, "Tigres", "Monterrey")
-    # Draw market is skipped ('draw' in q)
     assert results is not None
-    assert len(results) == 1
-    assert results[0]["model_outcome"] == "HOME_WIN"
+    assert {result["model_outcome"] for result in results} == {"HOME_WIN", "DRAW"}
 
 
 def test_match_event_swapped_polymarket_order():

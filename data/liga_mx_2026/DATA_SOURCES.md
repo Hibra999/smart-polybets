@@ -31,7 +31,7 @@
 - Los kickoffs se guardan en UTC (regla #8). Horarios raros tipo `01:07` vienen así de PM.
 
 | ticks de mercado | **Recorder por minuto** (bid/ask/spread/vol + book en ventana activa + score live) | mercados winner/draw abiertos | 1/min mientras corra | `scripts/record_market_ticks.py` → `market_ticks.sqlite` (gitignored, WAL) |
-| snapshots Polymarket | Ask, top-3, profundidad, fee y decisión pública | Próxima fecha disponible | Diario | `generate_reports.py --live --snapshot-dir data` → `ingest/market_snapshots.csv` |
+| snapshots Polymarket | Ask, top-3, profundidad, fee, decisión y coste complete-set H/D/A | Próxima fecha disponible | Diario | `generate_reports.py --live --snapshot-dir data` → `ingest/market_snapshots.csv` |
 | minutos de gol + rojas | **ESPN scoreboard API** (`mex.1`, sin key; "Santos" = Santos Laguna) | 2025/26: 322 partidos, 999 goles, 138 rojas | por temporada (extensible --from/--to) | `ingest/fetch_goal_minutes_espn.py` → tabla `match_timeline_event` |
 
 ## Cómo actualizar (rutina diaria de temporada)

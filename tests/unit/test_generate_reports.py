@@ -40,6 +40,8 @@ def test_market_snapshot_is_daily_idempotent_and_reconciles(monkeypatch, tmp_pat
             "fixture_id": "g1", "kickoff": "2026-09-03T00:00:00+00:00",
             "home": "A", "away": "B", "pick_side": "HOME_WIN",
             "token_id": "tok", "best_ask": 0.51, "top_asks": [[0.51, 100]],
+            "complete_set_asks": {"HOME_WIN": 0.2, "DRAW": 0.3, "AWAY_WIN": 0.51},
+            "complete_set_status": "NO_EDGE",
             "verdict": "DISCARD", "action": "NO_TRADE",
         }],
     }
@@ -53,4 +55,5 @@ def test_market_snapshot_is_daily_idempotent_and_reconciles(monkeypatch, tmp_pat
     assert rows[0]["best_ask"] == "0.52"
     assert json.loads(rows[0]["ask_levels_json"]) == [[0.51, 100]]
     assert rows[0]["settlement"] == "WON"
+    assert json.loads(rows[0]["complete_set_asks_json"])["DRAW"] == 0.3
     assert b"\r\n" not in path.read_bytes()

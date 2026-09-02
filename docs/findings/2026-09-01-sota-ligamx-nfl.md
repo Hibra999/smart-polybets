@@ -191,6 +191,12 @@ quedaron visibles en el HTML. Todos resultaron `DISCARD` por volumen o edge y, p
 tanto, `NO_TRADE`; NFL no tenía contrato emparejado para su próximo fixture y quedó
 `SKIP`. No se calculó edge neto en filas sin sizing y no se envió ninguna orden.
 
+El mismo corte valoró cinco shares de cada resultado H/D/A al mejor ask y con la tasa
+específica de cada token. Los asks sumaron 1.01–1.05 y el coste all-in fue
+1.07391–1.11163 por share; los cuatro complete sets quedaron `NO_EDGE`. El control se
+archiva diariamente, pero nunca deriva una orden: cualquier coste menor que uno sólo
+sería candidato a revisión humana.
+
 ### Intento adicional congelado: calibración Platt del precio
 
 Se probó una sola hipótesis adicional sobre el histórico Polymarket NFL: calibración
