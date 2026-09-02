@@ -51,6 +51,8 @@ def test_pipeline_backtest_places_only_auto_and_settles_bankroll():
     assert result["decisions"]["AUTO"] == 1
     assert result["performance"]["bets"] == 1
     assert result["performance"]["bankroll_final"] > 1000
+    assert result["calibration"]["sample_size"] == 1
+    assert result["calibration"]["model"]["log_loss"] < result["calibration"]["market_only"]["log_loss"]
 
 
 def test_pipeline_backtest_does_not_bet_review_zone():

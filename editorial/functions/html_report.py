@@ -164,7 +164,7 @@ def _document(
     body: str,
     footer: str,
 ) -> str:
-    return f"""<!DOCTYPE html>
+    document = f"""<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="utf-8">
@@ -186,6 +186,7 @@ def _document(
   </main>
 </body>
 </html>"""
+    return "\n".join(line.rstrip() for line in document.splitlines()) + "\n"
 
 
 def _model_chips(row: dict[str, Any]) -> str:
@@ -419,6 +420,30 @@ def _backtest_section(result: dict[str, Any], horizon: dict[str, Any]) -> str:
         f'Temporada actual: <b class="num">{horizon["finished_to_date"]}</b> finalizados '
         f'hasta hoy; último <b class="num">{html.escape(latest_label)}</b>.'
     )
+    calibration = result.get("calibration") or {}
+    calibration_html = ""
+    if calibration:
+        model = calibration["model"]
+        market = calibration["market_only"]
+        calibration_html = f"""
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Calibración OOS</th><th>n</th><th>Log-loss</th>
+                <th>Brier</th><th>ECE</th></tr></thead>
+              <tbody>
+                <tr><td>Modelo</td><td class="num">{calibration["sample_size"]}</td>
+                  <td class="num">{model["log_loss"]:.4f}</td>
+                  <td class="num">{model["brier"]:.4f}</td>
+                  <td class="num">{model["ece"]:.4f}</td></tr>
+                <tr><td>Market-only (de-vig)</td><td class="num">{calibration["sample_size"]}</td>
+                  <td class="num">{market["log_loss"]:.4f}</td>
+                  <td class="num">{market["brier"]:.4f}</td>
+                  <td class="num">{market["ece"]:.4f}</td></tr>
+              </tbody>
+            </table>
+            <div class="source">Menor es mejor; la tabla puntúa todos los partidos con precio,
+              no sólo las apuestas AUTO.</div>
+          </div>"""
     return f"""
       <section class="report-block">
         <header class="section-h">
@@ -447,6 +472,7 @@ def _backtest_section(result: dict[str, Any], horizon: dict[str, Any]) -> str:
           <div class="metric"><span class="k">Decisiones</span>
             <strong class="num">{result["decisions"]["AUTO"]} AUTO</strong></div>
         </div>
+        {calibration_html}
         {_sparkline(result)}
         <div class="source">Fuente: {html.escape(result["price_source"])}. Corte del benchmark:
           {html.escape(str(result.get("latest_event_utc", "n/d"))[:10])}. Simulación walk-forward;

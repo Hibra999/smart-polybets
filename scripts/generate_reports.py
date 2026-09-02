@@ -159,7 +159,7 @@ def write_market_snapshots(predictions: list[dict], root: Path, snapshot_date: d
             records[(record["snapshot_date"], record["fixture_id"], record["pick_side"])] = record
 
         with path.open("w", encoding="utf-8", newline="") as destination:
-            writer = csv.DictWriter(destination, fieldnames=SNAPSHOT_FIELDS)
+            writer = csv.DictWriter(destination, fieldnames=SNAPSHOT_FIELDS, lineterminator="\n")
             writer.writeheader()
             writer.writerows(
                 records[key] for key in sorted(records, key=lambda item: (item[0], item[1], item[2]))

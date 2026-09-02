@@ -67,6 +67,7 @@ def test_html_structure():
     assert "Toluca" in h                           # escape de acentos OK
     assert "empate Poisson" in h and "dixon_coles" in h and "modelos en desacuerdo" in h
     assert "NO_TRADE" in h and "condition-1" in h and "Top asks" in h
+    assert all(line.rstrip() == line for line in h.splitlines())
 
 
 def test_combined_predictions_html_keeps_both_markets():
@@ -97,6 +98,11 @@ def test_backtest_html_shows_cutoff_targets_and_horizon():
             "bets": 2, "fees": 1.25,
         },
         "targets": {"met": {"roi": False, "win_rate": True, "max_drawdown": True}},
+        "calibration": {
+            "sample_size": 10,
+            "model": {"log_loss": 1.02, "brier": 0.61, "ece": 0.12},
+            "market_only": {"log_loss": 0.98, "brier": 0.58, "ece": 0.08},
+        },
         "bets": [],
     }
     data = {
@@ -112,6 +118,7 @@ def test_backtest_html_shows_cutoff_targets_and_horizon():
     assert "Temporada actual" in report and "54" in report
     assert "roi: Falla" in report and "win_rate: Cumple" in report
     assert "Yield" in report and "Fees" in report and "slippage histórico no disponible" in report
+    assert "Calibración OOS" in report and "Market-only (de-vig)" in report
 
 
 def test_metricool_payload_shape():

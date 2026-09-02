@@ -14,6 +14,12 @@ from core.types import ModelConfidence
 from execution.functions.fees import taker_fee_usdc
 from optimization.functions import size_single
 from portfolio.schemas.portfolio_state import PortfolioState
+from research.functions.calibration import (
+    expected_calibration_error,
+    multiclass_brier,
+    multiclass_log_loss,
+    power_devig,
+)
 from research.functions.market_scanner import PolymarketMarket
 from research.functions.strategy_selection import build_strategy_opportunity
 from research.schemas.match_prediction import MatchPrediction
@@ -129,6 +135,9 @@ def simulate_games(
     total_fees = Decimal(0)
     equity_points: list[tuple[datetime, Decimal]] = []
     bets: list[dict[str, Any]] = []
+    model_probabilities: list[list[float]] = []
+    market_probabilities: list[list[float]] = []
+    outcomes: list[int] = []
     decisions = {"AUTO": 0, "REVIEW": 0, "DISCARD": 0, "SKIP": 0}
     target_games = priced_games = 0
 
@@ -150,6 +159,14 @@ def simulate_games(
                 priced_games += 1
                 snap = pipeline.prematch(game["home"], game["away"])
                 prediction = _prediction(game, snap, strategy)
+                sides = [HOME, AWAY] if strategy.sport == "american_football" else [HOME, DRAW, AWAY]
+                raw_market = [game.get(f"market_{side.split('_')[0].lower()}") for side in sides]
+                if game["winner"] in sides and all(price is not None for price in raw_market):
+                    model_probabilities.append(
+                        [float(prediction.probabilities[side]) for side in sides]
+                    )
+                    market_probabilities.append(power_devig(raw_market))
+                    outcomes.append(sides.index(game["winner"]))
                 opportunity = build_strategy_opportunity(
                     prediction,
                     _markets(game, strategy),
@@ -240,6 +257,25 @@ def simulate_games(
         "win_rate": wins / len(bets) if bets else 0.0,
         "max_drawdown": float(max_drawdown),
     }
+    calibration = {}
+    if outcomes:
+        def scores(probabilities: list[list[float]]) -> dict[str, float]:
+            return {
+                "log_loss": multiclass_log_loss(probabilities, outcomes),
+                "brier": multiclass_brier(probabilities, outcomes),
+                "ece": expected_calibration_error(probabilities, outcomes),
+            }
+
+        model_scores = scores(model_probabilities)
+        market_scores = scores(market_probabilities)
+        calibration = {
+            "sample_size": len(outcomes),
+            "model": model_scores,
+            "market_only": market_scores,
+            "market_minus_model": {
+                name: market_scores[name] - model_scores[name] for name in model_scores
+            },
+        }
     return {
         "tournament_id": tournament_id,
         "strategy": strategy.strategy_id,
@@ -262,6 +298,7 @@ def simulate_games(
             "fees": float(round(total_fees, 2)),
             "max_drawdown": observed["max_drawdown"],
         },
+        "calibration": calibration,
         "targets": {
             **targets,
             "met": {
@@ -332,6 +369,7 @@ def _liga_mx(
     short_tournament = None
     for index, match in enumerate(target, start=1):
         home_price = 1 / match["oh"] if match["oh"] else None
+        draw_price = 1 / match["od"] if match["od"] else None
         away_price = 1 / match["oa"] if match["oa"] else None
         current_short_tournament = torneo_corto(match["date"])
         games.append(
@@ -347,6 +385,7 @@ def _liga_mx(
                 "kickoff_utc": datetime.combine(match["date"].date(), time(12), tzinfo=UTC),
                 "phase": "regular_season",
                 "market_home": home_price,
+                "market_draw": draw_price,
                 "market_away": away_price,
                 "target": True,
                 "rating_regression": (

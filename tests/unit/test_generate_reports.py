@@ -53,3 +53,4 @@ def test_market_snapshot_is_daily_idempotent_and_reconciles(monkeypatch, tmp_pat
     assert rows[0]["best_ask"] == "0.52"
     assert json.loads(rows[0]["ask_levels_json"]) == [[0.51, 100]]
     assert rows[0]["settlement"] == "WON"
+    assert b"\r\n" not in path.read_bytes()
