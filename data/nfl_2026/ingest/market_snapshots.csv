@@ -1,0 +1,2 @@
+snapshot_date,snapshot_utc,tournament_id,fixture_id,kickoff_utc,home,away,pick_side,condition_id,token_id,outcome,source,model_probability,market_probability,best_ask,best_ask_size,ask_levels_json,volume_usdc,liquidity_usdc,fee_rate_bps,tick_size,min_order_size,evaluated_stake,expected_avg_price,slippage_pct,fee_usdc,net_edge,verdict,action,settlement
+2026-09-02,2026-09-02T06:24:41.394004+00:00,nfl_2026,2026_01_NE_SEA,2026-09-10T00:20:00+00:00,Seahawks,Patriots,HOME_WIN,,,,polymarket-live,0.685745,,,,[],,,,,,,,,,,SKIP,NO_TRADE,
