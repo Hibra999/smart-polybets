@@ -60,6 +60,7 @@ def _prediction(game: dict[str, Any], snap: dict[str, Any], strategy: StrategyCo
         components = {"trueskill": ts}
         probabilities = ts
     else:
+        elo[DRAW] = _decimal(snap.get("p_draw", 0.0))
         bayes = {
             HOME: _decimal(snap.get("bayes_home", snap["p_home"])),
             AWAY: _decimal(snap.get("bayes_away", snap["p_away"])),

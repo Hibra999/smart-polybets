@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from adapters.football.elo_loader import AWAY_WIN, DRAW, HOME_WIN, elo_win_probabilities
 from adapters.football.strength_models import (
     BayesianLeague,
     EloSystem,
@@ -54,17 +55,20 @@ class FootballModelPipeline:
         """Foto pre-partido con el estado actual (sin mutar). Mismo formato que el
         match_log del origen (sin resultado).
 
-        - p_home: prob. Elo de que el local gane (la E de Elo)
+        - p_home/p_draw/p_away: probabilidades Elo 1X2
         - bayes_home/away: media bayesiana de la fuerza latente de cada lado
         - home/away_match_no: número de aparición que tendría cada lado (warmup)
         """
-        p_home = self.elo.expected_home(home, away)  # aplica home_adv si hay
+        elo = elo_win_probabilities(
+            self.elo.get(home), self.elo.get(away), home_advantage=self.home_adv_elo
+        )
         ts_home = self.trueskill.win_probability(home, away)
         return {
             "home": home,
             "away": away,
-            "p_home": p_home,
-            "p_away": 1.0 - p_home,
+            "p_home": float(elo[HOME_WIN]),
+            "p_draw": float(elo[DRAW]),
+            "p_away": float(elo[AWAY_WIN]),
             "bayes_home": self.bayes.get(home).mean,
             "bayes_away": self.bayes.get(away).mean,
             "ts_home": ts_home,

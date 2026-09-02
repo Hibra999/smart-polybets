@@ -20,6 +20,7 @@ from core.types import ModelConfidence
 from core.utils import to_utc, utcnow
 
 HOME_WIN = "HOME_WIN"
+DRAW = "DRAW"
 AWAY_WIN = "AWAY_WIN"
 ANCHOR_ELO = 1500.0  # Elo neutral para equipos sin semilla (el modelo los trata como media)
 
@@ -81,7 +82,11 @@ class FootballModelAdapter(SportAdapter):
         )
         snap = pipe.prematch(home_id, away_id)
 
-        elo = {HOME_WIN: _q(snap["p_home"]), AWAY_WIN: _q(snap["p_away"])}
+        elo = {
+            HOME_WIN: _q(snap["p_home"]),
+            DRAW: _q(snap["p_draw"]),
+            AWAY_WIN: _q(snap["p_away"]),
+        }
         bayes = {HOME_WIN: _q(snap["bayes_home"]), AWAY_WIN: _q(snap["bayes_away"])}
         trueskill = {HOME_WIN: _q(snap["ts_home"]), AWAY_WIN: _q(snap["ts_away"])}
 

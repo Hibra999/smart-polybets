@@ -9,11 +9,10 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-from adapters.football.strength_models import BayesianLeague, EloSystem
 from adapters.football.model_pipeline import FootballModelPipeline
+from adapters.football.strength_models import BayesianLeague, EloSystem
 from adapters.football.trueskill import TrueSkillSystem
 from venue.results import reconstruct_score, score_from_exact_markets, score_from_ou_ladder
-
 
 # ── localía ──────────────────────────────────────────────────────────────────
 
@@ -41,10 +40,12 @@ def test_pipeline_passes_home_adv_to_elo():
     pipe = FootballModelPipeline(home_adv_elo=65.0)
     pipe.seed({"a": 1500.0, "b": 1500.0})
     snap = pipe.prematch("a", "b")
-    assert snap["p_home"] > 0.55
+    assert snap["p_home"] > snap["p_away"]
     neutral = FootballModelPipeline()
     neutral.seed({"a": 1500.0, "b": 1500.0})
-    assert neutral.prematch("a", "b")["p_home"] == 0.5
+    neutral_snap = neutral.prematch("a", "b")
+    assert neutral_snap["p_home"] == neutral_snap["p_away"]
+    assert sum(neutral_snap[key] for key in ("p_home", "p_draw", "p_away")) == 1.0
 
 
 # ── cold start coherente (Elo flat → TS/Bayes flat) ─────────────────────────

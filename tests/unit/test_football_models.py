@@ -4,6 +4,8 @@ from decimal import Decimal
 import pytest
 
 from adapters.football.db_reader import FootballDBReader
+from adapters.football.model_adapter import FootballModelAdapter
+from adapters.football.model_pipeline import FootballModelPipeline
 from adapters.football.strength_models import (
     BayesianLeague,
     EloSystem,
@@ -11,10 +13,8 @@ from adapters.football.strength_models import (
     expected_score,
     match_scores,
 )
-from adapters.football.model_pipeline import FootballModelPipeline
-from adapters.football.model_adapter import FootballModelAdapter
-from research.functions.strategy_selection import build_strategy_opportunity, pick_side
 from research.functions.market_scanner import PolymarketMarket
+from research.functions.strategy_selection import build_strategy_opportunity, pick_side
 from research.schemas.match_prediction import MatchPrediction
 from tournaments.registry import load_active_strategy
 
@@ -64,7 +64,8 @@ def test_pipeline_evolves_and_counts_appearances():
     pipe.seed({"A": 1600, "B": 1500, "C": 1400})
     pipe.process_all([("A", "C", 3, 0)])                  # A golea a C
     snap = pipe.prematch("A", "B")
-    assert snap["p_home"] > 0.5                           # A subió, favorito vs B
+    assert snap["p_home"] > snap["p_away"]                # A subió, favorito vs B
+    assert sum(snap[key] for key in ("p_home", "p_draw", "p_away")) == pytest.approx(1)
     assert snap["home_match_no"] == 2                     # A ya jugó 1 → próxima es la 2ª
     assert snap["away_match_no"] == 1                     # B no ha jugado
 
@@ -78,6 +79,7 @@ def test_football_adapter_components(football_conn):
     pred = FootballModelAdapter("liga_mx_2026", reader=reader).get_event_prediction("m1")
     assert pred is not None
     assert "elo" in pred.components and "bayes" in pred.components
+    assert sum(pred.components["elo"].values()) == Decimal(1)
     assert pred.appearances["HOME_WIN"] == 1             # sin partidos jugados
     # Elo: AME(2100) favorito sin ventaja de localía (modelo neutral)
     assert pred.components["elo"]["HOME_WIN"] > Decimal("0.5")
@@ -88,8 +90,8 @@ def test_football_adapter_components(football_conn):
 
 def _prediction(elo_home="0.45", elo_away="0.55", bayes_home="0.70", bayes_away="0.40",
                 app_home=3, app_away=3) -> MatchPrediction:
-    from core.utils import utcnow
     from core.types import ModelConfidence
+    from core.utils import utcnow
 
     return MatchPrediction(
         event_id="m1", tournament_id="liga_mx_2026", sport="football",
@@ -121,8 +123,8 @@ def test_pick_side_elo_vs_blend():
 def _market(outcome="HOME_WIN", prob="0.30"):
     return PolymarketMarket(
         condition_id="c", token_id="t", outcome="YES", model_outcome=outcome,
-        market_probability=Decimal(prob), volume_usdc=Decimal("6000"),
-        liquidity_usdc=Decimal("8000"),
+        market_probability=Decimal(prob), volume_usdc=Decimal(6000),
+        liquidity_usdc=Decimal(8000),
     )
 
 
