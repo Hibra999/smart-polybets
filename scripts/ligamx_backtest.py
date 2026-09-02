@@ -66,6 +66,9 @@ def load_matches(seasons: set[str] | None = None) -> list[dict]:
                 "oh": float(r["AvgCH"]) if r.get("AvgCH") else None,
                 "od": float(r["AvgCD"]) if r.get("AvgCD") else None,
                 "oa": float(r["AvgCA"]) if r.get("AvgCA") else None,
+                "max_oh": float(r["MaxCH"]) if r.get("MaxCH") else None,
+                "max_od": float(r["MaxCD"]) if r.get("MaxCD") else None,
+                "max_oa": float(r["MaxCA"]) if r.get("MaxCA") else None,
             })
     rows.sort(key=lambda m: m["date"])
     return rows
