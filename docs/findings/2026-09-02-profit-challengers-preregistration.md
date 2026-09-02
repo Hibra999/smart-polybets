@@ -105,3 +105,18 @@ fills reales. Liga MX continúa `draft`; NFL continúa dry-run.
 Este documento registra dos nuevas hipótesis: `LMX-MKT-1X2-01` y
 `NFL-SPREAD-ML-01`. Se suman a los intentos ya publicados (Dixon-Coles, ML Liga MX,
 ratings+EPA NFL, TrueSkill y Platt Polymarket); no los reemplazan ni ocultan.
+
+## Resultado de la única ejecución
+
+**Ejecutado:** 2026-09-02. Ambos gates fallaron y estas hipótesis quedan cerradas sin
+variantes sobre las mismas ventanas.
+
+| Challenger | Apuestas | Profit | ROI | Yield/stake | Temporadas positivas | IC 95% yield |
+|---|---:|---:|---:|---:|---:|---:|
+| LMX-MKT-1X2-01 | 78 | −39.14 | −3.91% | −3.24% | 2/4 | [−28.59%, 23.70%] |
+| NFL-SPREAD-ML-01 | 51 | −108.10 | −10.81% | −21.07% | 0/4 | [−45.03%, 4.76%] |
+
+Liga MX terminó 2025/26 en −143.96 USDC y NFL fue negativa en las cuatro temporadas;
+por tanto, ningún beneficio agregado puede defenderse como estable. El detalle por
+apuesta y los coeficientes de cada fold se conservan en
+[`2026-09-02_profit-challengers.json`](../../editorial/reports/_system/2026-09-02_profit-challengers.json).
