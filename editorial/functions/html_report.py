@@ -39,7 +39,7 @@ _STYLE = """
   .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(360px,1fr));
     gap:16px; margin-top:8px; }
   .card, .report-block { background:var(--surface); border:1px solid var(--border);
-    border-radius:12px; padding:20px; }
+    border-radius:12px; padding:20px; min-width:0; }
   .card-h, .section-h { display:flex; align-items:flex-start; justify-content:space-between;
     gap:12px; }
   .match { font-size:1.125rem; font-weight:600; }
@@ -230,6 +230,7 @@ def _prediction_card(row: dict[str, Any]) -> str:
     action = html.escape(str(row.get("action", "NO_TRADE")))
     reason = html.escape(str(row.get("reason", "")))
     reason_html = f'<div class="reason">Motivo: {reason}</div>' if reason else ""
+    contract_html = _contract_details(row)
     return f"""
       <article class="card" aria-label="Predicción {home} contra {away}">
         <header class="card-h">
@@ -247,8 +248,7 @@ def _prediction_card(row: dict[str, Any]) -> str:
             {stake_html}</div>
         </div>
         <div class="models">{_model_chips(row)}</div>
-        {reason_html}
-        {_contract_details(row)}
+        {reason_html}{contract_html}
       </article>"""
 
 
@@ -434,18 +434,23 @@ def _backtest_section(result: dict[str, Any], horizon: dict[str, Any]) -> str:
             <strong class="num">${perf["bankroll_final"]:,.2f}</strong></div>
           <div class="metric"><span class="k">ROI</span>
             <strong class="num" style="color:{roi_color}">{perf["roi"]:+.1%}</strong></div>
+          <div class="metric"><span class="k">Yield</span>
+            <strong class="num">{perf["yield_on_staked"]:+.1%}</strong></div>
           <div class="metric"><span class="k">Win rate</span>
             <strong class="num">{perf["win_rate"]:.1%}</strong></div>
           <div class="metric"><span class="k">Max drawdown</span>
             <strong class="num">{perf["max_drawdown"]:.1%}</strong></div>
           <div class="metric"><span class="k">Apuestas</span>
             <strong class="num">{perf["bets"]}</strong></div>
+          <div class="metric"><span class="k">Fees</span>
+            <strong class="num">${perf["fees"]:,.2f}</strong></div>
           <div class="metric"><span class="k">Decisiones</span>
             <strong class="num">{result["decisions"]["AUTO"]} AUTO</strong></div>
         </div>
         {_sparkline(result)}
         <div class="source">Fuente: {html.escape(result["price_source"])}. Corte del benchmark:
-          {html.escape(str(result.get("latest_event_utc", "n/d"))[:10])}. Simulación walk-forward.</div>
+          {html.escape(str(result.get("latest_event_utc", "n/d"))[:10])}. Simulación walk-forward;
+          fee histórico de 500 bps aplicado y slippage histórico no disponible.</div>
         {_recent_bets(result)}
       </section>"""
 

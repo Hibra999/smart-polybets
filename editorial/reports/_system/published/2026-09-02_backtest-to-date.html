@@ -31,7 +31,7 @@
   .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(360px,1fr));
     gap:16px; margin-top:8px; }
   .card, .report-block { background:var(--surface); border:1px solid var(--border);
-    border-radius:12px; padding:20px; }
+    border-radius:12px; padding:20px; min-width:0; }
   .card-h, .section-h { display:flex; align-items:flex-start; justify-content:space-between;
     gap:12px; }
   .match { font-size:1.125rem; font-weight:600; }
@@ -48,6 +48,11 @@
   .k { font-size:.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
   .val { font-weight:600; overflow-wrap:anywhere; }
   .models { margin-top:14px; border-top:1px solid var(--border); padding-top:12px; }
+  details.execution { margin-top:14px; border-top:1px solid var(--border); padding-top:12px; }
+  details.execution summary { cursor:pointer; color:var(--cyan); font-size:.8125rem; }
+  .contract { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px 16px;
+    margin-top:10px; font-size:.75rem; }
+  .contract .wide { grid-column:1/-1; overflow-wrap:anywhere; }
   .chip { font-size:.75rem; color:var(--muted); background:var(--surface-alt);
     border-radius:8px; padding:3px 10px; }
   .chip b { color:var(--text); }
@@ -106,12 +111,16 @@
             <strong class="num">$938.95</strong></div>
           <div class="metric"><span class="k">ROI</span>
             <strong class="num" style="color:var(--danger)">-6.1%</strong></div>
+          <div class="metric"><span class="k">Yield</span>
+            <strong class="num">-18.8%</strong></div>
           <div class="metric"><span class="k">Win rate</span>
             <strong class="num">38.5%</strong></div>
           <div class="metric"><span class="k">Max drawdown</span>
             <strong class="num">7.8%</strong></div>
           <div class="metric"><span class="k">Apuestas</span>
             <strong class="num">13</strong></div>
+          <div class="metric"><span class="k">Fees</span>
+            <strong class="num">$8.30</strong></div>
           <div class="metric"><span class="k">Decisiones</span>
             <strong class="num">13 AUTO</strong></div>
         </div>
@@ -128,7 +137,8 @@
         </svg>
       </div>
         <div class="source">Fuente: football-data.co.uk AvgC closing odds (vig included). Corte del benchmark:
-          2026-08-24. Simulación walk-forward.</div>
+          2026-08-24. Simulación walk-forward;
+          fee histórico de 500 bps aplicado y slippage histórico no disponible.</div>
         
       <div class="table-wrap">
         <table>
@@ -152,12 +162,16 @@
             <strong class="num">$379.05</strong></div>
           <div class="metric"><span class="k">ROI</span>
             <strong class="num" style="color:var(--danger)">-62.1%</strong></div>
+          <div class="metric"><span class="k">Yield</span>
+            <strong class="num">-12.6%</strong></div>
           <div class="metric"><span class="k">Win rate</span>
             <strong class="num">48.5%</strong></div>
           <div class="metric"><span class="k">Max drawdown</span>
             <strong class="num">70.3%</strong></div>
           <div class="metric"><span class="k">Apuestas</span>
             <strong class="num">99</strong></div>
+          <div class="metric"><span class="k">Fees</span>
+            <strong class="num">$116.73</strong></div>
           <div class="metric"><span class="k">Decisiones</span>
             <strong class="num">99 AUTO</strong></div>
         </div>
@@ -174,7 +188,8 @@
         </svg>
       </div>
         <div class="source">Fuente: nflverse closing moneyline (vig included). Corte del benchmark:
-          2026-01-05. Simulación walk-forward.</div>
+          2026-01-05. Simulación walk-forward;
+          fee histórico de 500 bps aplicado y slippage histórico no disponible.</div>
         
       <div class="table-wrap">
         <table>
@@ -184,7 +199,7 @@
         </table>
       </div>
       </section></div>
-    <footer>Generado 2026-09-02T05:28:29.278842+00:00. Resultados simulados; no representan órdenes reales ni garantizan rendimiento futuro.</footer>
+    <footer>Generado 2026-09-02T05:40:24.716718+00:00. Resultados simulados; no representan órdenes reales ni garantizan rendimiento futuro.</footer>
   </main>
 </body>
 </html>

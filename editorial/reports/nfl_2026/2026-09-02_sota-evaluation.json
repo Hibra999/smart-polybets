@@ -1,0 +1,40 @@
+{
+  "generated_at": "2026-09-02T05:34:30.964772+00:00",
+  "split": {
+    "train": "2022-2023",
+    "calibration": "2024",
+    "holdout": "2025"
+  },
+  "sample_sizes": {
+    "train": 414,
+    "calibration": 208,
+    "holdout": 208
+  },
+  "features": [
+    "market_logit",
+    "elo_logit",
+    "bayes_logit",
+    "trueskill_logit",
+    "epa_net_diff",
+    "success_diff",
+    "explosive_diff",
+    "proe_diff"
+  ],
+  "market_only": {
+    "log_loss": 0.6653425605998449,
+    "brier": 0.4648952568110388,
+    "ece": 0.12336427247315504
+  },
+  "challenger": {
+    "log_loss": 0.7046059069159634,
+    "brier": 0.4931075642919796,
+    "ece": 0.1415672659116099
+  },
+  "delta_log_loss_market_minus_challenger": -0.039263346316118226,
+  "bootstrap_95_ci": [
+    -0.06520772906631245,
+    -0.012560417190397823
+  ],
+  "promotion_gate": "FAIL",
+  "strategy_changed": false
+}

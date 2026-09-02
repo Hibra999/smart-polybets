@@ -1,6 +1,6 @@
 # Estado del arte aplicable a Liga MX y NFL
 
-**Fecha de corte:** 2026-09-01
+**Fecha de corte:** 2026-09-02 (revisión original: 2026-09-01)
 
 **Alcance:** predicción prepartido y ejecución en Polymarket para Liga MX y NFL.
 
@@ -84,7 +84,25 @@ Bayes, TrueSkill y diferencias rolling de EPA, success rate, explosivas y PROE.
 La diferencia `log-loss mercado − challenger` fue **−0.03926**, con bootstrap IC 95%
 **[−0.06521, −0.01256]**. El intervalo completo favorece al mercado; el gate es `FAIL`.
 El reporte machine-readable vive en
-[`editorial/reports/nfl_2026/2026-09-01_sota-evaluation.json`](../../editorial/reports/nfl_2026/2026-09-01_sota-evaluation.json).
+[`editorial/reports/nfl_2026/2026-09-02_sota-evaluation.json`](../../editorial/reports/nfl_2026/2026-09-02_sota-evaluation.json).
+
+### NFL: histórico Polymarket T-24h, corte 2026-09-02
+
+El recolector público emparejó 524 contratos NFL y obtuvo 521 snapshots válidos a
+T-24h; 520 observaciones no terminaron en empate. El precio histórico de Polymarket
+superó a TrueSkill activo en log-loss, 0.59610 frente a 0.64358. La diferencia
+`mercado − TrueSkill` fue **−0.04747**, con IC bootstrap 95%
+**[−0.07661, −0.01946]**, completamente favorable al mercado.
+
+El replay continuo de TrueSkill fue positivo (1,000 → 2,280.58 USDC; ROI +128.06%,
+yield +8.24%, 262 apuestas y drawdown máximo 31.56%), pero no es estable: reiniciado
+por temporada, 2024 dio ROI +120.38% y 2025 **−17.92%**, con drawdown 61.87%. Los
+contratos incluidos indicaban fees deshabilitados, pero la API histórica no ofrece los
+order books necesarios para reconstruir slippage. Por ambas razones el gate es `FAIL`.
+El dataset y reporte reproducibles son
+[`data/nfl_2026/ingest/polymarket_t24h.csv`](../../data/nfl_2026/ingest/polymarket_t24h.csv)
+y
+[`editorial/reports/nfl_2026/2026-09-02_pm-history.json`](../../editorial/reports/nfl_2026/2026-09-02_pm-history.json).
 
 ## Síntesis de la evidencia
 
@@ -167,14 +185,21 @@ El código ya calcula ese coste y el backtest automático aplica 500 bps como es
 histórico reproducible, no como constante live. La tasa live siempre se consulta por
 token; el backtest sigue sin poder reconstruir slippage histórico.
 
+En el snapshot público del 2 de septiembre, los cuatro tokens seleccionados de Liga MX
+devolvieron `base_fee=1000` bps. Sus libros, top-3 asks, volumen, liquidez, tick y mínimo
+quedaron visibles en el HTML. Todos resultaron `DISCARD` por volumen o edge y, por
+tanto, `NO_TRADE`; NFL no tenía contrato emparejado para su próximo fixture y quedó
+`SKIP`. No se calculó edge neto en filas sin sizing y no se envió ninguna orden.
+
 ### Intento adicional congelado: calibración Platt del precio
 
 Se probó una sola hipótesis adicional sobre el histórico Polymarket NFL: calibración
-Platt del logit del precio, ajustada sólo con 2024 y evaluada en 2025. El mercado 2025
-obtuvo log-loss 0.610361, Brier 0.424052 y ECE 0.034921; Platt empeoró a 0.614362,
-0.427320 y 0.055412, respectivamente. El replay terminó en 987.69 USDC desde 1,000
-(ROI -1.23%, 76 apuestas). La hipótesis queda descartada y no se buscaron thresholds
-adicionales sobre el mismo holdout.
+Platt del logit del precio, ajustada sólo con 2024 y evaluada en 2025. En el corte
+actual, el mercado 2025 obtuvo log-loss 0.606982, Brier 0.421396 y ECE 0.053962;
+Platt empeoró a 0.615927, 0.428319 y 0.071345, respectivamente. El replay terminó en
+884.53 USDC desde 1,000 (ROI −11.55%, yield −1.50%, 144 apuestas). La hipótesis queda
+descartada y no se buscaron thresholds adicionales sobre el mismo holdout. En total se
+evaluaron dos hipótesis sobre este histórico: TrueSkill activo y Platt de mercado.
 
 ### 5. Validar muchas estrategias produce ganadores falsos
 
@@ -194,6 +219,10 @@ el holdout para retocar hiperparámetros.
   reporta fees y declara que no dispone de slippage histórico.
 - NFL ingiere calendario y play-by-play 2010-2025, más roster/depth chart 2026 (el PBP
   2026 aún no está publicado); la estrategia activa sigue filtrando historia desde 2022.
+- El histórico Polymarket NFL conserva condition/token y el último precio público a
+  T-24h; documenta explícitamente que no reconstruye books ni slippage pasados.
+- El panel live falla cerrado: `SIMULATED_BUY` sólo existe para un `AUTO` con ask,
+  profundidad, fee, tick y mínimo completos; todo lo demás es `NO_TRADE`.
 - El experimento NFL usa train 2022-23, calibración 2024, holdout 2025, bootstrap y un
   gate explícito. Su resultado `FAIL` queda versionado.
 - Los paneles HTML actuales se regeneran automáticamente y GitHub Pages publica el

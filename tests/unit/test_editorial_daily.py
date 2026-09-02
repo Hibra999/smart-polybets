@@ -93,7 +93,8 @@ def test_backtest_html_shows_cutoff_targets_and_horizon():
         "decisions": {"AUTO": 3, "REVIEW": 2, "DISCARD": 5, "SKIP": 0},
         "performance": {
             "bankroll_initial": 1000.0, "bankroll_final": 980.0, "roi": -0.02,
-            "win_rate": 0.5, "max_drawdown": 0.08, "bets": 2,
+            "yield_on_staked": -0.04, "win_rate": 0.5, "max_drawdown": 0.08,
+            "bets": 2, "fees": 1.25,
         },
         "targets": {"met": {"roi": False, "win_rate": True, "max_drawdown": True}},
         "bets": [],
@@ -110,6 +111,7 @@ def test_backtest_html_shows_cutoff_targets_and_horizon():
     assert "Backtest hasta 2026-09-01" in report
     assert "Temporada actual" in report and "54" in report
     assert "roi: Falla" in report and "win_rate: Cumple" in report
+    assert "Yield" in report and "Fees" in report and "slippage histórico no disponible" in report
 
 
 def test_metricool_payload_shape():
