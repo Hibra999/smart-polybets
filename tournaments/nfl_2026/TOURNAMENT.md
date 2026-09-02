@@ -21,7 +21,7 @@ Temporada regular NFL 2026 + playoffs. 32 franquicias, 18 semanas + postemporada
 
 ## Datos
 - SQLite poblado desde nflverse con `python scripts/migrate_nfl_data.py`
-  (2022-2025 jugados + calendario 2026).
+  (historia 2010-2025 + calendario 2026). La estrategia activa filtra desde 2022.
 
 ## Estrategias
 | strategy_id | market_type | status | nota |
