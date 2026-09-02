@@ -55,7 +55,11 @@ def _negative_mean(series: pd.Series) -> float | None:
 
 
 def upsert_team_stats(
-    db: Path, records: list[dict], unavailable_years: tuple[int, ...] = (),
+    db: Path,
+    records: list[dict],
+    unavailable_years: tuple[int, ...] = (),
+    *,
+    log_ingest: bool = True,
 ) -> int:
     connection = sqlite3.connect(db)
     valid = {
@@ -73,44 +77,62 @@ def upsert_team_stats(
         + ",".join(f"{column}=excluded.{column}" for column in columns[2:]),
         [tuple(row[column] for column in columns) for row in rows],
     )
-    status = "partial" if unavailable_years else "ok"
-    note = (f"play-by-play no publicado: {', '.join(map(str, unavailable_years))}"
-            if unavailable_years else None)
-    connection.execute(
-        "INSERT INTO ingest_log(tournament_id,source,entity_type,records_inserted,status,error_msg) "
-        "VALUES('nfl_2026','nflverse-pbp','match_team_stat',?,?,?)",
-        (len(rows), status, note))
+    if log_ingest:
+        _log_ingest(connection, len(rows), unavailable_years)
     connection.commit()
     connection.close()
     return len(rows)
 
 
-def load_pbp(since: int, through: int) -> tuple[pd.DataFrame, tuple[int, ...]]:
-    frames = []
-    unavailable = []
+def _log_ingest(
+    connection: sqlite3.Connection, records: int, unavailable_years: tuple[int, ...]
+) -> None:
+    status = "partial" if unavailable_years else "ok"
+    note = (
+        f"play-by-play no publicado: {', '.join(map(str, unavailable_years))}"
+        if unavailable_years
+        else None
+    )
+    connection.execute(
+        "INSERT INTO ingest_log(tournament_id,source,entity_type,records_inserted,status,error_msg) "
+        "VALUES('nfl_2026','nflverse-pbp','match_team_stat',?,?,?)",
+        (records, status, note),
+    )
+
+
+def load_pbp(year: int) -> pd.DataFrame | None:
+    """Carga un solo año; None significa que el año actual aún no fue publicado."""
     current_year = datetime.now(UTC).year
-    for year in range(since, through + 1):
-        try:
-            frames.append(pd.read_csv(
-                PBP_URL.format(year=year), usecols=USECOLS, low_memory=False))
-        except HTTPError as error:
-            if error.code != 404 or year < current_year:
-                raise
-            unavailable.append(year)
-    if not frames:
-        raise RuntimeError("nflverse no publicó ningún año solicitado de play-by-play")
-    return pd.concat(frames, ignore_index=True), tuple(unavailable)
+    try:
+        return pd.read_csv(PBP_URL.format(year=year), usecols=USECOLS, low_memory=False)
+    except HTTPError as error:
+        if error.code != 404 or year < current_year:
+            raise
+        return None
 
 
 def run(db: Path, since: int, through: int) -> int:
-    pbp, unavailable = load_pbp(since, through)
-    return upsert_team_stats(db, aggregate_team_stats(pbp), unavailable)
+    total = 0
+    unavailable: list[int] = []
+    for year in range(since, through + 1):
+        pbp = load_pbp(year)
+        if pbp is None:
+            unavailable.append(year)
+            continue
+        total += upsert_team_stats(db, aggregate_team_stats(pbp), log_ingest=False)
+    if total == 0:
+        raise RuntimeError("nflverse no publicó ningún año solicitado de play-by-play")
+    connection = sqlite3.connect(db)
+    _log_ingest(connection, total, tuple(unavailable))
+    connection.commit()
+    connection.close()
+    return total
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--db", type=Path, default=DB)
-    parser.add_argument("--since", type=int, default=2022)
+    parser.add_argument("--since", type=int, default=2010)
     parser.add_argument("--through", type=int, default=2026)
     args = parser.parse_args()
     print(f"match_team_stat: {run(args.db, args.since, args.through)}")

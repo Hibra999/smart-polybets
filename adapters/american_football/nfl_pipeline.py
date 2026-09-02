@@ -11,9 +11,19 @@ jugados en orden cronológico. Puro: no toca la DB.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 
 # TrueSkill 1v1 puro (vive en adapters/football pero es un modelo genérico).
 from adapters.football.trueskill import TrueSkillSystem
+
+ACTIVE_HISTORY_START = datetime(2022, 1, 1, tzinfo=UTC)
+
+
+def in_active_history(kickoff_utc: str | datetime) -> bool:
+    value = datetime.fromisoformat(kickoff_utc) if isinstance(kickoff_utc, str) else kickoff_utc
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=UTC)
+    return value.astimezone(UTC) >= ACTIVE_HISTORY_START
 
 
 @dataclass

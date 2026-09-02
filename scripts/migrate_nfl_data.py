@@ -6,18 +6,20 @@ Toma `games.csv` de nflverse (todas las temporadas con resultados + el calendari
   - tournament (nfl_2026)
   - team       (32 franquicias)
   - week       (por season/week/game_type)
-  - fixture    (2022-2026: histórico finished + 2026 scheduled)
+  - fixture    (2010-2026: histórico finished + 2026 scheduled)
 
-El histórico (2022-2025) sirve para sembrar TrueSkill; los juegos 2026 son los
-fixtures programados que el adapter predice.
+El histórico ampliado sirve para investigación. La estrategia TrueSkill activa sigue
+anclada a 2022; los juegos 2026 son los fixtures programados que el adapter predice.
 
-    python scripts/migrate_nfl_data.py [--since 2022]
+    python scripts/migrate_nfl_data.py [--since 2010]
 """
 from __future__ import annotations
 
 import argparse
 import sqlite3
+from datetime import UTC, datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 
@@ -47,7 +49,10 @@ def _kickoff(row) -> str:
     day = str(row.get("gameday") or f"{int(row['season'])}-09-01")
     t = str(row.get("gametime") or "")
     if t and ":" in t:
-        return f"{day}T{t}:00+00:00"
+        local = datetime.fromisoformat(f"{day}T{t}:00").replace(
+            tzinfo=ZoneInfo("America/New_York")
+        )
+        return local.astimezone(UTC).isoformat()
     return f"{day}T17:00:00+00:00"
 
 
@@ -128,7 +133,7 @@ def migrate(target: Path, since: int) -> dict:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--since", type=int, default=2022)
+    ap.add_argument("--since", type=int, default=2010)
     ap.add_argument("--target", type=Path,
                     default=REPO_ROOT / "data" / TARGET_ID / f"{TARGET_ID}.sqlite")
     a = ap.parse_args()

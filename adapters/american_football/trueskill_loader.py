@@ -12,7 +12,7 @@ from datetime import datetime
 from decimal import Decimal
 
 from adapters.american_football.db_reader import AmericanFootballDBReader
-from adapters.american_football.nfl_pipeline import NFLPipeline
+from adapters.american_football.nfl_pipeline import NFLPipeline, in_active_history
 from adapters.base import SportAdapter
 from core.types import ModelConfidence
 from core.utils import to_utc, utcnow
@@ -39,6 +39,8 @@ class AmericanFootballTrueSkillAdapter(SportAdapter):
     def _run_pipeline(self, before_utc: str) -> NFLPipeline:
         pipe = NFLPipeline()
         for fx in self.reader.get_finished_fixtures(before_utc=before_utc):
+            if not in_active_history(fx["kickoff_utc"]):
+                continue
             pipe.process_match(
                 fx["home_team_id"], fx["away_team_id"],
                 int(fx["home_score"]), int(fx["away_score"]),

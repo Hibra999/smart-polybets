@@ -70,8 +70,8 @@ aplica 80 puntos de localía y Poisson usa `neutral=False`.
 ### NFL 2026
 
 ```bash
-.venv/bin/python data/nfl_2026/ingest/fetch_schedule.py --since 2022
-.venv/bin/python data/nfl_2026/ingest/fetch_game_stats.py --since 2022 --through 2026
+.venv/bin/python data/nfl_2026/ingest/fetch_schedule.py --since 2010
+.venv/bin/python data/nfl_2026/ingest/fetch_game_stats.py --since 2010 --through 2026
 .venv/bin/python data/nfl_2026/ingest/fetch_rosters.py --season 2026
 ```
 

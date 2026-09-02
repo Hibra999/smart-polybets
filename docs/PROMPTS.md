@@ -14,7 +14,7 @@ catálogo; no ejecuta sus ejemplos.
 ## Datos, predicciones y backtests
 
 - `Codex, actualiza los datos de Liga MX y verifica su frescura.`
-- `Codex, actualiza nflverse para NFL desde 2022 y verifica su frescura.`
+- `Codex, actualiza nflverse para NFL desde 2010 y verifica su frescura.`
 - `Codex, actualiza calendario, EPA, roster y depth chart NFL; reporta por separado la cobertura de injuries.`
 - `Codex, escanea Liga MX durante las próximas 168 horas en modo observación.`
 - `Codex, calcula Poisson para Liga MX en la fecha YYYY-MM-DD.`

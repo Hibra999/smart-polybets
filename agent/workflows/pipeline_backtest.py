@@ -6,7 +6,7 @@ from decimal import Decimal
 from typing import Any
 
 from adapters.american_football.db_reader import AmericanFootballDBReader
-from adapters.american_football.nfl_pipeline import NFLPipeline
+from adapters.american_football.nfl_pipeline import NFLPipeline, in_active_history
 from adapters.football.model_pipeline import FootballModelPipeline
 from agent.workflows.nfl_backtest import american_to_decimal
 from core.strategy import StrategyConfig
@@ -405,6 +405,8 @@ def _nfl(
         )
     games = []
     for row in rows:
+        if not in_active_history(row["kickoff_utc"]):
+            continue
         home_decimal = (
             american_to_decimal(row["moneyline_home"])
             if row["moneyline_home"] is not None

@@ -3,12 +3,11 @@ import sqlite3
 from decimal import Decimal
 from pathlib import Path
 
-import pytest
-
 from adapters.american_football.db_reader import AmericanFootballDBReader
-from adapters.american_football.nfl_pipeline import NFLPipeline
+from adapters.american_football.nfl_pipeline import NFLPipeline, in_active_history
 from adapters.american_football.trueskill_loader import AmericanFootballTrueSkillAdapter
 from research.functions.strategy_selection import pick_side
+from scripts.migrate_nfl_data import _kickoff
 from tournaments.registry import load_active_strategy
 
 DDL = (Path(__file__).resolve().parents[2] / "data" / "_schema" / "american_football.sql"
@@ -51,6 +50,15 @@ def test_nfl_pipeline_symmetric_fresh():
     pipe = NFLPipeline()
     # sin juegos: dos equipos fresh → 50/50
     assert abs(pipe.prematch("A", "B")["p_home"] - 0.5) < 1e-9
+
+
+def test_active_history_anchor_and_nflverse_eastern_kickoff():
+    assert not in_active_history("2021-12-31T23:59:59+00:00")
+    assert in_active_history("2022-01-01T00:00:00+00:00")
+    assert _kickoff({"gameday": "2026-09-10", "gametime": "20:20"}) \
+        == "2026-09-11T00:20:00+00:00"
+    assert _kickoff({"gameday": "2026-01-10", "gametime": "20:20"}) \
+        == "2026-01-11T01:20:00+00:00"
 
 
 def test_nfl_adapter_prediction():

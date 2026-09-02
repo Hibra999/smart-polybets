@@ -13,7 +13,7 @@ from scripts.migrate_nfl_data import migrate
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--since", type=int, default=2022)
+    parser.add_argument("--since", type=int, default=2010)
     parser.add_argument(
         "--target", type=Path,
         default=REPO_ROOT / "data" / "nfl_2026" / "nfl_2026.sqlite")

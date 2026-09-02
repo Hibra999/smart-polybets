@@ -53,8 +53,8 @@ seleccionando por TrueSkill porque el challenger EPA no superó el holdout.
 .venv/bin/python scripts/update_results.py --tournament liga_mx_2026 --apply
 
 # NFL: fetch_schedule reconstruye el SQLite; stats conserva el último año publicado
-.venv/bin/python data/nfl_2026/ingest/fetch_schedule.py --since 2022
-.venv/bin/python data/nfl_2026/ingest/fetch_game_stats.py --since 2022 --through 2026
+.venv/bin/python data/nfl_2026/ingest/fetch_schedule.py --since 2010
+.venv/bin/python data/nfl_2026/ingest/fetch_game_stats.py --since 2010 --through 2026
 .venv/bin/python data/nfl_2026/ingest/fetch_rosters.py --season 2026
 
 # Verificación y análisis read-only

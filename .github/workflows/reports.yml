@@ -50,8 +50,8 @@ jobs:
           python data/liga_mx_2026/ingest/fetch_fixtures_pm.py --apply --include-closed
           python data/liga_mx_2026/ingest/load_history_fdcouk.py --apply
           python scripts/update_results.py --tournament liga_mx_2026 --apply
-          python data/nfl_2026/ingest/fetch_schedule.py --since 2022
-          python data/nfl_2026/ingest/fetch_game_stats.py --since 2022 --through 2026
+          python data/nfl_2026/ingest/fetch_schedule.py --since 2010
+          python data/nfl_2026/ingest/fetch_game_stats.py --since 2010 --through 2026
           python data/nfl_2026/ingest/fetch_rosters.py --season 2026
           python scripts/check_freshness.py
       - name: Test and generate

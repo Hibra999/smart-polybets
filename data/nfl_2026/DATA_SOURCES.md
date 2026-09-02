@@ -18,8 +18,8 @@
 - Injury report vigente: conectar una fuente oficial con licencia y timestamp auditable
 
 ## Cómo actualizar antes de un partido
-1. `python data/nfl_2026/ingest/fetch_schedule.py --since 2022` — reconstruye DB y calendario
-2. `python data/nfl_2026/ingest/fetch_game_stats.py --since 2022 --through 2026`
+1. `python data/nfl_2026/ingest/fetch_schedule.py --since 2010` — reconstruye DB y calendario
+2. `python data/nfl_2026/ingest/fetch_game_stats.py --since 2010 --through 2026`
 3. `python data/nfl_2026/ingest/fetch_rosters.py --season 2026`
 4. Verificar externamente el injury report y QB titular antes de operar; la DB no lo tiene aún
 

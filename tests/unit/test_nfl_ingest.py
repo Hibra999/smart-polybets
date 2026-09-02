@@ -75,9 +75,8 @@ def test_pbp_loader_marks_unpublished_current_year_partial(monkeypatch):
         return pbp
 
     monkeypatch.setattr(pd, "read_csv", read_csv)
-    loaded, unavailable = load_pbp(2025, 2026)
-    assert loaded.equals(pbp)
-    assert unavailable == (2026,)
+    assert load_pbp(2025).equals(pbp)
+    assert load_pbp(2026) is None
 
 
 def test_roster_latest_week_depth_and_partial_injury_log(tmp_path):
