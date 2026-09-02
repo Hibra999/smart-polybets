@@ -1,0 +1,119 @@
+{
+  "generated_at": "2026-09-02T05:24:45.821510+00:00",
+  "source": {
+    "catalog": "Polymarket public NFL tag 450",
+    "price": "CLOB price_history at or before T-24h",
+    "price_semantics": "official API documents only historical price data",
+    "events_scanned": 1380,
+    "catalog_start_utc": "2024-08-08T23:00:00+00:00",
+    "catalog_end_utc": "2026-08-29T22:00:00+00:00",
+    "request_failures": 0
+  },
+  "coverage": {
+    "contracts_matched": 524,
+    "snapshots_valid": 521,
+    "observations_no_tie": 520
+  },
+  "market_only": {
+    "log_loss": 0.5961042972495266,
+    "brier": 0.40982939807692276,
+    "ece": 0.04407500000000018
+  },
+  "trueskill_active": {
+    "log_loss": 0.6435750291619347,
+    "brier": 0.4490983017546844,
+    "ece": 0.04225777844829094
+  },
+  "delta_log_loss_market_minus_trueskill": -0.0474707319124076,
+  "bootstrap_95_ci": [
+    -0.07660662041092538,
+    -0.019463674565253147
+  ],
+  "continuous_replay": {
+    "bankroll_initial": 1000.0,
+    "bankroll_final": 2280.58,
+    "profit": 1280.58,
+    "roi": 1.280584618284641,
+    "yield_on_staked": 0.08244565212645774,
+    "bets": 262,
+    "wins": 145,
+    "losses": 117,
+    "win_rate": 0.5534351145038168,
+    "staked": 15532.47,
+    "fees": 0.0,
+    "max_drawdown": 0.31559880035023447
+  },
+  "season_replays": {
+    "2024": {
+      "bankroll_initial": 1000.0,
+      "bankroll_final": 2203.83,
+      "profit": 1203.83,
+      "roi": 1.2038299299347102,
+      "yield_on_staked": 0.15214337999824457,
+      "bets": 135,
+      "wins": 82,
+      "losses": 53,
+      "win_rate": 0.6074074074074074,
+      "staked": 7912.47,
+      "fees": 0.0,
+      "max_drawdown": 0.30848272817079975
+    },
+    "2025": {
+      "bankroll_initial": 1000.0,
+      "bankroll_final": 820.78,
+      "profit": -179.22,
+      "roi": -0.17922159355108283,
+      "yield_on_staked": -0.027929187089151136,
+      "bets": 115,
+      "wins": 56,
+      "losses": 59,
+      "win_rate": 0.48695652173913045,
+      "staked": 6417.0,
+      "fees": 0.0,
+      "max_drawdown": 0.6186675149467648
+    }
+  },
+  "platt_calibration": {
+    "split": {
+      "fit": "2024",
+      "test": "2025"
+    },
+    "market_2025": {
+      "log_loss": 0.6069815916104502,
+      "brier": 0.42139584905660354,
+      "ece": 0.05396226415094336
+    },
+    "platt_2025": {
+      "log_loss": 0.6159269626091559,
+      "brier": 0.42831892619732653,
+      "ece": 0.07134514766263005
+    },
+    "replay_2025": {
+      "bankroll_initial": 1000.0,
+      "bankroll_final": 884.53,
+      "roi": -0.11546735622916787,
+      "yield_on_staked": -0.014950462589215778,
+      "bets": 144,
+      "wins": 103,
+      "losses": 41,
+      "win_rate": 0.7152777777777778,
+      "max_drawdown": 0.3253790551077078
+    },
+    "gate": "FAIL"
+  },
+  "costs": {
+    "contracts_indicated_fees_disabled": true,
+    "historical_order_books_available": false,
+    "slippage_reconstructed": false
+  },
+  "hypotheses_tested": [
+    "active_trueskill",
+    "market_logit_platt"
+  ],
+  "promotion_gate": "FAIL",
+  "gate_reasons": [
+    "no se reconstruyó slippage histórico",
+    "ROI no es positivo y estable por temporada"
+  ],
+  "strategy_changed": false
+}
