@@ -56,6 +56,11 @@ _STYLE = """
   .k { font-size:.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
   .val { font-weight:600; overflow-wrap:anywhere; }
   .models { margin-top:14px; border-top:1px solid var(--border); padding-top:12px; }
+  details.execution { margin-top:14px; border-top:1px solid var(--border); padding-top:12px; }
+  details.execution summary { cursor:pointer; color:var(--cyan); font-size:.8125rem; }
+  .contract { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px 16px;
+    margin-top:10px; font-size:.75rem; }
+  .contract .wide { grid-column:1/-1; overflow-wrap:anywhere; }
   .chip { font-size:.75rem; color:var(--muted); background:var(--surface-alt);
     border-radius:8px; padding:3px 10px; }
   .chip b { color:var(--text); }
@@ -101,6 +106,52 @@ def _edge_html(edge: float | None) -> str:
         return '<span class="num muted">n/d</span>'
     color = "var(--cyan)" if edge > 0 else "var(--muted)"
     return f'<span class="num" style="color:{color}">{edge:+.1%}</span>'
+
+
+def _contract_details(row: dict[str, Any]) -> str:
+    if not row.get("token_id"):
+        return ""
+    asks = ", ".join(
+        f"{price:.4f} × {size:.2f} shares" for price, size in row.get("top_asks", [])
+    ) or "n/d"
+    rules = html.escape(str(row.get("rules") or "n/d"))
+    execution_reason = html.escape(str(row.get("execution_reason") or "cotización completa"))
+    fields = [
+        ("Condition", row.get("condition_id")),
+        ("Token", row.get("token_id")),
+        ("Pregunta", row.get("question") or "n/d"),
+        ("Outcome", row.get("outcome") or "n/d"),
+        ("Best ask", row.get("best_ask")),
+        ("Ask size", row.get("best_ask_size")),
+        ("Top asks", asks),
+        ("Volumen USDC", row.get("volume_usdc")),
+        ("Liquidez USDC", row.get("liquidity_usdc")),
+        ("Tick", row.get("tick_size")),
+        ("Orden mínima", row.get("min_order_size")),
+        ("Base fee bps", row.get("base_fee_bps")),
+        ("Slippage", _pct(row.get("slippage_pct"))),
+        ("Precio promedio", row.get("expected_avg_price")),
+        ("Fee USDC", row.get("fee_usdc")),
+        ("Edge neto", _pct(row.get("net_edge"))),
+        ("Muestra", row.get("sample_size")),
+        ("Modelo", row.get("model_version")),
+    ]
+    cells = "".join(
+        ('<div class="cell wide">' if label in {"Condition", "Token", "Pregunta", "Top asks"}
+         else '<div class="cell">')
+        + f'<span class="k">{html.escape(label)}</span>'
+        + f'<span class="num">{html.escape(str(value if value is not None else "n/d"))}</span></div>'
+        for label, value in fields
+    )
+    return f"""
+        <details class="execution">
+          <summary>Contrato y ejecución pública</summary>
+          <div class="contract">{cells}
+            <div class="cell wide"><span class="k">Reglas</span><span>{rules}</span></div>
+            <div class="cell wide"><span class="k">Decisión de ejecución</span>
+              <span>{execution_reason}</span></div>
+          </div>
+        </details>"""
 
 
 def _document(
@@ -176,6 +227,7 @@ def _prediction_card(row: dict[str, Any]) -> str:
         if stake > 0
         else '<span class="num muted">sin apuesta</span>'
     )
+    action = html.escape(str(row.get("action", "NO_TRADE")))
     reason = html.escape(str(row.get("reason", "")))
     reason_html = f'<div class="reason">Motivo: {reason}</div>' if reason else ""
     return f"""
@@ -191,10 +243,12 @@ def _prediction_card(row: dict[str, Any]) -> str:
           <div class="cell"><span class="k">Modelo</span><span class="num">{_pct(row.get("model_prob"))}</span></div>
           <div class="cell"><span class="k">Mercado</span><span class="num">{_pct(row.get("market_prob"))}</span></div>
           <div class="cell"><span class="k">Edge</span>{_edge_html(row.get("edge"))}</div>
-          <div class="cell"><span class="k">Sugerido</span>{stake_html}</div>
+          <div class="cell"><span class="k">Acción</span><span class="num">{action}</span>
+            {stake_html}</div>
         </div>
         <div class="models">{_model_chips(row)}</div>
         {reason_html}
+        {_contract_details(row)}
       </article>"""
 
 
@@ -276,13 +330,12 @@ def build_next_predictions_html(reports: list[dict[str, Any]], *, as_of: str) ->
         summary=(
             f"<b>{total_matches}</b> partidos en la próxima fecha disponible. "
             "Elo, Bayes, TrueSkill, Poisson y Dixon-Coles se muestran por separado; "
-            "sin cuota local "
-            "no se propone apuesta."
+            "sin costes públicos completos no se muestra SIMULATED_BUY."
         ),
         body="".join(sections) or '<p class="muted">Sin partidos programados.</p>',
         footer=(
-            "Datos locales SQLite. Panel informativo: no es consejo financiero y no se "
-            "enviaron órdenes."
+            "Datos locales SQLite y cotizaciones públicas de Polymarket. Panel informativo: "
+            "toda compra indicada es simulada; no se enviaron órdenes."
         ),
     )
 

@@ -10,8 +10,9 @@ para que edge_screener pueda comparar manzanas con manzanas.
 """
 from __future__ import annotations
 
+from collections.abc import Callable
 from decimal import Decimal
-from typing import Callable, Protocol
+from typing import Protocol
 
 from pydantic import BaseModel, ConfigDict
 
@@ -30,6 +31,8 @@ class PolymarketMarket(BaseModel):
     market_probability: Decimal   # midpoint del token YES (0-1)
     volume_usdc: Decimal
     liquidity_usdc: Decimal
+    question: str | None = None
+    rules: str | None = None
 
     # Campos para ejecución real en el CLOB (los llena la fuente live de Gamma;
     # opcionales para no romper las fuentes stub/snapshot).
@@ -39,11 +42,17 @@ class PolymarketMarket(BaseModel):
     tick_size: Decimal | None = None      # orderPriceMinTickSize (ej: 0.001)
     min_order_size: Decimal | None = None  # orderMinSize (ej: 5)
     accepting_orders: bool = True
+    best_ask_size: Decimal | None = None  # shares disponibles al mejor ask
+    ask_levels: tuple[tuple[Decimal, Decimal], ...] = ()
+    fee_rate_bps: int | None = None
 
     # Lado NO del mismo mercado (para apuestas doble-oportunidad).
     no_token_id: str | None = None
     no_best_ask: Decimal | None = None
     no_probability: Decimal | None = None
+    no_best_ask_size: Decimal | None = None
+    no_ask_levels: tuple[tuple[Decimal, Decimal], ...] = ()
+    no_fee_rate_bps: int | None = None
 
 
 class MarketSource(Protocol):
@@ -68,5 +77,5 @@ def find_markets(
     """
     source = market_source or _empty_source
     markets = source(prediction)
-    min_vol = getattr(strategy, "min_market_volume_usdc", Decimal("0"))
+    min_vol = getattr(strategy, "min_market_volume_usdc", Decimal(0))
     return [m for m in markets if m.volume_usdc >= min_vol]

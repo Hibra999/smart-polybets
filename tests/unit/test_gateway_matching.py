@@ -9,12 +9,10 @@ from __future__ import annotations
 from decimal import Decimal
 from types import SimpleNamespace
 
-import pytest
-
-from venue.matching import canon, match_event, _extract_yes_token
-from venue.gateway import PolymarketGateway
 from research.functions.market_scanner import PolymarketMarket
-
+from research.functions.polymarket_live import PolymarketLiveSource
+from venue.gateway import PolymarketGateway
+from venue.matching import _extract_yes_token, canon, match_event
 
 # ── helpers: objetos fake que imitan el SDK Event / Market ──────────────────
 
@@ -46,8 +44,8 @@ class _FakePrices:
 
 
 class _FakeMetrics:
-    def __init__(self, volume_num: Decimal = Decimal("1000"),
-                 liquidity_num: Decimal = Decimal("500")):
+    def __init__(self, volume_num: Decimal = Decimal(1000),
+                 liquidity_num: Decimal = Decimal(500)):
         self.volume_num = volume_num
         self.liquidity_num = liquidity_num
 
@@ -60,7 +58,7 @@ class _FakeState:
 
 class _FakeTrading:
     def __init__(self, tick: Decimal | None = Decimal("0.001"),
-                 min_size: Decimal | None = Decimal("5")):
+                 min_size: Decimal | None = Decimal(5)):
         self.minimum_tick_size = tick
         self.minimum_order_size = min_size
 
@@ -70,6 +68,7 @@ class _FakeMarket:
                  condition_id: str = "cond-fake-1",
                  yes_price: Decimal = Decimal("0.60")):
         self.question = question
+        self.description = "Resolves from the official full-time result."
         self.condition_id = condition_id
         self.outcomes = _FakeOutcomes(token_id, yes_price)
         self.prices = _FakePrices(best_ask=yes_price)
@@ -143,7 +142,7 @@ def test_extract_includes_no_side():
         prices=SimpleNamespace(best_ask=Decimal("0.61"), best_bid=Decimal("0.59")),
         metrics=SimpleNamespace(volume_num=100, liquidity_num=50),
         state=SimpleNamespace(neg_risk=False, accepting_orders=True),
-        trading=SimpleNamespace(minimum_tick_size=Decimal("0.001"), minimum_order_size=Decimal("5")),
+        trading=SimpleNamespace(minimum_tick_size=Decimal("0.001"), minimum_order_size=Decimal(5)),
         condition_id="c1",
     )
 
@@ -165,7 +164,7 @@ def test_extract_yes_token_inverted_labels():
         prices=SimpleNamespace(best_ask=Decimal("0.66"), best_bid=Decimal("0.64")),
         metrics=SimpleNamespace(volume_num=200, liquidity_num=100),
         state=SimpleNamespace(neg_risk=False, accepting_orders=True),
-        trading=SimpleNamespace(minimum_tick_size=Decimal("0.001"), minimum_order_size=Decimal("5")),
+        trading=SimpleNamespace(minimum_tick_size=Decimal("0.001"), minimum_order_size=Decimal(5)),
         condition_id="c2",
     )
 
@@ -198,6 +197,8 @@ def test_match_event_netherlands_sweden_home_win():
     swe = next(r for r in results if r["model_outcome"] == "AWAY_WIN")
     assert ned["token_id"] == "tok-ned"
     assert swe["token_id"] == "tok-swe"
+    assert ned["question"] == "Will Tigres win?"
+    assert ned["rules"] == "Resolves from the official full-time result."
 
 
 def test_match_event_no_match_returns_none():
@@ -298,3 +299,26 @@ def test_find_match_markets_multiple_events_only_one_matches():
     result = gw.find_match_markets("Tigres", "Monterrey")
     assert len(result) == 1
     assert result[0].token_id == "tok-ned"
+
+
+def test_live_source_enriches_public_execution_quote(monkeypatch):
+    market = PolymarketMarket(
+        condition_id="condition", token_id="token", model_outcome="HOME_WIN",
+        market_probability=Decimal("0.50"), volume_usdc=Decimal(1000),
+        liquidity_usdc=Decimal(500),
+    )
+    source = PolymarketLiveSource(tag_id=1)
+    source._gateway = SimpleNamespace(find_match_markets=lambda *_args, **_kwargs: [market])
+    book = SimpleNamespace(model_dump=lambda: {
+        "asks": [{"price": "0.52", "size": "20"}, {"price": "0.51", "size": "10"}],
+    })
+    monkeypatch.setattr("research.functions.polymarket_live.order_book", lambda _token: book)
+    monkeypatch.setattr("research.functions.polymarket_live.fee_rate_bps", lambda _token: 25)
+
+    result = source(SimpleNamespace(participant_home="Home", participant_away="Away"))
+
+    assert result[0].best_ask == Decimal("0.51")
+    assert result[0].best_ask_size == Decimal(10)
+    assert result[0].ask_levels == ((Decimal("0.51"), Decimal(10)),
+                                    (Decimal("0.52"), Decimal(20)))
+    assert result[0].fee_rate_bps == 25

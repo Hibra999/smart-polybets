@@ -44,6 +44,8 @@ class MarketOpportunity(BaseModel):
     # Contexto del mercado Polymarket
     market_volume_usdc: Decimal
     market_liquidity_usdc: Decimal
+    question: str | None = None
+    rules: str | None = None
 
     # Metadata del modelo
     model_version: str
@@ -56,6 +58,9 @@ class MarketOpportunity(BaseModel):
     neg_risk: bool = False
     tick_size: Decimal | None = None
     min_order_size: Decimal | None = None
+    best_ask_size: Decimal | None = None
+    ask_levels: tuple[tuple[Decimal, Decimal], ...] = ()
+    fee_rate_bps: int | None = None
 
     # Timestamp y versión para idempotencia y auditoría
     generated_at: datetime

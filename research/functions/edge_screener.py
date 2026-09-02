@@ -8,8 +8,8 @@ from core.strategy import StrategyConfig
 from core.utils import hours_between, utcnow
 from research.functions.market_scanner import PolymarketMarket
 from research.functions.probability_extractor import get_model_prob
-from research.schemas.match_prediction import MatchPrediction
 from research.schemas.market_opportunity import MarketOpportunity
+from research.schemas.match_prediction import MatchPrediction
 
 
 def calculate_edge(
@@ -56,10 +56,15 @@ def calculate_edge(
         event_phase=prediction.event_phase,
         market_volume_usdc=market.volume_usdc,
         market_liquidity_usdc=market.liquidity_usdc,
+        question=market.question,
+        rules=market.rules,
         best_ask=market.best_ask,
         neg_risk=market.neg_risk,
         tick_size=market.tick_size,
         min_order_size=market.min_order_size,
+        best_ask_size=market.best_ask_size,
+        ask_levels=market.ask_levels,
+        fee_rate_bps=market.fee_rate_bps,
         model_version=prediction.model_version,
         model_confidence=prediction.model_confidence.value,
         sample_size=prediction.sample_size,

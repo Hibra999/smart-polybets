@@ -8,8 +8,14 @@ La lógica de matching/canonicalización vive ahora en `venue.matching`.
 """
 from __future__ import annotations
 
+import logging
+from decimal import Decimal
+
 from research.functions.market_scanner import PolymarketMarket
 from research.schemas.match_prediction import MatchPrediction
+from venue.books import ask_levels, fee_rate_bps, order_book
+
+LOGGER = logging.getLogger(__name__)
 
 # PolymarketGateway se importa lazy (dentro de __call__) como defensa: hoy NO hay ciclo
 # real (a nivel de módulo sólo se importa venue.matching), pero el import diferido evita
@@ -49,4 +55,27 @@ class PolymarketLiveSource:
         )
         if self.accepting_only:
             markets = [m for m in markets if m.accepting_orders]
-        return markets
+        enriched = []
+        for market in markets:
+            updates = {}
+            for prefix, token_id in (("", market.token_id), ("no_", market.no_token_id)):
+                if not token_id:
+                    continue
+                try:
+                    levels = ask_levels(order_book(token_id))
+                except Exception as exc:  # noqa: BLE001 - falla cerrada ante errores del SDK.
+                    LOGGER.warning("Libro CLOB no disponible para %s: %s", token_id, exc)
+                    levels = []
+                if levels:
+                    decimal_levels = tuple(
+                        (Decimal(str(price)), Decimal(str(size))) for price, size in levels
+                    )
+                    updates[f"{prefix}ask_levels"] = decimal_levels
+                    updates[f"{prefix}best_ask"] = decimal_levels[0][0]
+                    updates[f"{prefix}best_ask_size"] = decimal_levels[0][1]
+                try:
+                    updates[f"{prefix}fee_rate_bps"] = fee_rate_bps(token_id)
+                except Exception as exc:  # noqa: BLE001 - falla cerrada ante errores HTTP/SDK.
+                    LOGGER.warning("Fee CLOB no disponible para %s: %s", token_id, exc)
+            enriched.append(market.model_copy(update=updates))
+        return enriched

@@ -46,7 +46,7 @@ def _kill_switch_on() -> bool:
 def round_to_tick(price: Decimal, tick: Decimal | None) -> Decimal:
     """Redondea el precio al múltiplo de tick más cercano (default 0.001)."""
     t = tick or Decimal("0.001")
-    return (price / t).quantize(Decimal("1"), rounding=ROUND_HALF_UP) * t
+    return (price / t).quantize(Decimal(1), rounding=ROUND_HALF_UP) * t
 
 
 class PolymarketGateway:
@@ -217,7 +217,7 @@ class PolymarketGateway:
         price = round_to_tick(order.price, order.tick_size)
         if price != order.price:
             notes.append(f"precio redondeado a tick {order.tick_size}: {order.price}->{price}")
-        shares = (to_decimal(order.size_usdc) / price) if price > 0 else Decimal("0")
+        shares = (to_decimal(order.size_usdc) / price) if price > 0 else Decimal(0)
         shares = shares.quantize(Decimal("0.01"), rounding=ROUND_DOWN)
         return price, shares, notes
 
@@ -235,14 +235,14 @@ class PolymarketGateway:
 
         if order.min_order_size is not None and shares < order.min_order_size:
             return OrderResult(
-                order_id=oid, status="rejected", filled_size_usdc=Decimal("0"),
+                order_id=oid, status="rejected", filled_size_usdc=Decimal(0),
                 avg_price=price, submitted_at=utcnow(),
                 raw={**raw, "reject": f"shares {shares} < min {order.min_order_size}"},
             )
 
         if not self.live:
             return OrderResult(
-                order_id=oid, status="dry_run", filled_size_usdc=Decimal("0"),
+                order_id=oid, status="dry_run", filled_size_usdc=Decimal(0),
                 avg_price=price, submitted_at=utcnow(),
                 raw={**raw, "dry_run": True, "blocked_reason": self._blocked_reason,
                      "note": "dry-run: no se envió nada. Activá live con POLYMARKET_LIVE=1 + key"},
@@ -262,13 +262,13 @@ class PolymarketGateway:
             return OrderResult(
                 order_id=str(order_id),
                 status="live" if accepted else "rejected",
-                filled_size_usdc=order.size_usdc if accepted else Decimal("0"),
+                filled_size_usdc=order.size_usdc if accepted else Decimal(0),
                 avg_price=price, submitted_at=utcnow(),
                 raw={**raw, "response": str(result)[:500]},
             )
         except Exception as exc:  # noqa: BLE001 — nunca tirar dentro del pipeline de trading
             return OrderResult(
-                order_id=oid, status="error", filled_size_usdc=Decimal("0"),
+                order_id=oid, status="error", filled_size_usdc=Decimal(0),
                 avg_price=price, submitted_at=utcnow(),
                 raw={**raw, "error": f"{type(exc).__name__}: {exc}"},
             )
@@ -278,20 +278,20 @@ class PolymarketGateway:
         base = {"action": "cancel", "order_id": order_id}
         if not self.live:
             return OrderResult(
-                order_id=order_id, status="dry_run", filled_size_usdc=Decimal("0"),
+                order_id=order_id, status="dry_run", filled_size_usdc=Decimal(0),
                 avg_price=None, submitted_at=utcnow(),
                 raw={**base, "dry_run": True, "blocked_reason": self._blocked_reason},
             )
         try:
             resp = self._ensure_client().cancel_order(order_id=order_id)
             return OrderResult(
-                order_id=order_id, status="cancelled", filled_size_usdc=Decimal("0"),
+                order_id=order_id, status="cancelled", filled_size_usdc=Decimal(0),
                 avg_price=None, submitted_at=utcnow(),
                 raw={**base, "response": str(resp)[:500]},
             )
         except Exception as exc:  # noqa: BLE001
             return OrderResult(
-                order_id=order_id, status="error", filled_size_usdc=Decimal("0"),
+                order_id=order_id, status="error", filled_size_usdc=Decimal(0),
                 avg_price=None, submitted_at=utcnow(),
                 raw={**base, "error": f"{type(exc).__name__}: {exc}"},
             )
@@ -356,6 +356,8 @@ class PolymarketGateway:
                     market_probability=info["yes_price"],
                     volume_usdc=info["volume"],
                     liquidity_usdc=info["liquidity"],
+                    question=info.get("question"),
+                    rules=info.get("rules"),
                     best_ask=info["best_ask"],
                     best_bid=info["best_bid"],
                     neg_risk=info["neg_risk"],

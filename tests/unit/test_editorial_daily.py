@@ -24,7 +24,15 @@ SAMPLE = {
          "confidence": "LOW", "elo": 0.70, "bayes": 0.63, "trueskill": 0.47,
          "poisson": 0.58, "poisson_draw": 0.24, "dixon_coles": 0.56,
          "verdict": "REVIEW", "reason": "model_confidence LOW",
-         "model_prob": 0.70, "market_prob": 0.575, "edge": 0.125, "stake": 50.0},
+         "model_prob": 0.70, "market_prob": 0.575, "edge": 0.125, "stake": 0.0,
+         "action": "NO_TRADE", "condition_id": "condition-1", "token_id": "token-1",
+         "question": "Will Tigres win?", "outcome": "YES", "rules": "Full time result.",
+         "best_ask": 0.575, "best_ask_size": 100.0,
+         "top_asks": [[0.575, 100.0], [0.58, 50.0]], "volume_usdc": 20000.0,
+         "liquidity_usdc": 3000.0, "tick_size": 0.001, "min_order_size": 5.0,
+         "base_fee_bps": 0, "slippage_pct": 0.001, "expected_avg_price": 0.576,
+         "fee_usdc": 0.0, "net_edge": 0.124, "sample_size": 12,
+         "model_version": "test", "execution_reason": "veredicto REVIEW: requiere NO_TRADE"},
         {"home": "Pumas", "away": "Toluca", "kickoff": "2026-06-20T14:00:00+00:00",
          "phase": "Group Stage", "pick_side": "HOME_WIN", "pick_team": "Pumas",
          "confidence": "LOW", "elo": 0.80, "bayes": 0.34, "trueskill": 0.62,
@@ -58,6 +66,7 @@ def test_html_structure():
     assert "#0F1117" in h                           # token del design system
     assert "Toluca" in h                           # escape de acentos OK
     assert "empate Poisson" in h and "dixon_coles" in h and "modelos en desacuerdo" in h
+    assert "NO_TRADE" in h and "condition-1" in h and "Top asks" in h
 
 
 def test_combined_predictions_html_keeps_both_markets():
@@ -152,3 +161,23 @@ def test_compute_supports_nfl_reader(monkeypatch):
     )
     assert data["rows"][0]["trueskill"] == 0.62
     assert data["rows"][0]["poisson"] is None
+
+
+def test_execution_plan_requires_auto_and_complete_costs():
+    opportunity = SimpleNamespace(
+        fee_rate_bps=0,
+        best_ask=Decimal("0.50"),
+        ask_levels=((Decimal("0.50"), Decimal(500)),),
+        tick_size=Decimal("0.01"),
+        min_order_size=Decimal(5),
+        polymarket_token_id="token",
+        model_probability=Decimal("0.60"),
+    )
+    sizing = SimpleNamespace(skipped=False, size_usdc=Decimal(100))
+
+    auto = daily_suggestions._execution_plan(opportunity, "AUTO", sizing)
+    review = daily_suggestions._execution_plan(opportunity, "REVIEW", sizing)
+
+    assert auto["action"] == "SIMULATED_BUY" and auto["stake"] == 100.0
+    assert auto["net_edge"] == 0.1
+    assert review["action"] == "NO_TRADE" and review["stake"] == 0.0

@@ -8,6 +8,7 @@ tocan el PublicClient directo — todo acceso a Polymarket pasa por venue/
   order_books(token_ids)    -> batch de OrderBooks (mismo orden que la entrada)
   price_history(token_id, start_ts, end_ts, fidelity) -> [(ts, price)]
   best_prices(book)         -> (best_bid, best_ask, bid_size) con orden defensivo
+  ask_levels(book, limit)   -> [(price, size_shares)] ordenados de mejor a peor
 """
 from __future__ import annotations
 
@@ -51,6 +52,23 @@ def best_prices(book) -> tuple[float | None, float | None, float | None]:
     ba = float(asks[0]["price"]) if asks else None
     bsz = float(bids[0]["size"]) if bids else None
     return bb, ba, bsz
+
+
+def ask_levels(book, limit: int = 3) -> list[tuple[float, float]]:
+    """Niveles ask del CLOB como ``(price, size_shares)``."""
+    if limit < 1:
+        raise ValueError("limit debe ser positivo")
+    data = book.model_dump() if hasattr(book, "model_dump") else dict(book)
+    asks = [
+        dict(level) for level in data.get("asks") or []
+        if 0 < float(dict(level).get("price", 0)) < 1
+        and float(dict(level).get("size", 0)) > 0
+    ]
+    asks.sort(key=lambda level: float(level["price"]))
+    return [
+        (float(level["price"]), float(level["size"]))
+        for level in asks[:limit]
+    ]
 
 
 def fee_rate_bps(token_id: str, *, session=requests) -> int:

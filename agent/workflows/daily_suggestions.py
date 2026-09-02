@@ -13,6 +13,8 @@ from decimal import Decimal
 from typing import Any
 
 from core.utils import utcnow
+from execution.functions.fees import taker_fee_usdc
+from execution.functions.slippage_estimator import estimate
 from optimization.functions.bet_sizer import size_single
 from portfolio.schemas.portfolio_state import PortfolioState
 from research.functions import build_strategy_opportunity, get_event_prediction, pick_side
@@ -23,6 +25,62 @@ from tournaments.registry import get_adapter, get_config, load_active_strategy
 
 def _f(x) -> float | None:
     return float(x) if x is not None else None
+
+
+def _execution_plan(opp, verdict: str, sizing) -> dict[str, Any]:
+    """Valora costes públicos; sólo AUTO completo se convierte en compra simulada."""
+    plan: dict[str, Any] = {
+        "action": "NO_TRADE",
+        "stake": 0.0,
+        "evaluated_stake": 0.0,
+        "expected_avg_price": None,
+        "slippage_pct": None,
+        "base_fee_bps": opp.fee_rate_bps,
+        "fee_usdc": None,
+        "net_edge": None,
+        "execution_reason": None,
+    }
+    if sizing.skipped or sizing.size_usdc <= 0:
+        plan["execution_reason"] = "sizing omitido"
+        return plan
+
+    size = sizing.size_usdc
+    plan["evaluated_stake"] = float(size)
+    missing = [
+        name for name, value in (
+            ("best ask", opp.best_ask),
+            ("top asks", opp.ask_levels),
+            ("base fee", opp.fee_rate_bps),
+            ("tick size", opp.tick_size),
+            ("minimum order size", opp.min_order_size),
+        ) if value is None or value == ()
+    ]
+    if missing:
+        plan["execution_reason"] = "faltan datos de ejecución: " + ", ".join(missing)
+        return plan
+
+    slippage = estimate(opp.polymarket_token_id, size, orderbook=list(opp.ask_levels))
+    plan["expected_avg_price"] = _f(slippage.expected_avg_price)
+    plan["slippage_pct"] = _f(slippage.slippage_pct)
+    if not slippage.fully_filled or slippage.expected_avg_price is None:
+        plan["execution_reason"] = "profundidad insuficiente para el sizing evaluado"
+        return plan
+
+    shares = size / slippage.expected_avg_price
+    if shares < opp.min_order_size:
+        plan["execution_reason"] = "sizing inferior al mínimo del mercado"
+        return plan
+
+    fee = taker_fee_usdc(shares, slippage.expected_avg_price, opp.fee_rate_bps)
+    net_edge = opp.model_probability - slippage.expected_avg_price - fee / shares
+    plan.update({"fee_usdc": float(fee), "net_edge": float(net_edge)})
+    if verdict != "AUTO":
+        plan["execution_reason"] = f"veredicto {verdict}: requiere NO_TRADE"
+    elif net_edge <= 0:
+        plan["execution_reason"] = "edge neto no positivo tras fee y slippage"
+    else:
+        plan.update({"action": "SIMULATED_BUY", "stake": float(size)})
+    return plan
 
 
 def compute(
@@ -85,6 +143,8 @@ def compute(
             "pick_side": side,
             "pick_team": pick_team,
             "confidence": pred.model_confidence.value,
+            "sample_size": pred.sample_size,
+            "model_version": pred.model_version,
             "elo": _f(comp.get("elo", {}).get(side)),
             "bayes": _f(comp.get("bayes", {}).get(side)),
             "trueskill": _f(comp.get("trueskill", {}).get(side)),
@@ -103,7 +163,7 @@ def compute(
         if not markets:
             row.update({"verdict": "SKIP", "reason": "sin cuota de mercado",
                         "model_prob": _f(pk["model_prob"]), "market_prob": None,
-                        "edge": None, "stake": 0.0})
+                        "edge": None, "stake": 0.0, "action": "NO_TRADE"})
             rows.append(row)
             continue
 
@@ -112,22 +172,34 @@ def compute(
         if opp is None:
             row.update({"verdict": "SKIP", "reason": "warmup / filtro Bayes",
                         "model_prob": _f(pk["model_prob"]), "market_prob": None,
-                        "edge": None, "stake": 0.0})
+                        "edge": None, "stake": 0.0, "action": "NO_TRADE"})
             rows.append(row)
             continue
 
         verdict = evaluate(opp, strat, portfolio)
         sizing = size_single(verdict, strat)
-        stake = 0.0 if (verdict.verdict.value == "DISCARD" or sizing.skipped) else float(sizing.size_usdc)
+        verdict_name = verdict.verdict.value
         reason = (verdict.reasons[0] if verdict.reasons
                   else (verdict.blocking_rules[0] if verdict.blocking_rules else ""))
         row.update({
-            "verdict": verdict.verdict.value,
+            "verdict": verdict_name,
             "reason": reason,
             "model_prob": _f(opp.model_probability),
             "market_prob": _f(opp.market_probability),
             "edge": _f(opp.edge),
-            "stake": stake,
+            "condition_id": opp.polymarket_condition_id,
+            "token_id": opp.polymarket_token_id,
+            "question": opp.question,
+            "outcome": opp.outcome,
+            "rules": opp.rules,
+            "best_ask": _f(opp.best_ask),
+            "best_ask_size": _f(opp.best_ask_size),
+            "top_asks": [[_f(price), _f(size)] for price, size in opp.ask_levels[:3]],
+            "volume_usdc": _f(opp.market_volume_usdc),
+            "liquidity_usdc": _f(opp.market_liquidity_usdc),
+            "tick_size": _f(opp.tick_size),
+            "min_order_size": _f(opp.min_order_size),
+            **_execution_plan(opp, verdict_name, sizing),
         })
         rows.append(row)
 

@@ -63,7 +63,7 @@ ALIASES: dict[str, str] = {
     "club necaxa": "necaxa",
 }
 
-_WILL_WIN_RE = re.compile(r"\s*will\s+(.+?)\s+win\b", re.I)
+_WILL_WIN_RE = re.compile(r"\s*will\s+(.+?)\s+win\b", re.IGNORECASE)
 
 
 def canon(name: str) -> str:
@@ -122,7 +122,7 @@ def _extract_yes_token(market) -> dict | None:
     if yes_price is None:
         yes_price = getattr(prices, "best_ask", None)
     if yes_price is None:
-        yes_price = Decimal("0")
+        yes_price = Decimal(0)
 
     metrics = getattr(market, "metrics", None)
     state = getattr(market, "state", None)
@@ -136,17 +136,17 @@ def _extract_yes_token(market) -> dict | None:
     no_out = no_out if yes_label == "yes" else yes_out
     no_token_id = str(getattr(no_out, "token_id", "") or "") or None
     no_price = getattr(no_out, "price", None)
-    no_price = Decimal(str(no_price)) if no_price is not None else (Decimal("1") - Decimal(str(yes_price)))
+    no_price = Decimal(str(no_price)) if no_price is not None else (Decimal(1) - Decimal(str(yes_price)))
     # NO best_ask = 1 - (YES best_bid): comprar NO = alguien vende YES al bid.
-    no_best_ask = (Decimal("1") - Decimal(str(best_bid))) if best_bid is not None else None
+    no_best_ask = (Decimal(1) - Decimal(str(best_bid))) if best_bid is not None else None
 
     # volume: preferir volume_num (USDC float), caer a volume si no
     volume_raw = getattr(metrics, "volume_num", None) or getattr(metrics, "volume", None)
     liquidity_raw = (
         getattr(metrics, "liquidity_num", None) or getattr(metrics, "liquidity", None)
     )
-    volume = Decimal(str(volume_raw)) if volume_raw is not None else Decimal("0")
-    liquidity = Decimal(str(liquidity_raw)) if liquidity_raw is not None else Decimal("0")
+    volume = Decimal(str(volume_raw)) if volume_raw is not None else Decimal(0)
+    liquidity = Decimal(str(liquidity_raw)) if liquidity_raw is not None else Decimal(0)
 
     neg_risk = bool(getattr(state, "neg_risk", False))
     tick_size = getattr(trading, "minimum_tick_size", None)
@@ -192,7 +192,7 @@ def match_event(event, home: str, away: str) -> list[dict] | None:
     # Descartar subtítulo después de " - " (ej: "Necaxa vs. Atlante - More Markets")
     title = title.split(" - ")[0]
 
-    m = re.match(r"^(.+?)\s+vs\.?\s+(.+?)\??$", title, re.I)
+    m = re.match(r"^(.+?)\s+vs\.?\s+(.+?)\??$", title, re.IGNORECASE)
     if not m:
         return None
 
@@ -230,6 +230,12 @@ def match_event(event, home: str, away: str) -> list[dict] | None:
 
         info = _extract_yes_token(mkt)
         if info:
-            results.append({**info, "model_outcome": outcome})
+            rules = getattr(mkt, "description", None) or getattr(mkt, "rules", None)
+            results.append({
+                **info,
+                "model_outcome": outcome,
+                "question": q,
+                "rules": str(rules) if rules else None,
+            })
 
     return results or None

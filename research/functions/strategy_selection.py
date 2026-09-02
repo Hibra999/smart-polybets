@@ -57,6 +57,9 @@ def resolve_bet_market(pick_side, pick_model_prob, markets, strategy, poisson_re
             "model_outcome": pick_side,   # el NO resuelve a favor de "el pick no pierde"
             "market_probability": no_price,
             "best_ask": opp.no_best_ask,
+            "best_ask_size": opp.no_best_ask_size,
+            "ask_levels": opp.no_ask_levels,
+            "fee_rate_bps": opp.no_fee_rate_bps,
         })
         return BetTarget(market=no_market, model_probability=one_x)
 

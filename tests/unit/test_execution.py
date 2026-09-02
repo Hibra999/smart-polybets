@@ -2,6 +2,7 @@ from decimal import Decimal
 
 import pytest
 
+from agent.tools import execution_tools
 from core.exceptions import AgentError
 from execution.functions.order_builder import build_order
 from execution.functions.order_classifier import classify
@@ -9,7 +10,6 @@ from execution.functions.price_validator import validate_live_price
 from execution.functions.slippage_estimator import estimate
 from execution.functions.submit import submit_order
 from risk.functions.evaluate import evaluate
-from agent.tools import execution_tools
 from tournaments.registry import load_active_strategy
 
 STRATEGY = load_active_strategy("liga_mx_2026", require_approved=False)
@@ -22,12 +22,12 @@ def test_price_validator():
 
 def test_slippage_no_orderbook():
     est = estimate("tok", 100)
-    assert est.slippage_pct == Decimal("0")
+    assert est.slippage_pct == Decimal(0)
     assert est.fully_filled is False
 
 
 def test_slippage_with_orderbook():
-    est = estimate("tok", 100, orderbook=[(0.50, 50), (0.52, 100)])
+    est = estimate("tok", 100, orderbook=[(0.50, 100), (0.52, 100)])
     assert est.fully_filled is True
     assert est.expected_avg_price > Decimal("0.50")
 

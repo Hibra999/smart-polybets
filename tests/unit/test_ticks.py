@@ -1,6 +1,7 @@
 """Tests de venue/ticks.py (extracción pura de snapshots de mercado)."""
 from __future__ import annotations
 
+from datetime import UTC
 from types import SimpleNamespace
 
 from venue.ticks import book_summary, market_kind, tick_rows_from_event
@@ -24,8 +25,8 @@ def _event(markets, score=None, elapsed=None):
             "score": score, "elapsed": elapsed, "period": None, "game_status": None}),
         markets=markets,
     )
-    from datetime import datetime, timezone
-    return SimpleNamespace(title="Necaxa vs. Atlante", kickoff=datetime(2026, 7, 17, 1, 0, tzinfo=timezone.utc),
+    from datetime import datetime
+    return SimpleNamespace(title="Necaxa vs. Atlante", kickoff=datetime(2026, 7, 17, 1, 0, tzinfo=UTC),
                            event=ev)
 
 
@@ -72,11 +73,12 @@ def test_book_summary_empty():
 
 
 def test_books_best_prices_defensive_order():
-    from venue.books import best_prices
+    from venue.books import ask_levels, best_prices
     book = SimpleNamespace(model_dump=lambda: {
         "bids": [{"price": "0.28", "size": "100"}, {"price": "0.30", "size": "50"}],
         "asks": [{"price": "0.35", "size": "80"}, {"price": "0.32", "size": "40"}],
     })
     bb, ba, bsz = best_prices(book)
     assert (bb, ba, bsz) == (0.30, 0.32, 50.0)
-    assert best_prices(SimpleNamespace(model_dump=lambda: {})) == (None, None, None)
+    assert ask_levels(book) == [(0.32, 40.0), (0.35, 80.0)]
+    assert best_prices(SimpleNamespace(model_dump=dict)) == (None, None, None)
