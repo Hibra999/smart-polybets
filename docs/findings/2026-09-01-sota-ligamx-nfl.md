@@ -164,7 +164,17 @@ actual indica `0.05` para Sports
 por token porque el endpoint devuelve `base_fee` en basis points
 ([fee-rate API](https://docs.polymarket.com/api-reference/market-data/get-fee-rate)).
 El código ya calcula ese coste y el backtest automático aplica 500 bps como escenario
-sports actual, pero sigue sin poder reconstruir slippage histórico.
+histórico reproducible, no como constante live. La tasa live siempre se consulta por
+token; el backtest sigue sin poder reconstruir slippage histórico.
+
+### Intento adicional congelado: calibración Platt del precio
+
+Se probó una sola hipótesis adicional sobre el histórico Polymarket NFL: calibración
+Platt del logit del precio, ajustada sólo con 2024 y evaluada en 2025. El mercado 2025
+obtuvo log-loss 0.610361, Brier 0.424052 y ECE 0.034921; Platt empeoró a 0.614362,
+0.427320 y 0.055412, respectivamente. El replay terminó en 987.69 USDC desde 1,000
+(ROI -1.23%, 76 apuestas). La hipótesis queda descartada y no se buscaron thresholds
+adicionales sobre el mismo holdout.
 
 ### 5. Validar muchas estrategias produce ganadores falsos
 

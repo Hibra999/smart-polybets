@@ -24,7 +24,7 @@ from tournaments.registry import get_config, load_active_strategy
 HOME = "HOME_WIN"
 AWAY = "AWAY_WIN"
 DRAW = "DRAW"
-CURRENT_SPORTS_TAKER_FEE_BPS = 500
+BACKTEST_FEE_SCENARIO_BPS = 500
 
 
 def _decimal(value: float) -> Decimal:
@@ -361,7 +361,7 @@ def _liga_mx(
         strategy,
         bankroll=bankroll,
         price_source="football-data.co.uk AvgC closing odds (vig included)",
-        taker_fee_rate_bps=CURRENT_SPORTS_TAKER_FEE_BPS,
+        taker_fee_rate_bps=BACKTEST_FEE_SCENARIO_BPS,
     )
     result.update(
         {
@@ -443,7 +443,7 @@ def _nfl(
         strategy,
         bankroll=bankroll,
         price_source="nflverse closing moneyline (vig included)",
-        taker_fee_rate_bps=CURRENT_SPORTS_TAKER_FEE_BPS,
+        taker_fee_rate_bps=BACKTEST_FEE_SCENARIO_BPS,
     )
     result.update(
         {

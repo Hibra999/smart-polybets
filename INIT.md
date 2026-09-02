@@ -155,10 +155,10 @@ públicos live, corre tests y conserva el último snapshot bueno si una fuente f
 `scripts/backtest_pipeline.py` conserva su salida de terminal y acepta el mismo corte
 mediante `--as-of`.
 
-El backtest automático descuenta la comisión taker Sports vigente usada como escenario
-(500 bps en la fórmula de Polymarket) y reporta `fees`; no dispone de order books
-históricos, por lo que declara que el slippage no fue reconstruido. La tasa live se
-consulta por token y no debe reemplazarse por un valor fijo.
+El backtest automático descuenta 500 bps como escenario histórico reproducible y
+reporta `fees`; no dispone de order books históricos, por lo que declara que el
+slippage no fue reconstruido. No es una constante live: la tasa vigente siempre se
+consulta por token.
 
 Después de cada backtest, Codex debe informar: comando, torneo/temporada, bankroll,
 fuente de precios, ROI, win rate, drawdown, cumplimiento de targets y ruta exacta del
