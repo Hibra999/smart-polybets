@@ -46,3 +46,4 @@ snapshot_date,snapshot_utc,tournament_id,fixture_id,kickoff_utc,home,away,pick_s
 2026-09-13,2026-09-13T15:39:18.628988+00:00,nfl_2026,2026_01_WAS_PHI,2026-09-13T20:25:00+00:00,Eagles,Commanders,HOME_WIN,,,,polymarket-live,0.772961,,,,[],,,,,,,,,,,SKIP,NO_TRADE,WON,{},,,,,
 2026-09-14,2026-09-14T17:43:52.181554+00:00,nfl_2026,2026_01_DEN_KC,2026-09-15T00:15:00+00:00,Chiefs,Broncos,HOME_WIN,,,,polymarket-live,0.641029,,,,[],,,,,,,,,,,SKIP,NO_TRADE,WON,{},,,,,
 2026-09-15,2026-09-15T16:17:13.294786+00:00,nfl_2026,2026_02_DET_BUF,2026-09-18T00:15:00+00:00,Bills,Lions,HOME_WIN,,,,polymarket-live,0.564584,,,,[],,,,,,,,,,,SKIP,NO_TRADE,,{},,,,,
+2026-09-16,2026-09-16T16:09:18.611810+00:00,nfl_2026,2026_02_DET_BUF,2026-09-18T00:15:00+00:00,Bills,Lions,HOME_WIN,,,,polymarket-live,0.564584,,,,[],,,,,,,,,,,SKIP,NO_TRADE,,{},,,,,
