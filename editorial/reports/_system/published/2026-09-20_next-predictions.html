@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>Próximos partidos hasta 2026-09-20</title>
+<style>
+  :root {
+    --bg:#0F1117; --surface:#1A1D27; --surface-alt:#22262F; --border:#2D3340;
+    --text:#E2E8F0; --muted:#94A3B8; --blue:#2563EB; --cyan:#22D3EE;
+    --success:#10B981; --warning:#F59E0B; --danger:#EF4444;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text);
+    font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif; line-height:1.6;
+    -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:1040px; margin:0 auto; padding:48px 24px 64px; }
+  .num { font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Consolas,monospace;
+    font-variant-numeric:tabular-nums; }
+  .muted { color:var(--muted); }
+  header.top { border-bottom:1px solid var(--border); padding-bottom:24px; margin-bottom:32px; }
+  .eyebrow { font-size:.75rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--cyan); }
+  h1 { font-size:2.25rem; line-height:1.2; font-weight:700; letter-spacing:-.015em;
+    margin:.25rem 0 .5rem; text-wrap:balance; }
+  h2 { font-size:1.25rem; line-height:1.3; margin:36px 0 12px; text-wrap:balance; }
+  .meta { color:var(--muted); font-size:.875rem; }
+  .meta b { color:var(--text); font-weight:600; }
+  .summary { margin-top:16px; max-width:72ch; font-size:.9375rem; text-wrap:pretty; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(360px,1fr));
+    gap:16px; margin-top:8px; }
+  .card, .report-block { background:var(--surface); border:1px solid var(--border);
+    border-radius:12px; padding:20px; min-width:0; }
+  .card-h, .section-h { display:flex; align-items:flex-start; justify-content:space-between;
+    gap:12px; }
+  .match { font-size:1.125rem; font-weight:600; }
+  .vs { color:var(--muted); font-weight:400; font-size:.875rem; }
+  .badge { display:inline-flex; align-items:center; font-size:.7rem; font-weight:600;
+    letter-spacing:.06em; text-transform:uppercase; border:1px solid;
+    border-radius:9999px; padding:4px 12px; white-space:nowrap; }
+  .badges, .models, .targets { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+  .kick, .source, .reason { color:var(--muted); font-size:.8125rem; }
+  .kick { margin:8px 0 16px; }
+  .reason { margin-top:12px; }
+  .grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px; }
+  .cell, .metric { display:flex; flex-direction:column; gap:2px; min-width:0; }
+  .k { font-size:.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+  .val { font-weight:600; overflow-wrap:anywhere; }
+  .models { margin-top:14px; border-top:1px solid var(--border); padding-top:12px; }
+  details.execution { margin-top:14px; border-top:1px solid var(--border); padding-top:12px; }
+  details.execution summary { cursor:pointer; color:var(--cyan); font-size:.8125rem; }
+  .contract { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px 16px;
+    margin-top:10px; font-size:.75rem; }
+  .contract .wide { grid-column:1/-1; overflow-wrap:anywhere; }
+  .chip { font-size:.75rem; color:var(--muted); background:var(--surface-alt);
+    border-radius:8px; padding:3px 10px; }
+  .chip b { color:var(--text); }
+  .consensus { margin-left:auto; color:var(--muted); font-size:.75rem; }
+  .metrics { display:grid; grid-template-columns:repeat(auto-fit,minmax(125px,1fr));
+    gap:1px; margin:16px 0; background:var(--border); border-radius:8px; overflow:hidden; }
+  .metric { background:var(--surface-alt); padding:12px; }
+  .metric strong { font-size:1.05rem; }
+  .target { font-size:.75rem; border:1px solid var(--border); border-radius:8px; padding:4px 10px; }
+  .target.ok { color:var(--success); border-color:#10B98155; }
+  .target.fail { color:var(--danger); border-color:#EF444455; }
+  .equity { margin:16px 0 8px; background:var(--bg); border-radius:8px; padding:8px; }
+  .equity svg { display:block; width:100%; height:auto; }
+  .table-wrap { overflow-x:auto; margin-top:16px; }
+  table { width:100%; border-collapse:collapse; font-size:.8125rem; }
+  th, td { padding:9px 10px; border-bottom:1px solid var(--border); text-align:left; }
+  th { color:var(--muted); font-size:.7rem; letter-spacing:.04em; text-transform:uppercase; }
+  td:nth-last-child(-n+3), th:nth-last-child(-n+3) { text-align:right; }
+  footer { margin-top:40px; color:var(--muted); font-size:.8125rem;
+    border-top:1px solid var(--border); padding-top:20px; }
+  @media (max-width:620px) {
+    .wrap { padding:28px 16px 40px; }
+    h1 { font-size:1.75rem; }
+    .cards { grid-template-columns:1fr; }
+    .grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .card-h, .section-h { flex-direction:column; }
+    .consensus { margin-left:0; width:100%; }
+  }
+  @media print {
+    :root { --bg:#FFFFFF; --surface:#FFFFFF; --surface-alt:#F3F4F6; --border:#CBD5E1;
+      --text:#111827; --muted:#475569; }
+    .wrap { max-width:none; padding:16px; }
+  }
+</style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="top">
+      <div class="eyebrow">Sports Quant Trading, Liga MX + NFL</div>
+      <h1>Próximos partidos</h1>
+      <div class="meta">Corte automático <b class="num">2026-09-20</b> · sólo lectura</div>
+      <div class="summary"><b>16</b> partidos en la próxima fecha disponible. Elo, Bayes, TrueSkill, Poisson y Dixon-Coles se muestran por separado; sin costes públicos completos no se muestra SIMULATED_BUY.</div>
+    </header>
+
+            <section aria-labelledby="liga_mx_2026-title">
+              <header class="section-h">
+                <div>
+                  <h2 id="liga_mx_2026-title">Liga MX Apertura 2026</h2>
+                  <div class="source">Próxima fecha <b class="num">2026-09-21</b> ·
+                    estrategia match_winner_ligamx_v1 · cuotas
+                    polymarket-live</div>
+                </div>
+                <span class="badge" style="color:var(--cyan);border-color:#22D3EE55">
+                  3 partidos</span>
+              </header>
+              <div class="cards">
+      <article class="card" aria-label="Predicción Toluca contra Santos Laguna">
+        <header class="card-h">
+          <div class="match">Toluca <span class="vs">vs</span> Santos Laguna</div>
+          <span class="badge" style="color:#F59E0B;border-color:#F59E0B55">Revisar</span>
+        </header>
+        <div class="kick">Kickoff 00:00 UTC, fase Fase regular,
+          confianza Alta</div>
+        <div class="grid">
+          <div class="cell"><span class="k">Pick</span><span class="val">Toluca</span></div>
+          <div class="cell"><span class="k">Modelo</span><span class="num">82.1%</span></div>
+          <div class="cell"><span class="k">Mercado</span><span class="num">78.0%</span></div>
+          <div class="cell"><span class="k">Edge</span><span class="num" style="color:var(--cyan)">+4.1%</span></div>
+          <div class="cell"><span class="k">Acción</span><span class="num">NO_TRADE</span>
+            <span class="num muted">sin apuesta</span></div>
+        </div>
+        <div class="models"><span class="chip">elo <b class="num">82.1%</b></span><span class="chip">bayes <b class="num">74.3%</b></span><span class="chip">trueskill <b class="num">98.2%</b></span><span class="chip">poisson <b class="num">79.3%</b></span><span class="chip">dixon_coles <b class="num">77.2%</b></span><span class="chip">empate Poisson <b class="num">13.3%</b></span><span class="consensus">modelos en desacuerdo · rango <b class="num">23.8%</b></span></div>
+        <div class="reason">Motivo: edge 0.040615 en zona REVIEW [0.02,0.10)</div><div class="reason">Complete set H/D/A: asks 0.78 + 0.14 + 0.10; all-in <span class="num">1.0582</span>/share; NO_EDGE. Sólo observación.</div>
+        <details class="execution">
+          <summary>Contrato y ejecución pública</summary>
+          <div class="contract"><div class="cell wide"><span class="k">Condition</span><span class="num">0x649b07ee0967f7a09682d7f97fa6182b475c3974690316240c7aaccc3ac36d2b</span></div><div class="cell wide"><span class="k">Token</span><span class="num">23273800378254795114082035648598674929599693755634971789163278929583087019317</span></div><div class="cell wide"><span class="k">Pregunta</span><span class="num">Will Deportivo Toluca FC win on 2026-09-20?</span></div><div class="cell"><span class="k">Outcome</span><span class="num">YES</span></div><div class="cell"><span class="k">Best ask</span><span class="num">0.78</span></div><div class="cell"><span class="k">Ask size</span><span class="num">14202.12</span></div><div class="cell wide"><span class="k">Top asks</span><span class="num">0.7800 × 14202.12 shares, 0.7900 × 25170.24 shares, 0.8000 × 37149.47 shares</span></div><div class="cell"><span class="k">Volumen USDC</span><span class="num">2001.062021</span></div><div class="cell"><span class="k">Liquidez USDC</span><span class="num">59645.448</span></div><div class="cell"><span class="k">Tick</span><span class="num">0.01</span></div><div class="cell"><span class="k">Orden mínima</span><span class="num">5.0</span></div><div class="cell"><span class="k">Base fee bps</span><span class="num">1000</span></div><div class="cell"><span class="k">Slippage</span><span class="num">0.0%</span></div><div class="cell"><span class="k">Precio promedio</span><span class="num">0.78</span></div><div class="cell"><span class="k">Fee USDC</span><span class="num">0.55</span></div><div class="cell"><span class="k">Edge neto</span><span class="num">2.3%</span></div><div class="cell"><span class="k">Muestra</span><span class="num">8</span></div><div class="cell"><span class="k">Modelo</span><span class="num">football-elo-bayes-trueskill-v1</span></div>
+            <div class="cell wide"><span class="k">Reglas</span><span>In the upcoming game, scheduled for September 20, 2026
+If Deportivo Toluca FC wins, this market will resolve to &quot;Yes&quot;.
+Otherwise, this market will resolve to &quot;No&quot;.
+If the game is postponed, this market will remain open until the game has been completed.
+If the game is canceled entirely, with no make-up game, this market will resolve &quot;No&quot;.
+This market refers only to the outcome within the first 90 minutes of regular play plus stoppage time.
+
+The primary resolution source for this market is the official statistics of the event as recognized by the governing body or event organizers. However, if the governing body or event organizers have not published final match statistics within 2 hours after the event&#x27;s conclusion, data from Flashscore may be used; if Flashscore data is unavailable, data from Sofascore may be used; if neither is available, a consensus of credible reporting may be used instead. All markets will settle based on the official final result as recognized by the governing body or event organizers. Revisions to officially declared final scores made after market resolution will not be accounted for in determining the outcome. If no acceptable data is available within 24 hours of the event&#x27;s conclusion, this market will resolve 50-50, or to &quot;Draw&quot; where applicable.</span></div>
+            <div class="cell wide"><span class="k">Decisión de ejecución</span>
+              <span>veredicto REVIEW: requiere NO_TRADE</span></div>
+          </div>
+        </details>
+      </article>
+      <article class="card" aria-label="Predicción Pachuca contra Tijuana">
+        <header class="card-h">
+          <div class="match">Pachuca <span class="vs">vs</span> Tijuana</div>
+          <span class="badge" style="color:#EF4444;border-color:#EF444455">Descartar</span>
+        </header>
+        <div class="kick">Kickoff 00:00 UTC, fase Fase regular,
+          confianza Alta</div>
+        <div class="grid">
+          <div class="cell"><span class="k">Pick</span><span class="val">Pachuca</span></div>
+          <div class="cell"><span class="k">Modelo</span><span class="num">50.2%</span></div>
+          <div class="cell"><span class="k">Mercado</span><span class="num">56.0%</span></div>
+          <div class="cell"><span class="k">Edge</span><span class="num" style="color:var(--muted)">-5.8%</span></div>
+          <div class="cell"><span class="k">Acción</span><span class="num">NO_TRADE</span>
+            <span class="num muted">sin apuesta</span></div>
+        </div>
+        <div class="models"><span class="chip">elo <b class="num">50.2%</b></span><span class="chip">bayes <b class="num">53.5%</b></span><span class="chip">trueskill <b class="num">31.9%</b></span><span class="chip">poisson <b class="num">45.6%</b></span><span class="chip">dixon_coles <b class="num">44.9%</b></span><span class="chip">empate Poisson <b class="num">27.6%</b></span><span class="consensus">modelos en desacuerdo · rango <b class="num">21.5%</b></span></div>
+        <div class="reason">Motivo: DISCARD: edge -0.05763 &lt; discard 0.0</div><div class="reason">Complete set H/D/A: asks 0.56 + 0.24 + 0.21; all-in <span class="num">1.06947</span>/share; NO_EDGE. Sólo observación.</div>
+        <details class="execution">
+          <summary>Contrato y ejecución pública</summary>
+          <div class="contract"><div class="cell wide"><span class="k">Condition</span><span class="num">0xed82eeb0f61315df3e592372f7b7b5be730aa41c576746dd9b97e1fc320ede39</span></div><div class="cell wide"><span class="k">Token</span><span class="num">87164451906770413099080527592556403332060374424163395278719866621531240572769</span></div><div class="cell wide"><span class="k">Pregunta</span><span class="num">Will CF Pachuca win on 2026-09-20?</span></div><div class="cell"><span class="k">Outcome</span><span class="num">YES</span></div><div class="cell"><span class="k">Best ask</span><span class="num">0.56</span></div><div class="cell"><span class="k">Ask size</span><span class="num">4053.47</span></div><div class="cell wide"><span class="k">Top asks</span><span class="num">0.5600 × 4053.47 shares, 0.5700 × 11211.56 shares, 0.5800 × 10924.01 shares</span></div><div class="cell"><span class="k">Volumen USDC</span><span class="num">20433.881348000006</span></div><div class="cell"><span class="k">Liquidez USDC</span><span class="num">84994.4098</span></div><div class="cell"><span class="k">Tick</span><span class="num">0.01</span></div><div class="cell"><span class="k">Orden mínima</span><span class="num">5.0</span></div><div class="cell"><span class="k">Base fee bps</span><span class="num">1000</span></div><div class="cell"><span class="k">Slippage</span><span class="num">n/d</span></div><div class="cell"><span class="k">Precio promedio</span><span class="num">n/d</span></div><div class="cell"><span class="k">Fee USDC</span><span class="num">n/d</span></div><div class="cell"><span class="k">Edge neto</span><span class="num">n/d</span></div><div class="cell"><span class="k">Muestra</span><span class="num">7</span></div><div class="cell"><span class="k">Modelo</span><span class="num">football-elo-bayes-trueskill-v1</span></div>
+            <div class="cell wide"><span class="k">Reglas</span><span>In the upcoming game, scheduled for September 20, 2026
+If CF Pachuca wins, this market will resolve to &quot;Yes&quot;.
+Otherwise, this market will resolve to &quot;No&quot;.
+If the game is postponed, this market will remain open until the game has been completed.
+If the game is canceled entirely, with no make-up game, this market will resolve &quot;No&quot;.
+This market refers only to the outcome within the first 90 minutes of regular play plus stoppage time.
+
+The primary resolution source for this market is the official statistics of the event as recognized by the governing body or event organizers. However, if the governing body or event organizers have not published final match statistics within 2 hours after the event&#x27;s conclusion, data from Flashscore may be used; if Flashscore data is unavailable, data from Sofascore may be used; if neither is available, a consensus of credible reporting may be used instead. All markets will settle based on the official final result as recognized by the governing body or event organizers. Revisions to officially declared final scores made after market resolution will not be accounted for in determining the outcome. If no acceptable data is available within 24 hours of the event&#x27;s conclusion, this market will resolve 50-50, or to &quot;Draw&quot; where applicable.</span></div>
+            <div class="cell wide"><span class="k">Decisión de ejecución</span>
+              <span>sizing omitido</span></div>
+          </div>
+        </details>
+      </article>
+      <article class="card" aria-label="Predicción Querétaro contra León">
+        <header class="card-h">
+          <div class="match">Querétaro <span class="vs">vs</span> León</div>
+          <span class="badge" style="color:#10B981;border-color:#10B98155">Auto</span>
+        </header>
+        <div class="kick">Kickoff 02:10 UTC, fase Fase regular,
+          confianza Alta</div>
+        <div class="grid">
+          <div class="cell"><span class="k">Pick</span><span class="val">Querétaro</span></div>
+          <div class="cell"><span class="k">Modelo</span><span class="num">57.3%</span></div>
+          <div class="cell"><span class="k">Mercado</span><span class="num">38.0%</span></div>
+          <div class="cell"><span class="k">Edge</span><span class="num" style="color:var(--cyan)">+19.3%</span></div>
+          <div class="cell"><span class="k">Acción</span><span class="num">SIMULATED_BUY</span>
+            <span class="num">25.00 USDC</span></div>
+        </div>
+        <div class="models"><span class="chip">elo <b class="num">57.3%</b></span><span class="chip">bayes <b class="num">57.9%</b></span><span class="chip">trueskill <b class="num">65.2%</b></span><span class="chip">poisson <b class="num">51.8%</b></span><span class="chip">dixon_coles <b class="num">51.2%</b></span><span class="chip">empate Poisson <b class="num">25.1%</b></span><span class="consensus">dispersión media · rango <b class="num">14.0%</b></span></div>
+        <div class="reason">Motivo: AUTO: todas las reglas cuantitativas satisfechas</div><div class="reason">Complete set H/D/A: asks 0.38 + 0.28 + 0.36; all-in <span class="num">1.08676</span>/share; NO_EDGE. Sólo observación.</div>
+        <details class="execution">
+          <summary>Contrato y ejecución pública</summary>
+          <div class="contract"><div class="cell wide"><span class="k">Condition</span><span class="num">0x47234bbf61c9d0f3b1bcc8830022703be594905f646b45158d581b898d932735</span></div><div class="cell wide"><span class="k">Token</span><span class="num">48527557141594031969161227526906929620257537848203162081032514303571626152177</span></div><div class="cell wide"><span class="k">Pregunta</span><span class="num">Will Querétaro FC win on 2026-09-20?</span></div><div class="cell"><span class="k">Outcome</span><span class="num">YES</span></div><div class="cell"><span class="k">Best ask</span><span class="num">0.38</span></div><div class="cell"><span class="k">Ask size</span><span class="num">24866.01</span></div><div class="cell wide"><span class="k">Top asks</span><span class="num">0.3800 × 24866.01 shares, 0.3900 × 16687.15 shares, 0.4000 × 7826.02 shares</span></div><div class="cell"><span class="k">Volumen USDC</span><span class="num">1023.36434</span></div><div class="cell"><span class="k">Liquidez USDC</span><span class="num">79095.6924</span></div><div class="cell"><span class="k">Tick</span><span class="num">0.01</span></div><div class="cell"><span class="k">Orden mínima</span><span class="num">5.0</span></div><div class="cell"><span class="k">Base fee bps</span><span class="num">1000</span></div><div class="cell"><span class="k">Slippage</span><span class="num">0.0%</span></div><div class="cell"><span class="k">Precio promedio</span><span class="num">0.38</span></div><div class="cell"><span class="k">Fee USDC</span><span class="num">1.55</span></div><div class="cell"><span class="k">Edge neto</span><span class="num">17.0%</span></div><div class="cell"><span class="k">Muestra</span><span class="num">7</span></div><div class="cell"><span class="k">Modelo</span><span class="num">football-elo-bayes-trueskill-v1</span></div>
+            <div class="cell wide"><span class="k">Reglas</span><span>In the upcoming game, scheduled for September 20, 2026
+If Querétaro FC wins, this market will resolve to &quot;Yes&quot;.
+Otherwise, this market will resolve to &quot;No&quot;.
+If the game is postponed, this market will remain open until the game has been completed.
+If the game is canceled entirely, with no make-up game, this market will resolve &quot;No&quot;.
+This market refers only to the outcome within the first 90 minutes of regular play plus stoppage time.
+
+The primary resolution source for this market is the official statistics of the event as recognized by the governing body or event organizers. However, if the governing body or event organizers have not published final match statistics within 2 hours after the event&#x27;s conclusion, data from Flashscore may be used; if Flashscore data is unavailable, data from Sofascore may be used; if neither is available, a consensus of credible reporting may be used instead. All markets will settle based on the official final result as recognized by the governing body or event organizers. Revisions to officially declared final scores made after market resolution will not be accounted for in determining the outcome. If no acceptable data is available within 24 hours of the event&#x27;s conclusion, this market will resolve 50-50, or to &quot;Draw&quot; where applicable.</span></div>
+            <div class="cell wide"><span class="k">Decisión de ejecución</span>
+              <span>cotización completa</span></div>
+          </div>
+        </details>
+      </article></div>
+            </section>
+            <section aria-labelledby="nfl_2026-title">
+              <header class="section-h">
+                <div>
+                  <h2 id="nfl_2026-title">NFL 2026 Season</h2>
+                  <div class="source">Próxima fecha <b class="num">2026-09-20</b> ·
+                    estrategia game_winner_v1 · cuotas
+                    polymarket-live</div>
+                </div>
+                <span class="badge" style="color:var(--cyan);border-color:#22D3EE55">
+                  13 partidos</span>
+              </header>
+              <div class="cards">
+      <article class="card" aria-label="Predicción Falcons contra Panthers">
+        <header class="card-h">
+          <div class="match">Falcons <span class="vs">vs</span> Panthers</div>
+          <span class="badge" style="color:#94A3B8;border-color:#94A3B855">Saltar</span>
+        </header>
+        <div class="kick">Kickoff 17:00 UTC, fase regular_season,
+          confianza Alta</div>
+        <div class="grid">
+          <div class="cell"><span class="k">Pick</span><span class="val">Falcons</span></div>
+          <div class="cell"><span class="k">Modelo</span><span class="num">61.6%</span></div>
+          <div class="cell"><span class="k">Mercado</span><span class="num">n/d</span></div>
+          <div class="cell"><span class="k">Edge</span><span class="num muted">n/d</span></div>
+          <div class="cell"><span class="k">Acción</span><span class="num">NO_TRADE</span>
+            <span class="num muted">sin apuesta</span></div>
+        </div>
+        <div class="models"><span class="chip">trueskill <b class="num">61.6%</b></span></div>
+        <div class="reason">Motivo: sin cuota de mercado</div>
+      </article>
+      <article class="card" aria-label="Predicción Ravens contra Saints">
+        <header class="card-h">
+          <div class="match">Ravens <span class="vs">vs</span> Saints</div>
+          <span class="badge" style="color:#94A3B8;border-color:#94A3B855">Saltar</span>
+        </header>
+        <div class="kick">Kickoff 17:00 UTC, fase regular_season,
+          confianza Alta</div>
+        <div class="grid">
+          <div class="cell"><span class="k">Pick</span><span class="val">Ravens</span></div>
+          <div class="cell"><span class="k">Modelo</span><span class="num">79.0%</span></div>
+          <div class="cell"><span class="k">Mercado</span><span class="num">n/d</span></div>
+          <div class="cell"><span class="k">Edge</span><span class="num muted">n/d</span></div>
+          <div class="cell"><span class="k">Acción</span><span class="num">NO_TRADE</span>
+            <span class="num muted">sin apuesta</span></div>
+        </div>
+        <div class="models"><span class="chip">trueskill <b class="num">79.0%</b></span></div>
+        <div class="reason">Motivo: sin cuota de mercado</div>
+      </article>
+      <article class="card" aria-label="Predicción Bears contra Vikings">
+        <header class="card-h">
+          <div class="match">Bears <span class="vs">vs</span> Vikings</div>
+          <span class="badge" style="color:#94A3B8;border-color:#94A3B855">Saltar</span>
+        </header>
+        <div class="kick">Kickoff 17:00 UTC, fase regular_season,
+          confianza Alta</div>
+        <div class="grid">
+          <div class="cell"><span class="k">Pick</span><span class="val">Vikings</span></div>
+          <div class="cell"><span class="k">Modelo</span><span class="num">69.5%</span></div>
+          <div class="cell"><span class="k">Mercado</span><span class="num">n/d</span></div>
+          <div class="cell"><span class="k">Edge</span><span class="num muted">n/d</span></div>
+          <div class="cell"><span class="k">Acción</span><span class="num">NO_TRADE</span>
+            <span class="num muted">sin apuesta</span></div>
+        </div>
+        <div class="models"><span class="chip">trueskill <b class="num">69.5%</b></span></div>
+        <div class="reason">Motivo: sin cuota de mercado</div>
+      </article>
+      <article class="card" aria-label="Predicción Texans contra Bengals">
+        <header class="card-h">
+          <div class="match">Texans <span class="vs">vs</span> Bengals</div>
+          <span class="badge" style="color:#94A3B8;border-color:#94A3B855">Saltar</span>
+        </header>
+        <div class="kick">Kickoff 17:00 UTC, fase regular_season,
+          confianza Alta</div>
+        <div class="grid">
+          <div class="cell"><span class="k">Pick</span><span class="val">Bengals</span></div>
+          <div class="cell"><span class="k">Modelo</span><span class="num">53.9%</span></div>
+          <div class="cell"><span class="k">Mercado</span><span class="num">n/d</span></div>
+          <div class="cell"><span class="k">Edge</span><span class="num muted">n/d</span></div>
+          <div class="cell"><span class="k">Acción</span><span class="num">NO_TRADE</span>
+            <span class="num muted">sin apuesta</span></div>
+        </div>
+        <div class="models"><span class="chip">trueskill <b class="num">53.9%</b></span></div>
+        <div class="reason">Motivo: sin cuota de mercado</div>
+      </article>
+      <article class="card" aria-label="Predicción Patriots contra Steelers">
+        <header class="card-h">
+          <div class="match">Patriots <span class="vs">vs</span> Steelers</div>
+          <span class="badge" style="color:#94A3B8;border-color:#94A3B855">Saltar</span>
+        </header>
+        <div class="kick">Kickoff 17:00 UTC, fase regular_season,
+          confianza Alta</div>
+        <div class="grid">
+          <div class="cell"><span class="k">Pick</span><span class="val">Steelers</span></div>
+          <div class="cell"><span class="k">Modelo</span><span class="num">60.3%</span></div>
+          <div class="cell"><span class="k">Mercado</span><span class="num">n/d</span></div>
+          <div class="cell"><span class="k">Edge</span><span class="num muted">n/d</span></div>
+          <div class="cell"><span class="k">Acción</span><span class="num">NO_TRADE</span>
+            <span class="num muted">sin apuesta</span></div>
+        </div>
+        <div class="models"><span class="chip">trueskill <b class="num">60.3%</b></span></div>
+        <div class="reason">Motivo: sin cuota de mercado</div>
+      </article>
+      <article class="card" aria-label="Predicción Jets contra Packers">
+        <header class="card-h">
+          <div class="match">Jets <span class="vs">vs</span> Packers</div>
+          <span class="badge" style="color:#94A3B8;border-color:#94A3B855">Saltar</span>
+        </header>
+        <div class="kick">Kickoff 17:00 UTC, fase regular_season,
+          confianza Alta</div>
+        <div class="grid">
+          <div class="cell"><span class="k">Pick</span><span class="val">Packers</span></div>
+          <div class="cell"><span class="k">Modelo</span><span class="num">72.7%</span></div>
+          <div class="cell"><span class="k">Mercado</span><span class="num">n/d</span></div>
+          <div class="cell"><span class="k">Edge</span><span class="num muted">n/d</span></div>
+          <div class="cell"><span class="k">Acción</span><span class="num">NO_TRADE</span>
+            <span class="num muted">sin apuesta</span></div>
+        </div>
+        <div class="models"><span class="chip">trueskill <b class="num">72.7%</b></span></div>
+        <div class="reason">Motivo: sin cuota de mercado</div>
+      </article>
+      <article class="card" aria-label="Predicción Buccaneers contra Browns">
+        <header class="card-h">
+          <div class="match">Buccaneers <span class="vs">vs</span> Browns</div>
+          <span class="badge" style="color:#94A3B8;border-color:#94A3B855">Saltar</span>
+        </header>
+        <div class="kick">Kickoff 17:00 UTC, fase regular_season,
+          confianza Alta</div>
+        <div class="grid">
+          <div class="cell"><span class="k">Pick</span><span class="val">Buccaneers</span></div>
+          <div class="cell"><span class="k">Modelo</span><span class="num">60.4%</span></div>
+          <div class="cell"><span class="k">Mercado</span><span class="num">n/d</span></div>
+          <div class="cell"><span class="k">Edge</span><span class="num muted">n/d</span></div>
+          <div class="cell"><span class="k">Acción</span><span class="num">NO_TRADE</span>
+            <span class="num muted">sin apuesta</span></div>
+        </div>
+        <div class="models"><span class="chip">trueskill <b class="num">60.4%</b></span></div>
+        <div class="reason">Motivo: sin cuota de mercado</div>
+      </article>
+      <article class="card" aria-label="Predicción Titans contra Eagles">
+        <header class="card-h">
+          <div class="match">Titans <span class="vs">vs</span> Eagles</div>
+          <span class="badge" style="color:#94A3B8;border-color:#94A3B855">Saltar</span>
+        </header>
+        <div class="kick">Kickoff 17:00 UTC, fase regular_season,
+          confianza Alta</div>
+        <div class="grid">
+          <div class="cell"><span class="k">Pick</span><span class="val">Eagles</span></div>
+          <div class="cell"><span class="k">Modelo</span><span class="num">93.0%</span></div>
+          <div class="cell"><span class="k">Mercado</span><span class="num">n/d</span></div>
+          <div class="cell"><span class="k">Edge</span><span class="num muted">n/d</span></div>
+          <div class="cell"><span class="k">Acción</span><span class="num">NO_TRADE</span>
+            <span class="num muted">sin apuesta</span></div>
+        </div>
+        <div class="models"><span class="chip">trueskill <b class="num">93.0%</b></span></div>
+        <div class="reason">Motivo: sin cuota de mercado</div>
+      </article>
+      <article class="card" aria-label="Predicción Broncos contra Jaguars">
+        <header class="card-h">
+          <div class="match">Broncos <span class="vs">vs</span> Jaguars</div>
+          <span class="badge" style="color:#94A3B8;border-color:#94A3B855">Saltar</span>
+        </header>
+        <div class="kick">Kickoff 20:05 UTC, fase regular_season,
+          confianza Alta</div>
+        <div class="grid">
+          <div class="cell"><span class="k">Pick</span><span class="val">Broncos</span></div>
+          <div class="cell"><span class="k">Modelo</span><span class="num">58.4%</span></div>
+          <div class="cell"><span class="k">Mercado</span><span class="num">n/d</span></div>
+          <div class="cell"><span class="k">Edge</span><span class="num muted">n/d</span></div>
+          <div class="cell"><span class="k">Acción</span><span class="num">NO_TRADE</span>
+            <span class="num muted">sin apuesta</span></div>
+        </div>
+        <div class="models"><span class="chip">trueskill <b class="num">58.4%</b></span></div>
+        <div class="reason">Motivo: sin cuota de mercado</div>
+      </article>
+      <article class="card" aria-label="Predicción Chargers contra Raiders">
+        <header class="card-h">
+          <div class="match">Chargers <span class="vs">vs</span> Raiders</div>
+          <span class="badge" style="color:#94A3B8;border-color:#94A3B855">Saltar</span>
+        </header>
+        <div class="kick">Kickoff 20:05 UTC, fase regular_season,
+          confianza Alta</div>
+        <div class="grid">
+          <div class="cell"><span class="k">Pick</span><span class="val">Chargers</span></div>
+          <div class="cell"><span class="k">Modelo</span><span class="num">70.6%</span></div>
+          <div class="cell"><span class="k">Mercado</span><span class="num">n/d</span></div>
+          <div class="cell"><span class="k">Edge</span><span class="num muted">n/d</span></div>
+          <div class="cell"><span class="k">Acción</span><span class="num">NO_TRADE</span>
+            <span class="num muted">sin apuesta</span></div>
+        </div>
+        <div class="models"><span class="chip">trueskill <b class="num">70.6%</b></span></div>
+        <div class="reason">Motivo: sin cuota de mercado</div>
+      </article>
+      <article class="card" aria-label="Predicción Cardinals contra Seahawks">
+        <header class="card-h">
+          <div class="match">Cardinals <span class="vs">vs</span> Seahawks</div>
+          <span class="badge" style="color:#94A3B8;border-color:#94A3B855">Saltar</span>
+        </header>
+        <div class="kick">Kickoff 20:25 UTC, fase regular_season,
+          confianza Alta</div>
+        <div class="grid">
+          <div class="cell"><span class="k">Pick</span><span class="val">Seahawks</span></div>
+          <div class="cell"><span class="k">Modelo</span><span class="num">83.6%</span></div>
+          <div class="cell"><span class="k">Mercado</span><span class="num">n/d</span></div>
+          <div class="cell"><span class="k">Edge</span><span class="num muted">n/d</span></div>
+          <div class="cell"><span class="k">Acción</span><span class="num">NO_TRADE</span>
+            <span class="num muted">sin apuesta</span></div>
+        </div>
+        <div class="models"><span class="chip">trueskill <b class="num">83.6%</b></span></div>
+        <div class="reason">Motivo: sin cuota de mercado</div>
+      </article>
+      <article class="card" aria-label="Predicción Cowboys contra Commanders">
+        <header class="card-h">
+          <div class="match">Cowboys <span class="vs">vs</span> Commanders</div>
+          <span class="badge" style="color:#94A3B8;border-color:#94A3B855">Saltar</span>
+        </header>
+        <div class="kick">Kickoff 20:25 UTC, fase regular_season,
+          confianza Alta</div>
+        <div class="grid">
+          <div class="cell"><span class="k">Pick</span><span class="val">Cowboys</span></div>
+          <div class="cell"><span class="k">Modelo</span><span class="num">58.8%</span></div>
+          <div class="cell"><span class="k">Mercado</span><span class="num">n/d</span></div>
+          <div class="cell"><span class="k">Edge</span><span class="num muted">n/d</span></div>
+          <div class="cell"><span class="k">Acción</span><span class="num">NO_TRADE</span>
+            <span class="num muted">sin apuesta</span></div>
+        </div>
+        <div class="models"><span class="chip">trueskill <b class="num">58.8%</b></span></div>
+        <div class="reason">Motivo: sin cuota de mercado</div>
+      </article>
+      <article class="card" aria-label="Predicción 49ers contra Dolphins">
+        <header class="card-h">
+          <div class="match">49ers <span class="vs">vs</span> Dolphins</div>
+          <span class="badge" style="color:#94A3B8;border-color:#94A3B855">Saltar</span>
+        </header>
+        <div class="kick">Kickoff 20:25 UTC, fase regular_season,
+          confianza Alta</div>
+        <div class="grid">
+          <div class="cell"><span class="k">Pick</span><span class="val">49ers</span></div>
+          <div class="cell"><span class="k">Modelo</span><span class="num">69.8%</span></div>
+          <div class="cell"><span class="k">Mercado</span><span class="num">n/d</span></div>
+          <div class="cell"><span class="k">Edge</span><span class="num muted">n/d</span></div>
+          <div class="cell"><span class="k">Acción</span><span class="num">NO_TRADE</span>
+            <span class="num muted">sin apuesta</span></div>
+        </div>
+        <div class="models"><span class="chip">trueskill <b class="num">69.8%</b></span></div>
+        <div class="reason">Motivo: sin cuota de mercado</div>
+      </article></div>
+            </section>
+    <footer>Datos locales SQLite y cotizaciones públicas de Polymarket. Panel informativo: toda compra indicada es simulada; no se enviaron órdenes.</footer>
+  </main>
+</body>
+</html>
