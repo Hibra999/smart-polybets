@@ -90,3 +90,4 @@ snapshot_date,snapshot_utc,tournament_id,fixture_id,kickoff_utc,home,away,pick_s
 2026-09-21,2026-09-21T17:53:31.916280+00:00,nfl_2026,2026_02_NYG_LA,2026-09-22T00:15:00+00:00,Rams,Giants,HOME_WIN,,,,polymarket-live,0.729412,,,,[],,,,,,,,,,,SKIP,NO_TRADE,WON,{},,,,,
 2026-09-22,2026-09-22T16:19:05.221781+00:00,nfl_2026,2026_03_ATL_GB,2026-09-25T00:15:00+00:00,Packers,Falcons,HOME_WIN,,,,polymarket-live,0.674907,,,,[],,,,,,,,,,,SKIP,NO_TRADE,,{},,,,,
 2026-09-23,2026-09-23T16:08:23.426100+00:00,nfl_2026,2026_03_ATL_GB,2026-09-25T00:15:00+00:00,Packers,Falcons,HOME_WIN,,,,polymarket-live,0.674907,,,,[],,,,,,,,,,,SKIP,NO_TRADE,,{},,,,,
+2026-09-24,2026-09-24T16:31:50.572059+00:00,nfl_2026,2026_03_ATL_GB,2026-09-25T00:15:00+00:00,Packers,Falcons,HOME_WIN,,,,polymarket-live,0.674907,,,,[],,,,,,,,,,,SKIP,NO_TRADE,,{},,,,,
