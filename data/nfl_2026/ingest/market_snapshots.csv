@@ -130,4 +130,5 @@ snapshot_date,snapshot_utc,tournament_id,fixture_id,kickoff_utc,home,away,pick_s
 2026-09-27,2026-09-27T16:26:43.346113+00:00,nfl_2026,2026_03_NYJ_DET,2026-09-27T17:00:00+00:00,Lions,Jets,HOME_WIN,,,,polymarket-live,0.834844,,,,[],,,,,,,,,,,SKIP,NO_TRADE,WON,{},,,,,
 2026-09-27,2026-09-27T16:26:43.346113+00:00,nfl_2026,2026_03_SEA_WAS,2026-09-27T17:00:00+00:00,Commanders,Seahawks,AWAY_WIN,,,,polymarket-live,0.714602,,,,[],,,,,,,,,,,SKIP,NO_TRADE,LOST,{},,,,,
 2026-09-27,2026-09-27T16:26:43.346113+00:00,nfl_2026,2026_03_TEN_NYG,2026-09-27T17:00:00+00:00,Giants,Titans,HOME_WIN,,,,polymarket-live,0.657687,,,,[],,,,,,,,,,,SKIP,NO_TRADE,WON,{},,,,,
-2026-09-28,2026-09-28T19:16:56.955289+00:00,nfl_2026,2026_03_PHI_CHI,2026-09-29T00:15:00+00:00,Bears,Eagles,AWAY_WIN,,,,polymarket-live,0.812626,,,,[],,,,,,,,,,,SKIP,NO_TRADE,,{},,,,,
+2026-09-28,2026-09-28T19:16:56.955289+00:00,nfl_2026,2026_03_PHI_CHI,2026-09-29T00:15:00+00:00,Bears,Eagles,AWAY_WIN,,,,polymarket-live,0.812626,,,,[],,,,,,,,,,,SKIP,NO_TRADE,LOST,{},,,,,
+2026-10-01,2026-10-01T18:03:25.122117+00:00,nfl_2026,2026_04_PIT_CLE,2026-10-02T00:15:00+00:00,Browns,Steelers,AWAY_WIN,,,,polymarket-live,0.678572,,,,[],,,,,,,,,,,SKIP,NO_TRADE,,{},,,,,
