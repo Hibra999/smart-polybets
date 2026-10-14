@@ -176,3 +176,4 @@ snapshot_date,snapshot_utc,tournament_id,fixture_id,kickoff_utc,home,away,pick_s
 2026-10-10,2026-10-10T17:01:12.436283+00:00,nfl_2026,2026_05_SF_SEA,2026-10-11T20:25:00+00:00,Seahawks,49ers,AWAY_WIN,,,,polymarket-live,0.516327,,,,[],,,,,,,,,,,SKIP,NO_TRADE,WON,{},,,,,
 2026-10-12,2026-10-12T20:56:08.093901+00:00,nfl_2026,2026_05_BUF_LA,2026-10-13T00:15:00+00:00,Rams,Bills,AWAY_WIN,,,,polymarket-live,0.658002,,,,[],,,,,,,,,,,SKIP,NO_TRADE,WON,{},,,,,
 2026-10-13,2026-10-13T18:54:38.284281+00:00,nfl_2026,2026_06_SEA_DEN,2026-10-16T00:15:00+00:00,Broncos,Seahawks,AWAY_WIN,,,,polymarket-live,0.583211,,,,[],,,,,,,,,,,SKIP,NO_TRADE,,{},,,,,
+2026-10-14,2026-10-14T16:34:26.102358+00:00,nfl_2026,2026_06_SEA_DEN,2026-10-16T00:15:00+00:00,Broncos,Seahawks,AWAY_WIN,,,,polymarket-live,0.583211,,,,[],,,,,,,,,,,SKIP,NO_TRADE,,{},,,,,
