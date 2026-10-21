@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>Próximos partidos hasta 2026-10-21</title>
+<style>
+  :root {
+    --bg:#0F1117; --surface:#1A1D27; --surface-alt:#22262F; --border:#2D3340;
+    --text:#E2E8F0; --muted:#94A3B8; --blue:#2563EB; --cyan:#22D3EE;
+    --success:#10B981; --warning:#F59E0B; --danger:#EF4444;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text);
+    font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif; line-height:1.6;
+    -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:1040px; margin:0 auto; padding:48px 24px 64px; }
+  .num { font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Consolas,monospace;
+    font-variant-numeric:tabular-nums; }
+  .muted { color:var(--muted); }
+  header.top { border-bottom:1px solid var(--border); padding-bottom:24px; margin-bottom:32px; }
+  .eyebrow { font-size:.75rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--cyan); }
+  h1 { font-size:2.25rem; line-height:1.2; font-weight:700; letter-spacing:-.015em;
+    margin:.25rem 0 .5rem; text-wrap:balance; }
+  h2 { font-size:1.25rem; line-height:1.3; margin:36px 0 12px; text-wrap:balance; }
+  .meta { color:var(--muted); font-size:.875rem; }
+  .meta b { color:var(--text); font-weight:600; }
+  .summary { margin-top:16px; max-width:72ch; font-size:.9375rem; text-wrap:pretty; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(360px,1fr));
+    gap:16px; margin-top:8px; }
+  .card, .report-block { background:var(--surface); border:1px solid var(--border);
+    border-radius:12px; padding:20px; min-width:0; }
+  .card-h, .section-h { display:flex; align-items:flex-start; justify-content:space-between;
+    gap:12px; }
+  .match { font-size:1.125rem; font-weight:600; }
+  .vs { color:var(--muted); font-weight:400; font-size:.875rem; }
+  .badge { display:inline-flex; align-items:center; font-size:.7rem; font-weight:600;
+    letter-spacing:.06em; text-transform:uppercase; border:1px solid;
+    border-radius:9999px; padding:4px 12px; white-space:nowrap; }
+  .badges, .models, .targets { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+  .kick, .source, .reason { color:var(--muted); font-size:.8125rem; }
+  .kick { margin:8px 0 16px; }
+  .reason { margin-top:12px; }
+  .grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px; }
+  .cell, .metric { display:flex; flex-direction:column; gap:2px; min-width:0; }
+  .k { font-size:.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+  .val { font-weight:600; overflow-wrap:anywhere; }
+  .models { margin-top:14px; border-top:1px solid var(--border); padding-top:12px; }
+  details.execution { margin-top:14px; border-top:1px solid var(--border); padding-top:12px; }
+  details.execution summary { cursor:pointer; color:var(--cyan); font-size:.8125rem; }
+  .contract { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px 16px;
+    margin-top:10px; font-size:.75rem; }
+  .contract .wide { grid-column:1/-1; overflow-wrap:anywhere; }
+  .chip { font-size:.75rem; color:var(--muted); background:var(--surface-alt);
+    border-radius:8px; padding:3px 10px; }
+  .chip b { color:var(--text); }
+  .consensus { margin-left:auto; color:var(--muted); font-size:.75rem; }
+  .metrics { display:grid; grid-template-columns:repeat(auto-fit,minmax(125px,1fr));
+    gap:1px; margin:16px 0; background:var(--border); border-radius:8px; overflow:hidden; }
+  .metric { background:var(--surface-alt); padding:12px; }
+  .metric strong { font-size:1.05rem; }
+  .target { font-size:.75rem; border:1px solid var(--border); border-radius:8px; padding:4px 10px; }
+  .target.ok { color:var(--success); border-color:#10B98155; }
+  .target.fail { color:var(--danger); border-color:#EF444455; }
+  .equity { margin:16px 0 8px; background:var(--bg); border-radius:8px; padding:8px; }
+  .equity svg { display:block; width:100%; height:auto; }
+  .table-wrap { overflow-x:auto; margin-top:16px; }
+  table { width:100%; border-collapse:collapse; font-size:.8125rem; }
+  th, td { padding:9px 10px; border-bottom:1px solid var(--border); text-align:left; }
+  th { color:var(--muted); font-size:.7rem; letter-spacing:.04em; text-transform:uppercase; }
+  td:nth-last-child(-n+3), th:nth-last-child(-n+3) { text-align:right; }
+  footer { margin-top:40px; color:var(--muted); font-size:.8125rem;
+    border-top:1px solid var(--border); padding-top:20px; }
+  @media (max-width:620px) {
+    .wrap { padding:28px 16px 40px; }
+    h1 { font-size:1.75rem; }
+    .cards { grid-template-columns:1fr; }
+    .grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .card-h, .section-h { flex-direction:column; }
+    .consensus { margin-left:0; width:100%; }
+  }
+  @media print {
+    :root { --bg:#FFFFFF; --surface:#FFFFFF; --surface-alt:#F3F4F6; --border:#CBD5E1;
+      --text:#111827; --muted:#475569; }
+    .wrap { max-width:none; padding:16px; }
+  }
+</style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="top">
+      <div class="eyebrow">Sports Quant Trading, Liga MX + NFL</div>
+      <h1>Próximos partidos</h1>
+      <div class="meta">Corte automático <b class="num">2026-10-21</b> · sólo lectura</div>
+      <div class="summary"><b>6</b> partidos en la próxima fecha disponible. Elo, Bayes, TrueSkill, Poisson y Dixon-Coles se muestran por separado; sin costes públicos completos no se muestra SIMULATED_BUY.</div>
+    </header>
+
+            <section aria-labelledby="liga_mx_2026-title">
+              <header class="section-h">
+                <div>
+                  <h2 id="liga_mx_2026-title">Liga MX Apertura 2026</h2>
+                  <div class="source">Próxima fecha <b class="num">2026-10-22</b> ·
+                    estrategia match_winner_ligamx_v1 · cuotas
+                    polymarket-live</div>
+                </div>
+                <span class="badge" style="color:var(--cyan);border-color:#22D3EE55">
+                  5 partidos</span>
+              </header>
+              <div class="cards">
+      <article class="card" aria-label="Predicción Toluca contra Tijuana">
+        <header class="card-h">
+          <div class="match">Toluca <span class="vs">vs</span> Tijuana</div>
+          <span class="badge" style="color:#EF4444;border-color:#EF444455">Descartar</span>
+        </header>
+        <div class="kick">Kickoff 01:00 UTC, fase Fase regular,
+          confianza Alta</div>
+        <div class="grid">
+          <div class="cell"><span class="k">Pick</span><span class="val">Toluca</span></div>
+          <div class="cell"><span class="k">Modelo</span><span class="num">56.3%</span></div>
+          <div class="cell"><span class="k">Mercado</span><span class="num">75.0%</span></div>
+          <div class="cell"><span class="k">Edge</span><span class="num" style="color:var(--muted)">-18.7%</span></div>
+          <div class="cell"><span class="k">Acción</span><span class="num">NO_TRADE</span>
+            <span class="num muted">sin apuesta</span></div>
+        </div>
+        <div class="models"><span class="chip">elo <b class="num">56.3%</b></span><span class="chip">bayes <b class="num">62.0%</b></span><span class="chip">trueskill <b class="num">65.0%</b></span><span class="chip">poisson <b class="num">57.1%</b></span><span class="chip">dixon_coles <b class="num">53.8%</b></span><span class="chip">empate Poisson <b class="num">22.9%</b></span><span class="consensus">dispersión media · rango <b class="num">11.2%</b></span></div>
+        <div class="reason">Motivo: DISCARD: edge -0.186655 &lt; discard 0.0</div><div class="reason">Complete set H/D/A: asks 0.75 + 0.16 + 0.11; all-in <span class="num">1.06198</span>/share; NO_EDGE. Sólo observación.</div>
+        <details class="execution">
+          <summary>Contrato y ejecución pública</summary>
+          <div class="contract"><div class="cell wide"><span class="k">Condition</span><span class="num">0x2ffd30071edb2ff0dc582001d8925ef15099c6029401d7558cbac9129e7d2857</span></div><div class="cell wide"><span class="k">Token</span><span class="num">100683213387200349510127739860161199981582353765495273263030194356713520941437</span></div><div class="cell wide"><span class="k">Pregunta</span><span class="num">Will Deportivo Toluca FC win on 2026-10-21?</span></div><div class="cell"><span class="k">Outcome</span><span class="num">YES</span></div><div class="cell"><span class="k">Best ask</span><span class="num">0.75</span></div><div class="cell"><span class="k">Ask size</span><span class="num">6054.66</span></div><div class="cell wide"><span class="k">Top asks</span><span class="num">0.7500 × 6054.66 shares, 0.7600 × 8171.64 shares, 0.7700 × 15648.94 shares</span></div><div class="cell"><span class="k">Volumen USDC</span><span class="num">12436.361168000001</span></div><div class="cell"><span class="k">Liquidez USDC</span><span class="num">49024.2351</span></div><div class="cell"><span class="k">Tick</span><span class="num">0.01</span></div><div class="cell"><span class="k">Orden mínima</span><span class="num">5.0</span></div><div class="cell"><span class="k">Base fee bps</span><span class="num">1000</span></div><div class="cell"><span class="k">Slippage</span><span class="num">n/d</span></div><div class="cell"><span class="k">Precio promedio</span><span class="num">n/d</span></div><div class="cell"><span class="k">Fee USDC</span><span class="num">n/d</span></div><div class="cell"><span class="k">Edge neto</span><span class="num">n/d</span></div><div class="cell"><span class="k">Muestra</span><span class="num">11</span></div><div class="cell"><span class="k">Modelo</span><span class="num">football-elo-bayes-trueskill-v1</span></div>
+            <div class="cell wide"><span class="k">Reglas</span><span>In the upcoming game, scheduled for October 21, 2026
+If Deportivo Toluca FC wins, this market will resolve to &quot;Yes&quot;.
+Otherwise, this market will resolve to &quot;No&quot;.
+If the game is postponed, this market will remain open until the game has been completed.
+If the game is canceled entirely, with no make-up game, this market will resolve &quot;No&quot;.
+This market refers only to the outcome within the first 90 minutes of regular play plus stoppage time.
+
+The primary resolution source for this market is the official statistics of the event as recognized by the governing body or event organizers. However, if the governing body or event organizers have not published final match statistics within 2 hours after the event&#x27;s conclusion, data from Flashscore may be used; if Flashscore data is unavailable, data from Sofascore may be used; if neither is available, a consensus of credible reporting may be used instead. All markets will settle based on the official final result as recognized by the governing body or event organizers. Revisions to officially declared final scores made after market resolution will not be accounted for in determining the outcome. If no acceptable data is available within 24 hours of the event&#x27;s conclusion, this market will resolve 50-50, or to &quot;Draw&quot; where applicable.</span></div>
+            <div class="cell wide"><span class="k">Decisión de ejecución</span>
+              <span>sizing omitido</span></div>
+          </div>
+        </details>
+      </article>
+      <article class="card" aria-label="Predicción Puebla contra Monterrey">
+        <header class="card-h">
+          <div class="match">Puebla <span class="vs">vs</span> Monterrey</div>
+          <span class="badge" style="color:#EF4444;border-color:#EF444455">Descartar</span>
+        </header>
+        <div class="kick">Kickoff 01:00 UTC, fase Fase regular,
+          confianza Alta</div>
+        <div class="grid">
+          <div class="cell"><span class="k">Pick</span><span class="val">Monterrey</span></div>
+          <div class="cell"><span class="k">Modelo</span><span class="num">34.6%</span></div>
+          <div class="cell"><span class="k">Mercado</span><span class="num">51.0%</span></div>
+          <div class="cell"><span class="k">Edge</span><span class="num" style="color:var(--muted)">-16.4%</span></div>
+          <div class="cell"><span class="k">Acción</span><span class="num">NO_TRADE</span>
+            <span class="num muted">sin apuesta</span></div>
+        </div>
+        <div class="models"><span class="chip">elo <b class="num">34.6%</b></span><span class="chip">bayes <b class="num">52.4%</b></span><span class="chip">trueskill <b class="num">59.9%</b></span><span class="chip">poisson <b class="num">45.9%</b></span><span class="chip">dixon_coles <b class="num">41.3%</b></span><span class="chip">empate Poisson <b class="num">24.4%</b></span><span class="consensus">modelos en desacuerdo · rango <b class="num">25.3%</b></span></div>
+        <div class="reason">Motivo: DISCARD: edge -0.163761 &lt; discard 0.0</div><div class="reason">Complete set H/D/A: asks 0.25 + 0.25 + 0.51; all-in <span class="num">1.07249</span>/share; NO_EDGE. Sólo observación.</div>
+        <details class="execution">
+          <summary>Contrato y ejecución pública</summary>
+          <div class="contract"><div class="cell wide"><span class="k">Condition</span><span class="num">0xca0e86caf9a34f38619eec8ee48060ca1cf437c206a12336ce8bce31a5f55f76</span></div><div class="cell wide"><span class="k">Token</span><span class="num">92445750931594298245719145504431724649564068444871714643991524683011055057135</span></div><div class="cell wide"><span class="k">Pregunta</span><span class="num">Will CF Monterrey win on 2026-10-21?</span></div><div class="cell"><span class="k">Outcome</span><span class="num">YES</span></div><div class="cell"><span class="k">Best ask</span><span class="num">0.51</span></div><div class="cell"><span class="k">Ask size</span><span class="num">41.19</span></div><div class="cell wide"><span class="k">Top asks</span><span class="num">0.5100 × 41.19 shares, 0.5200 × 10902.15 shares, 0.5300 × 7581.68 shares</span></div><div class="cell"><span class="k">Volumen USDC</span><span class="num">46489.38538900001</span></div><div class="cell"><span class="k">Liquidez USDC</span><span class="num">48056.5247</span></div><div class="cell"><span class="k">Tick</span><span class="num">0.01</span></div><div class="cell"><span class="k">Orden mínima</span><span class="num">5.0</span></div><div class="cell"><span class="k">Base fee bps</span><span class="num">1000</span></div><div class="cell"><span class="k">Slippage</span><span class="num">n/d</span></div><div class="cell"><span class="k">Precio promedio</span><span class="num">n/d</span></div><div class="cell"><span class="k">Fee USDC</span><span class="num">n/d</span></div><div class="cell"><span class="k">Edge neto</span><span class="num">n/d</span></div><div class="cell"><span class="k">Muestra</span><span class="num">11</span></div><div class="cell"><span class="k">Modelo</span><span class="num">football-elo-bayes-trueskill-v1</span></div>
+            <div class="cell wide"><span class="k">Reglas</span><span>In the upcoming game, scheduled for October 21, 2026
+If CF Monterrey wins, this market will resolve to &quot;Yes&quot;.
+Otherwise, this market will resolve to &quot;No&quot;.
+If the game is postponed, this market will remain open until the game has been completed.
+If the game is canceled entirely, with no make-up game, this market will resolve &quot;No&quot;.
+This market refers only to the outcome within the first 90 minutes of regular play plus stoppage time.
+
+The primary resolution source for this market is the official statistics of the event as recognized by the governing body or event organizers. However, if the governing body or event organizers have not published final match statistics within 2 hours after the event&#x27;s conclusion, data from Flashscore may be used; if Flashscore data is unavailable, data from Sofascore may be used; if neither is available, a consensus of credible reporting may be used instead. All markets will settle based on the official final result as recognized by the governing body or event organizers. Revisions to officially declared final scores made after market resolution will not be accounted for in determining the outcome. If no acceptable data is available within 24 hours of the event&#x27;s conclusion, this market will resolve 50-50, or to &quot;Draw&quot; where applicable.</span></div>
+            <div class="cell wide"><span class="k">Decisión de ejecución</span>
+              <span>sizing omitido</span></div>
+          </div>
+        </details>
+      </article>
+      <article class="card" aria-label="Predicción Atlas contra América">
+        <header class="card-h">
+          <div class="match">Atlas <span class="vs">vs</span> América</div>
+          <span class="badge" style="color:#EF4444;border-color:#EF444455">Descartar</span>
+        </header>
+        <div class="kick">Kickoff 01:00 UTC, fase Fase regular,
+          confianza Alta</div>
+        <div class="grid">
+          <div class="cell"><span class="k">Pick</span><span class="val">América</span></div>
+          <div class="cell"><span class="k">Modelo</span><span class="num">45.3%</span></div>
+          <div class="cell"><span class="k">Mercado</span><span class="num">48.0%</span></div>
+          <div class="cell"><span class="k">Edge</span><span class="num" style="color:var(--muted)">-2.7%</span></div>
+          <div class="cell"><span class="k">Acción</span><span class="num">NO_TRADE</span>
+            <span class="num muted">sin apuesta</span></div>
+        </div>
+        <div class="models"><span class="chip">elo <b class="num">45.3%</b></span><span class="chip">bayes <b class="num">75.4%</b></span><span class="chip">trueskill <b class="num">74.4%</b></span><span class="chip">poisson <b class="num">47.5%</b></span><span class="chip">dixon_coles <b class="num">45.4%</b></span><span class="chip">empate Poisson <b class="num">24.5%</b></span><span class="consensus">modelos en desacuerdo · rango <b class="num">30.1%</b></span></div>
+        <div class="reason">Motivo: DISCARD: edge -0.027464 &lt; discard 0.0</div><div class="reason">Complete set H/D/A: asks 0.28 + 0.25 + 0.48; all-in <span class="num">1.07387</span>/share; NO_EDGE. Sólo observación.</div>
+        <details class="execution">
+          <summary>Contrato y ejecución pública</summary>
+          <div class="contract"><div class="cell wide"><span class="k">Condition</span><span class="num">0x5bda8d45b131691a49857571140da75fcdd8da96e4195041cf22fbc168e96670</span></div><div class="cell wide"><span class="k">Token</span><span class="num">49680161790802171862775099415546014255001161121420931065371614821512397153338</span></div><div class="cell wide"><span class="k">Pregunta</span><span class="num">Will CF América win on 2026-10-21?</span></div><div class="cell"><span class="k">Outcome</span><span class="num">YES</span></div><div class="cell"><span class="k">Best ask</span><span class="num">0.48</span></div><div class="cell"><span class="k">Ask size</span><span class="num">1998.69</span></div><div class="cell wide"><span class="k">Top asks</span><span class="num">0.4800 × 1998.69 shares, 0.4900 × 4680.58 shares, 0.5000 × 11779.91 shares</span></div><div class="cell"><span class="k">Volumen USDC</span><span class="num">11188.038995</span></div><div class="cell"><span class="k">Liquidez USDC</span><span class="num">57991.0469</span></div><div class="cell"><span class="k">Tick</span><span class="num">0.01</span></div><div class="cell"><span class="k">Orden mínima</span><span class="num">5.0</span></div><div class="cell"><span class="k">Base fee bps</span><span class="num">1000</span></div><div class="cell"><span class="k">Slippage</span><span class="num">n/d</span></div><div class="cell"><span class="k">Precio promedio</span><span class="num">n/d</span></div><div class="cell"><span class="k">Fee USDC</span><span class="num">n/d</span></div><div class="cell"><span class="k">Edge neto</span><span class="num">n/d</span></div><div class="cell"><span class="k">Muestra</span><span class="num">11</span></div><div class="cell"><span class="k">Modelo</span><span class="num">football-elo-bayes-trueskill-v1</span></div>
+            <div class="cell wide"><span class="k">Reglas</span><span>In the upcoming game, scheduled for October 21, 2026
+If CF América wins, this market will resolve to &quot;Yes&quot;.
+Otherwise, this market will resolve to &quot;No&quot;.
+If the game is postponed, this market will remain open until the game has been completed.
+If the game is canceled entirely, with no make-up game, this market will resolve &quot;No&quot;.
+This market refers only to the outcome within the first 90 minutes of regular play plus stoppage time.
+
+The primary resolution source for this market is the official statistics of the event as recognized by the governing body or event organizers. However, if the governing body or event organizers have not published final match statistics within 2 hours after the event&#x27;s conclusion, data from Flashscore may be used; if Flashscore data is unavailable, data from Sofascore may be used; if neither is available, a consensus of credible reporting may be used instead. All markets will settle based on the official final result as recognized by the governing body or event organizers. Revisions to officially declared final scores made after market resolution will not be accounted for in determining the outcome. If no acceptable data is available within 24 hours of the event&#x27;s conclusion, this market will resolve 50-50, or to &quot;Draw&quot; where applicable.</span></div>
+            <div class="cell wide"><span class="k">Decisión de ejecución</span>
+              <span>sizing omitido</span></div>
+          </div>
+        </details>
+      </article>
+      <article class="card" aria-label="Predicción Pachuca contra Cruz Azul">
+        <header class="card-h">
+          <div class="match">Pachuca <span class="vs">vs</span> Cruz Azul</div>
+          <span class="badge" style="color:#EF4444;border-color:#EF444455">Descartar</span>
+        </header>
+        <div class="kick">Kickoff 03:10 UTC, fase Fase regular,
+          confianza Alta</div>
+        <div class="grid">
+          <div class="cell"><span class="k">Pick</span><span class="val">Cruz Azul</span></div>
+          <div class="cell"><span class="k">Modelo</span><span class="num">37.8%</span></div>
+          <div class="cell"><span class="k">Mercado</span><span class="num">44.0%</span></div>
+          <div class="cell"><span class="k">Edge</span><span class="num" style="color:var(--muted)">-6.2%</span></div>
+          <div class="cell"><span class="k">Acción</span><span class="num">NO_TRADE</span>
+            <span class="num muted">sin apuesta</span></div>
+        </div>
+        <div class="models"><span class="chip">elo <b class="num">37.8%</b></span><span class="chip">bayes <b class="num">64.1%</b></span><span class="chip">trueskill <b class="num">78.4%</b></span><span class="chip">poisson <b class="num">35.8%</b></span><span class="chip">dixon_coles <b class="num">35.6%</b></span><span class="chip">empate Poisson <b class="num">26.7%</b></span><span class="consensus">modelos en desacuerdo · rango <b class="num">42.8%</b></span></div>
+        <div class="reason">Motivo: DISCARD: edge -0.062051 &lt; discard 0.0; volumen 16.481465 &lt; min 500</div><div class="reason">Complete set H/D/A: asks 0.32 + 0.26 + 0.44; all-in <span class="num">1.08564</span>/share; NO_EDGE. Sólo observación.</div>
+        <details class="execution">
+          <summary>Contrato y ejecución pública</summary>
+          <div class="contract"><div class="cell wide"><span class="k">Condition</span><span class="num">0x5a4513b7762ca3f5478d20890069d3b221a2d7af33d797c3dbc30d89f783acc6</span></div><div class="cell wide"><span class="k">Token</span><span class="num">14757599157442294354834116254411469005091141142061603264351897189747657519283</span></div><div class="cell wide"><span class="k">Pregunta</span><span class="num">Will CF Cruz Azul win on 2026-10-21?</span></div><div class="cell"><span class="k">Outcome</span><span class="num">YES</span></div><div class="cell"><span class="k">Best ask</span><span class="num">0.44</span></div><div class="cell"><span class="k">Ask size</span><span class="num">1053.57</span></div><div class="cell wide"><span class="k">Top asks</span><span class="num">0.4400 × 1053.57 shares, 0.4500 × 3958.37 shares, 0.4600 × 8455.72 shares</span></div><div class="cell"><span class="k">Volumen USDC</span><span class="num">16.481465</span></div><div class="cell"><span class="k">Liquidez USDC</span><span class="num">29093.0326</span></div><div class="cell"><span class="k">Tick</span><span class="num">0.01</span></div><div class="cell"><span class="k">Orden mínima</span><span class="num">5.0</span></div><div class="cell"><span class="k">Base fee bps</span><span class="num">1000</span></div><div class="cell"><span class="k">Slippage</span><span class="num">n/d</span></div><div class="cell"><span class="k">Precio promedio</span><span class="num">n/d</span></div><div class="cell"><span class="k">Fee USDC</span><span class="num">n/d</span></div><div class="cell"><span class="k">Edge neto</span><span class="num">n/d</span></div><div class="cell"><span class="k">Muestra</span><span class="num">12</span></div><div class="cell"><span class="k">Modelo</span><span class="num">football-elo-bayes-trueskill-v1</span></div>
+            <div class="cell wide"><span class="k">Reglas</span><span>In the upcoming game, scheduled for October 21, 2026
+If CF Cruz Azul wins, this market will resolve to &quot;Yes&quot;.
+Otherwise, this market will resolve to &quot;No&quot;.
+If the game is postponed, this market will remain open until the game has been completed.
+If the game is canceled entirely, with no make-up game, this market will resolve &quot;No&quot;.
+This market refers only to the outcome within the first 90 minutes of regular play plus stoppage time.
+
+The primary resolution source for this market is the official statistics of the event as recognized by the governing body or event organizers. However, if the governing body or event organizers have not published final match statistics within 2 hours after the event&#x27;s conclusion, data from Flashscore may be used; if Flashscore data is unavailable, data from Sofascore may be used; if neither is available, a consensus of credible reporting may be used instead. All markets will settle based on the official final result as recognized by the governing body or event organizers. Revisions to officially declared final scores made after market resolution will not be accounted for in determining the outcome. If no acceptable data is available within 24 hours of the event&#x27;s conclusion, this market will resolve 50-50, or to &quot;Draw&quot; where applicable.</span></div>
+            <div class="cell wide"><span class="k">Decisión de ejecución</span>
+              <span>sizing omitido</span></div>
+          </div>
+        </details>
+      </article>
+      <article class="card" aria-label="Predicción Santos Laguna contra Pumas UNAM">
+        <header class="card-h">
+          <div class="match">Santos Laguna <span class="vs">vs</span> Pumas UNAM</div>
+          <span class="badge" style="color:#F59E0B;border-color:#F59E0B55">Revisar</span>
+        </header>
+        <div class="kick">Kickoff 03:10 UTC, fase Fase regular,
+          confianza Alta</div>
+        <div class="grid">
+          <div class="cell"><span class="k">Pick</span><span class="val">Pumas UNAM</span></div>
+          <div class="cell"><span class="k">Modelo</span><span class="num">37.3%</span></div>
+          <div class="cell"><span class="k">Mercado</span><span class="num">32.0%</span></div>
+          <div class="cell"><span class="k">Edge</span><span class="num" style="color:var(--cyan)">+5.3%</span></div>
+          <div class="cell"><span class="k">Acción</span><span class="num">NO_TRADE</span>
+            <span class="num muted">sin apuesta</span></div>
+        </div>
+        <div class="models"><span class="chip">elo <b class="num">37.3%</b></span><span class="chip">bayes <b class="num">53.1%</b></span><span class="chip">trueskill <b class="num">42.1%</b></span><span class="chip">poisson <b class="num">43.0%</b></span><span class="chip">dixon_coles <b class="num">40.4%</b></span><span class="chip">empate Poisson <b class="num">24.2%</b></span><span class="consensus">dispersión media · rango <b class="num">15.8%</b></span></div>
+        <div class="reason">Motivo: edge 0.053301 en zona REVIEW [0.02,0.10)</div><div class="reason">Complete set H/D/A: asks 0.41 + 0.28 + 0.32; all-in <span class="num">1.07611</span>/share; NO_EDGE. Sólo observación.</div>
+        <details class="execution">
+          <summary>Contrato y ejecución pública</summary>
+          <div class="contract"><div class="cell wide"><span class="k">Condition</span><span class="num">0x7c242d9310f39dcf8d6125668de60deca532ef893866a983b2e190d540ab3bfd</span></div><div class="cell wide"><span class="k">Token</span><span class="num">12951126061308189439979696601624973993787595633715804270600983405234136017367</span></div><div class="cell wide"><span class="k">Pregunta</span><span class="num">Will Pumas de la UNAM win on 2026-10-21?</span></div><div class="cell"><span class="k">Outcome</span><span class="num">YES</span></div><div class="cell"><span class="k">Best ask</span><span class="num">0.32</span></div><div class="cell"><span class="k">Ask size</span><span class="num">203.37</span></div><div class="cell wide"><span class="k">Top asks</span><span class="num">0.3200 × 203.37 shares, 0.3300 × 3955.36 shares, 0.3400 × 8048.67 shares</span></div><div class="cell"><span class="k">Volumen USDC</span><span class="num">4165.612108</span></div><div class="cell"><span class="k">Liquidez USDC</span><span class="num">66178.3622</span></div><div class="cell"><span class="k">Tick</span><span class="num">0.01</span></div><div class="cell"><span class="k">Orden mínima</span><span class="num">5.0</span></div><div class="cell"><span class="k">Base fee bps</span><span class="num">1000</span></div><div class="cell"><span class="k">Slippage</span><span class="num">0.0%</span></div><div class="cell"><span class="k">Precio promedio</span><span class="num">0.32</span></div><div class="cell"><span class="k">Fee USDC</span><span class="num">1.3328</span></div><div class="cell"><span class="k">Edge neto</span><span class="num">3.2%</span></div><div class="cell"><span class="k">Muestra</span><span class="num">12</span></div><div class="cell"><span class="k">Modelo</span><span class="num">football-elo-bayes-trueskill-v1</span></div>
+            <div class="cell wide"><span class="k">Reglas</span><span>In the upcoming game, scheduled for October 21, 2026
+If Pumas de la UNAM wins, this market will resolve to &quot;Yes&quot;.
+Otherwise, this market will resolve to &quot;No&quot;.
+If the game is postponed, this market will remain open until the game has been completed.
+If the game is canceled entirely, with no make-up game, this market will resolve &quot;No&quot;.
+This market refers only to the outcome within the first 90 minutes of regular play plus stoppage time.
+
+The primary resolution source for this market is the official statistics of the event as recognized by the governing body or event organizers. However, if the governing body or event organizers have not published final match statistics within 2 hours after the event&#x27;s conclusion, data from Flashscore may be used; if Flashscore data is unavailable, data from Sofascore may be used; if neither is available, a consensus of credible reporting may be used instead. All markets will settle based on the official final result as recognized by the governing body or event organizers. Revisions to officially declared final scores made after market resolution will not be accounted for in determining the outcome. If no acceptable data is available within 24 hours of the event&#x27;s conclusion, this market will resolve 50-50, or to &quot;Draw&quot; where applicable.</span></div>
+            <div class="cell wide"><span class="k">Decisión de ejecución</span>
+              <span>veredicto REVIEW: requiere NO_TRADE</span></div>
+          </div>
+        </details>
+      </article></div>
+            </section>
+            <section aria-labelledby="nfl_2026-title">
+              <header class="section-h">
+                <div>
+                  <h2 id="nfl_2026-title">NFL 2026 Season</h2>
+                  <div class="source">Próxima fecha <b class="num">2026-10-23</b> ·
+                    estrategia game_winner_v1 · cuotas
+                    polymarket-live</div>
+                </div>
+                <span class="badge" style="color:var(--cyan);border-color:#22D3EE55">
+                  1 partido</span>
+              </header>
+              <div class="cards">
+      <article class="card" aria-label="Predicción Bears contra Patriots">
+        <header class="card-h">
+          <div class="match">Bears <span class="vs">vs</span> Patriots</div>
+          <span class="badge" style="color:#94A3B8;border-color:#94A3B855">Saltar</span>
+        </header>
+        <div class="kick">Kickoff 00:15 UTC, fase regular_season,
+          confianza Alta</div>
+        <div class="grid">
+          <div class="cell"><span class="k">Pick</span><span class="val">Patriots</span></div>
+          <div class="cell"><span class="k">Modelo</span><span class="num">55.7%</span></div>
+          <div class="cell"><span class="k">Mercado</span><span class="num">n/d</span></div>
+          <div class="cell"><span class="k">Edge</span><span class="num muted">n/d</span></div>
+          <div class="cell"><span class="k">Acción</span><span class="num">NO_TRADE</span>
+            <span class="num muted">sin apuesta</span></div>
+        </div>
+        <div class="models"><span class="chip">trueskill <b class="num">55.7%</b></span></div>
+        <div class="reason">Motivo: sin cuota de mercado</div>
+      </article></div>
+            </section>
+    <footer>Datos locales SQLite y cotizaciones públicas de Polymarket. Panel informativo: toda compra indicada es simulada; no se enviaron órdenes.</footer>
+  </main>
+</body>
+</html>
