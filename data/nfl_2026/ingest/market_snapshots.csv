@@ -274,3 +274,4 @@ snapshot_date,snapshot_utc,tournament_id,fixture_id,kickoff_utc,home,away,pick_s
 2026-11-02,2026-11-02T21:25:31.802199+00:00,nfl_2026,2026_08_CHI_SEA,2026-11-03T01:15:00+00:00,Seahawks,Bears,HOME_WIN,,,,polymarket-live,0.701276,,,,[],,,,,,,,,,,SKIP,NO_TRADE,LOST,{},,,,,
 2026-11-03,2026-11-03T19:03:58.648012+00:00,nfl_2026,2026_09_JAX_BAL,2026-11-06T01:15:00+00:00,Ravens,Jaguars,HOME_WIN,,,,polymarket-live,0.614014,,,,[],,,,,,,,,,,SKIP,NO_TRADE,,{},,,,,
 2026-11-04,2026-11-04T19:24:26.522764+00:00,nfl_2026,2026_09_JAX_BAL,2026-11-06T01:15:00+00:00,Ravens,Jaguars,HOME_WIN,,,,polymarket-live,0.614014,,,,[],,,,,,,,,,,SKIP,NO_TRADE,,{},,,,,
+2026-11-05,2026-11-05T19:30:56.698532+00:00,nfl_2026,2026_09_JAX_BAL,2026-11-06T01:15:00+00:00,Ravens,Jaguars,HOME_WIN,,,,polymarket-live,0.614014,,,,[],,,,,,,,,,,SKIP,NO_TRADE,,{},,,,,
