@@ -302,3 +302,4 @@ snapshot_date,snapshot_utc,tournament_id,fixture_id,kickoff_utc,home,away,pick_s
 2026-11-09,2026-11-09T21:57:28.954962+00:00,nfl_2026,2026_09_BUF_MIN,2026-11-10T01:15:00+00:00,Vikings,Bills,AWAY_WIN,,,,polymarket-live,0.628366,,,,[],,,,,,,,,,,SKIP,NO_TRADE,WON,{},,,,,
 2026-11-10,2026-11-10T19:20:01.902337+00:00,nfl_2026,2026_10_WAS_NYG,2026-11-13T01:15:00+00:00,Giants,Commanders,AWAY_WIN,,,,polymarket-live,0.589234,,,,[],,,,,,,,,,,SKIP,NO_TRADE,,{},,,,,
 2026-11-11,2026-11-11T19:16:40.927372+00:00,nfl_2026,2026_10_WAS_NYG,2026-11-13T01:15:00+00:00,Giants,Commanders,AWAY_WIN,,,,polymarket-live,0.589234,,,,[],,,,,,,,,,,SKIP,NO_TRADE,,{},,,,,
+2026-11-12,2026-11-12T19:33:14.195935+00:00,nfl_2026,2026_10_WAS_NYG,2026-11-13T01:15:00+00:00,Giants,Commanders,AWAY_WIN,,,,polymarket-live,0.589234,,,,[],,,,,,,,,,,SKIP,NO_TRADE,,{},,,,,
