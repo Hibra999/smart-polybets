@@ -337,3 +337,4 @@ snapshot_date,snapshot_utc,tournament_id,fixture_id,kickoff_utc,home,away,pick_s
 2026-11-15,2026-11-15T18:30:40.360782+00:00,nfl_2026,2026_10_SF_DAL,2026-11-15T21:25:00+00:00,Cowboys,49ers,AWAY_WIN,,,,polymarket-live,0.644753,,,,[],,,,,,,,,,,SKIP,NO_TRADE,WON,{},,,,,
 2026-11-16,2026-11-16T21:40:42.118756+00:00,nfl_2026,2026_10_LAC_BAL,2026-11-17T01:15:00+00:00,Ravens,Chargers,HOME_WIN,,,,polymarket-live,0.658527,,,,[],,,,,,,,,,,SKIP,NO_TRADE,LOST,{},,,,,
 2026-11-17,2026-11-17T20:29:55.869739+00:00,nfl_2026,2026_11_IND_HOU,2026-11-20T01:15:00+00:00,Texans,Colts,HOME_WIN,,,,polymarket-live,0.641561,,,,[],,,,,,,,,,,SKIP,NO_TRADE,,{},,,,,
+2026-11-18,2026-11-18T19:59:56.221977+00:00,nfl_2026,2026_11_IND_HOU,2026-11-20T01:15:00+00:00,Texans,Colts,HOME_WIN,,,,polymarket-live,0.641561,,,,[],,,,,,,,,,,SKIP,NO_TRADE,,{},,,,,
