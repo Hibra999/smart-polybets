@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>Próximos partidos hasta 2026-11-24</title>
+<style>
+  :root {
+    --bg:#0F1117; --surface:#1A1D27; --surface-alt:#22262F; --border:#2D3340;
+    --text:#E2E8F0; --muted:#94A3B8; --blue:#2563EB; --cyan:#22D3EE;
+    --success:#10B981; --warning:#F59E0B; --danger:#EF4444;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text);
+    font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif; line-height:1.6;
+    -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:1040px; margin:0 auto; padding:48px 24px 64px; }
+  .num { font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Consolas,monospace;
+    font-variant-numeric:tabular-nums; }
+  .muted { color:var(--muted); }
+  header.top { border-bottom:1px solid var(--border); padding-bottom:24px; margin-bottom:32px; }
+  .eyebrow { font-size:.75rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--cyan); }
+  h1 { font-size:2.25rem; line-height:1.2; font-weight:700; letter-spacing:-.015em;
+    margin:.25rem 0 .5rem; text-wrap:balance; }
+  h2 { font-size:1.25rem; line-height:1.3; margin:36px 0 12px; text-wrap:balance; }
+  .meta { color:var(--muted); font-size:.875rem; }
+  .meta b { color:var(--text); font-weight:600; }
+  .summary { margin-top:16px; max-width:72ch; font-size:.9375rem; text-wrap:pretty; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(360px,1fr));
+    gap:16px; margin-top:8px; }
+  .card, .report-block { background:var(--surface); border:1px solid var(--border);
+    border-radius:12px; padding:20px; min-width:0; }
+  .card-h, .section-h { display:flex; align-items:flex-start; justify-content:space-between;
+    gap:12px; }
+  .match { font-size:1.125rem; font-weight:600; }
+  .vs { color:var(--muted); font-weight:400; font-size:.875rem; }
+  .badge { display:inline-flex; align-items:center; font-size:.7rem; font-weight:600;
+    letter-spacing:.06em; text-transform:uppercase; border:1px solid;
+    border-radius:9999px; padding:4px 12px; white-space:nowrap; }
+  .badges, .models, .targets { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+  .kick, .source, .reason { color:var(--muted); font-size:.8125rem; }
+  .kick { margin:8px 0 16px; }
+  .reason { margin-top:12px; }
+  .grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px; }
+  .cell, .metric { display:flex; flex-direction:column; gap:2px; min-width:0; }
+  .k { font-size:.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+  .val { font-weight:600; overflow-wrap:anywhere; }
+  .models { margin-top:14px; border-top:1px solid var(--border); padding-top:12px; }
+  details.execution { margin-top:14px; border-top:1px solid var(--border); padding-top:12px; }
+  details.execution summary { cursor:pointer; color:var(--cyan); font-size:.8125rem; }
+  .contract { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px 16px;
+    margin-top:10px; font-size:.75rem; }
+  .contract .wide { grid-column:1/-1; overflow-wrap:anywhere; }
+  .chip { font-size:.75rem; color:var(--muted); background:var(--surface-alt);
+    border-radius:8px; padding:3px 10px; }
+  .chip b { color:var(--text); }
+  .consensus { margin-left:auto; color:var(--muted); font-size:.75rem; }
+  .metrics { display:grid; grid-template-columns:repeat(auto-fit,minmax(125px,1fr));
+    gap:1px; margin:16px 0; background:var(--border); border-radius:8px; overflow:hidden; }
+  .metric { background:var(--surface-alt); padding:12px; }
+  .metric strong { font-size:1.05rem; }
+  .target { font-size:.75rem; border:1px solid var(--border); border-radius:8px; padding:4px 10px; }
+  .target.ok { color:var(--success); border-color:#10B98155; }
+  .target.fail { color:var(--danger); border-color:#EF444455; }
+  .equity { margin:16px 0 8px; background:var(--bg); border-radius:8px; padding:8px; }
+  .equity svg { display:block; width:100%; height:auto; }
+  .table-wrap { overflow-x:auto; margin-top:16px; }
+  table { width:100%; border-collapse:collapse; font-size:.8125rem; }
+  th, td { padding:9px 10px; border-bottom:1px solid var(--border); text-align:left; }
+  th { color:var(--muted); font-size:.7rem; letter-spacing:.04em; text-transform:uppercase; }
+  td:nth-last-child(-n+3), th:nth-last-child(-n+3) { text-align:right; }
+  footer { margin-top:40px; color:var(--muted); font-size:.8125rem;
+    border-top:1px solid var(--border); padding-top:20px; }
+  @media (max-width:620px) {
+    .wrap { padding:28px 16px 40px; }
+    h1 { font-size:1.75rem; }
+    .cards { grid-template-columns:1fr; }
+    .grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .card-h, .section-h { flex-direction:column; }
+    .consensus { margin-left:0; width:100%; }
+  }
+  @media print {
+    :root { --bg:#FFFFFF; --surface:#FFFFFF; --surface-alt:#F3F4F6; --border:#CBD5E1;
+      --text:#111827; --muted:#475569; }
+    .wrap { max-width:none; padding:16px; }
+  }
+</style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="top">
+      <div class="eyebrow">Sports Quant Trading, Liga MX + NFL</div>
+      <h1>Próximos partidos</h1>
+      <div class="meta">Corte automático <b class="num">2026-11-24</b> · sólo lectura</div>
+      <div class="summary"><b>5</b> partidos en la próxima fecha disponible. Elo, Bayes, TrueSkill, Poisson y Dixon-Coles se muestran por separado; sin costes públicos completos no se muestra SIMULATED_BUY.</div>
+    </header>
+
+            <section aria-labelledby="liga_mx_2026-title">
+              <header class="section-h">
+                <div>
+                  <h2 id="liga_mx_2026-title">Liga MX Apertura 2026</h2>
+                  <div class="source">Próxima fecha <b class="num">2026-11-26</b> ·
+                    estrategia match_winner_ligamx_v1 · cuotas
+                    polymarket-live</div>
+                </div>
+                <span class="badge" style="color:var(--cyan);border-color:#22D3EE55">
+                  2 partidos</span>
+              </header>
+              <div class="cards">
+      <article class="card" aria-label="Predicción Toluca contra Atlas">
+        <header class="card-h">
+          <div class="match">Toluca <span class="vs">vs</span> Atlas</div>
+          <span class="badge" style="color:#EF4444;border-color:#EF444455">Descartar</span>
+        </header>
+        <div class="kick">Kickoff 01:00 UTC, fase Fase regular,
+          confianza Alta</div>
+        <div class="grid">
+          <div class="cell"><span class="k">Pick</span><span class="val">Toluca</span></div>
+          <div class="cell"><span class="k">Modelo</span><span class="num">64.9%</span></div>
+          <div class="cell"><span class="k">Mercado</span><span class="num">67.0%</span></div>
+          <div class="cell"><span class="k">Edge</span><span class="num" style="color:var(--muted)">-2.1%</span></div>
+          <div class="cell"><span class="k">Acción</span><span class="num">NO_TRADE</span>
+            <span class="num muted">sin apuesta</span></div>
+        </div>
+        <div class="models"><span class="chip">elo <b class="num">64.9%</b></span><span class="chip">bayes <b class="num">61.3%</b></span><span class="chip">trueskill <b class="num">52.3%</b></span><span class="chip">poisson <b class="num">70.1%</b></span><span class="chip">dixon_coles <b class="num">65.3%</b></span><span class="chip">empate Poisson <b class="num">17.6%</b></span><span class="consensus">dispersión media · rango <b class="num">17.8%</b></span></div>
+        <div class="reason">Motivo: DISCARD: edge -0.021109 &lt; discard 0.0; volumen 14.599317 &lt; min 500</div><div class="reason">Complete set H/D/A: asks 0.67 + 0.19 + 0.16; all-in <span class="num">1.07094</span>/share; NO_EDGE. Sólo observación.</div>
+        <details class="execution">
+          <summary>Contrato y ejecución pública</summary>
+          <div class="contract"><div class="cell wide"><span class="k">Condition</span><span class="num">0x9372cc12cd056bc3affc94ecd73d33a60155a55dd62dd71ffdba6abe435e1177</span></div><div class="cell wide"><span class="k">Token</span><span class="num">100769902784327954517191288176795587720898852751519865784997882853405474261660</span></div><div class="cell wide"><span class="k">Pregunta</span><span class="num">Will Deportivo Toluca FC win on 2026-11-25?</span></div><div class="cell"><span class="k">Outcome</span><span class="num">YES</span></div><div class="cell"><span class="k">Best ask</span><span class="num">0.67</span></div><div class="cell"><span class="k">Ask size</span><span class="num">730.0</span></div><div class="cell wide"><span class="k">Top asks</span><span class="num">0.6700 × 730.00 shares, 0.6800 × 820.64 shares, 0.6900 × 841.00 shares</span></div><div class="cell"><span class="k">Volumen USDC</span><span class="num">14.599317</span></div><div class="cell"><span class="k">Liquidez USDC</span><span class="num">20636.0303</span></div><div class="cell"><span class="k">Tick</span><span class="num">0.01</span></div><div class="cell"><span class="k">Orden mínima</span><span class="num">5.0</span></div><div class="cell"><span class="k">Base fee bps</span><span class="num">1000</span></div><div class="cell"><span class="k">Slippage</span><span class="num">n/d</span></div><div class="cell"><span class="k">Precio promedio</span><span class="num">n/d</span></div><div class="cell"><span class="k">Fee USDC</span><span class="num">n/d</span></div><div class="cell"><span class="k">Edge neto</span><span class="num">n/d</span></div><div class="cell"><span class="k">Muestra</span><span class="num">13</span></div><div class="cell"><span class="k">Modelo</span><span class="num">football-elo-bayes-trueskill-v1</span></div>
+            <div class="cell wide"><span class="k">Reglas</span><span>In the upcoming Liga MX game between Deportivo Toluca FC and Atlas FC, originally scheduled for Wednesday, November 25, 2026 at 8:00 PM ET (as of creation of the first market related to the event):
+If Deportivo Toluca FC wins, this market will resolve to &quot;Yes&quot;.
+Otherwise, this market will resolve to &quot;No&quot;.
+If this market&#x27;s outcome was definitively determined under its rules by the listed resolution sources before abandonment, that outcome will stand. Otherwise, the following no-result provisions apply. If the game is canceled, does not start by Friday, November 27, 2026, 11:59 PM ET, or is abandoned with no official result by that time, this market will resolve to &quot;No&quot;.
+The following abandonment rules apply only when this market&#x27;s outcome was not already definitively determined under its rules before abandonment. If the game is abandoned, this market will resolve according to the official ruling of the governing body or event organizers on the abandoned game. If a result is awarded by Friday, November 27, 2026, 11:59 PM ET that determines this market&#x27;s outcome, this market will resolve based on the awarded result, regardless of the score as played. If no such result is awarded and the result as played at the time of abandonment is declared to stand by Friday, November 27, 2026, 11:59 PM ET, this market will resolve based on the game as played. If the game is replayed or resumed from the point of abandonment and has an official result by Friday, November 27, 2026, 11:59 PM ET, this market will resolve based on the completed result. In any other case, this market will resolve to &quot;No&quot;.
+This market refers only to the outcome within the first 90 minutes of regular play plus stoppage time.
+
+Recognizable abbreviations, alternate or erroneous spellings, sponsor names, regional identifiers, and minor formatting differences in a team&#x27;s or player&#x27;s name will not affect resolution, provided the intended team or player can be clearly and uniquely identified as a participant in the listed fixture or competition. If a listed name has no reasonable connection to any participant, or could reasonably refer to more than one participant such that the intended team or player cannot be determined, this market will resolve as it would if the listed fixture had been canceled entirely; a listed participant who cannot be identified does not count as inactive or absent. The primary resolution source for this market will be official match information from Liga MX (https://ligamx.net/cancha/partidos). If the governing body or event organizers have not published final statistics within 2 hours of the event&#x27;s conclusion, data from Flashscore may be used; if Flashscore data is unavailable, data from Sofascore may be used; if neither is available, a consensus of credible reporting may be used. Revisions to officially declared final scores made after market resolution will not be accounted for in determining the outcome. If no acceptable data is available within 24 hours of the event&#x27;s conclusion, this market will resolve to &quot;No&quot;.</span></div>
+            <div class="cell wide"><span class="k">Decisión de ejecución</span>
+              <span>sizing omitido</span></div>
+          </div>
+        </details>
+      </article>
+      <article class="card" aria-label="Predicción Monterrey contra América">
+        <header class="card-h">
+          <div class="match">Monterrey <span class="vs">vs</span> América</div>
+          <span class="badge" style="color:#EF4444;border-color:#EF444455">Descartar</span>
+        </header>
+        <div class="kick">Kickoff 03:10 UTC, fase Fase regular,
+          confianza Alta</div>
+        <div class="grid">
+          <div class="cell"><span class="k">Pick</span><span class="val">América</span></div>
+          <div class="cell"><span class="k">Modelo</span><span class="num">40.3%</span></div>
+          <div class="cell"><span class="k">Mercado</span><span class="num">31.0%</span></div>
+          <div class="cell"><span class="k">Edge</span><span class="num" style="color:var(--cyan)">+9.3%</span></div>
+          <div class="cell"><span class="k">Acción</span><span class="num">NO_TRADE</span>
+            <span class="num muted">sin apuesta</span></div>
+        </div>
+        <div class="models"><span class="chip">elo <b class="num">40.3%</b></span><span class="chip">bayes <b class="num">75.3%</b></span><span class="chip">trueskill <b class="num">65.9%</b></span><span class="chip">poisson <b class="num">40.1%</b></span><span class="chip">dixon_coles <b class="num">40.4%</b></span><span class="chip">empate Poisson <b class="num">23.7%</b></span><span class="consensus">modelos en desacuerdo · rango <b class="num">35.2%</b></span></div>
+        <div class="reason">Motivo: DISCARD: volumen 0 &lt; min 500</div><div class="reason">Complete set H/D/A: asks 0.42 + 0.29 + 0.31; all-in <span class="num">1.08634</span>/share; NO_EDGE. Sólo observación.</div>
+        <details class="execution">
+          <summary>Contrato y ejecución pública</summary>
+          <div class="contract"><div class="cell wide"><span class="k">Condition</span><span class="num">0x24b3e97cc227b08d6b2eb87c6d9cf628379020886f41bb83dab7e65b1916e878</span></div><div class="cell wide"><span class="k">Token</span><span class="num">74595598788887310380840415543495011370818292228358567109475822746809526087302</span></div><div class="cell wide"><span class="k">Pregunta</span><span class="num">Will CF América win on 2026-11-25?</span></div><div class="cell"><span class="k">Outcome</span><span class="num">YES</span></div><div class="cell"><span class="k">Best ask</span><span class="num">0.31</span></div><div class="cell"><span class="k">Ask size</span><span class="num">556.0</span></div><div class="cell wide"><span class="k">Top asks</span><span class="num">0.3100 × 556.00 shares, 0.3200 × 1375.38 shares, 0.3300 × 5779.43 shares</span></div><div class="cell"><span class="k">Volumen USDC</span><span class="num">0.0</span></div><div class="cell"><span class="k">Liquidez USDC</span><span class="num">15402.8013</span></div><div class="cell"><span class="k">Tick</span><span class="num">0.01</span></div><div class="cell"><span class="k">Orden mínima</span><span class="num">5.0</span></div><div class="cell"><span class="k">Base fee bps</span><span class="num">1000</span></div><div class="cell"><span class="k">Slippage</span><span class="num">n/d</span></div><div class="cell"><span class="k">Precio promedio</span><span class="num">n/d</span></div><div class="cell"><span class="k">Fee USDC</span><span class="num">n/d</span></div><div class="cell"><span class="k">Edge neto</span><span class="num">n/d</span></div><div class="cell"><span class="k">Muestra</span><span class="num">13</span></div><div class="cell"><span class="k">Modelo</span><span class="num">football-elo-bayes-trueskill-v1</span></div>
+            <div class="cell wide"><span class="k">Reglas</span><span>In the upcoming Liga MX game between CF Monterrey and CF América, originally scheduled for Wednesday, November 25, 2026 at 10:10 PM ET (as of creation of the first market related to the event):
+If CF América wins, this market will resolve to &quot;Yes&quot;.
+Otherwise, this market will resolve to &quot;No&quot;.
+If this market&#x27;s outcome was definitively determined under its rules by the listed resolution sources before abandonment, that outcome will stand. Otherwise, the following no-result provisions apply. If the game is canceled, does not start by Friday, November 27, 2026, 11:59 PM ET, or is abandoned with no official result by that time, this market will resolve to &quot;No&quot;.
+The following abandonment rules apply only when this market&#x27;s outcome was not already definitively determined under its rules before abandonment. If the game is abandoned, this market will resolve according to the official ruling of the governing body or event organizers on the abandoned game. If a result is awarded by Friday, November 27, 2026, 11:59 PM ET that determines this market&#x27;s outcome, this market will resolve based on the awarded result, regardless of the score as played. If no such result is awarded and the result as played at the time of abandonment is declared to stand by Friday, November 27, 2026, 11:59 PM ET, this market will resolve based on the game as played. If the game is replayed or resumed from the point of abandonment and has an official result by Friday, November 27, 2026, 11:59 PM ET, this market will resolve based on the completed result. In any other case, this market will resolve to &quot;No&quot;.
+This market refers only to the outcome within the first 90 minutes of regular play plus stoppage time.
+
+Recognizable abbreviations, alternate or erroneous spellings, sponsor names, regional identifiers, and minor formatting differences in a team&#x27;s or player&#x27;s name will not affect resolution, provided the intended team or player can be clearly and uniquely identified as a participant in the listed fixture or competition. If a listed name has no reasonable connection to any participant, or could reasonably refer to more than one participant such that the intended team or player cannot be determined, this market will resolve as it would if the listed fixture had been canceled entirely; a listed participant who cannot be identified does not count as inactive or absent. The primary resolution source for this market will be official match information from Liga MX (https://ligamx.net/cancha/partidos). If the governing body or event organizers have not published final statistics within 2 hours of the event&#x27;s conclusion, data from Flashscore may be used; if Flashscore data is unavailable, data from Sofascore may be used; if neither is available, a consensus of credible reporting may be used. Revisions to officially declared final scores made after market resolution will not be accounted for in determining the outcome. If no acceptable data is available within 24 hours of the event&#x27;s conclusion, this market will resolve to &quot;No&quot;.</span></div>
+            <div class="cell wide"><span class="k">Decisión de ejecución</span>
+              <span>sizing omitido</span></div>
+          </div>
+        </details>
+      </article></div>
+            </section>
+            <section aria-labelledby="nfl_2026-title">
+              <header class="section-h">
+                <div>
+                  <h2 id="nfl_2026-title">NFL 2026 Season</h2>
+                  <div class="source">Próxima fecha <b class="num">2026-11-26</b> ·
+                    estrategia game_winner_v1 · cuotas
+                    polymarket-live</div>
+                </div>
+                <span class="badge" style="color:var(--cyan);border-color:#22D3EE55">
+                  3 partidos</span>
+              </header>
+              <div class="cards">
+      <article class="card" aria-label="Predicción Rams contra Packers">
+        <header class="card-h">
+          <div class="match">Rams <span class="vs">vs</span> Packers</div>
+          <span class="badge" style="color:#94A3B8;border-color:#94A3B855">Saltar</span>
+        </header>
+        <div class="kick">Kickoff 01:00 UTC, fase regular_season,
+          confianza Alta</div>
+        <div class="grid">
+          <div class="cell"><span class="k">Pick</span><span class="val">Rams</span></div>
+          <div class="cell"><span class="k">Modelo</span><span class="num">53.8%</span></div>
+          <div class="cell"><span class="k">Mercado</span><span class="num">n/d</span></div>
+          <div class="cell"><span class="k">Edge</span><span class="num muted">n/d</span></div>
+          <div class="cell"><span class="k">Acción</span><span class="num">NO_TRADE</span>
+            <span class="num muted">sin apuesta</span></div>
+        </div>
+        <div class="models"><span class="chip">trueskill <b class="num">53.8%</b></span></div>
+        <div class="reason">Motivo: sin cuota de mercado</div>
+      </article>
+      <article class="card" aria-label="Predicción Lions contra Bears">
+        <header class="card-h">
+          <div class="match">Lions <span class="vs">vs</span> Bears</div>
+          <span class="badge" style="color:#94A3B8;border-color:#94A3B855">Saltar</span>
+        </header>
+        <div class="kick">Kickoff 18:00 UTC, fase regular_season,
+          confianza Alta</div>
+        <div class="grid">
+          <div class="cell"><span class="k">Pick</span><span class="val">Lions</span></div>
+          <div class="cell"><span class="k">Modelo</span><span class="num">71.6%</span></div>
+          <div class="cell"><span class="k">Mercado</span><span class="num">n/d</span></div>
+          <div class="cell"><span class="k">Edge</span><span class="num muted">n/d</span></div>
+          <div class="cell"><span class="k">Acción</span><span class="num">NO_TRADE</span>
+            <span class="num muted">sin apuesta</span></div>
+        </div>
+        <div class="models"><span class="chip">trueskill <b class="num">71.6%</b></span></div>
+        <div class="reason">Motivo: sin cuota de mercado</div>
+      </article>
+      <article class="card" aria-label="Predicción Cowboys contra Eagles">
+        <header class="card-h">
+          <div class="match">Cowboys <span class="vs">vs</span> Eagles</div>
+          <span class="badge" style="color:#94A3B8;border-color:#94A3B855">Saltar</span>
+        </header>
+        <div class="kick">Kickoff 21:30 UTC, fase regular_season,
+          confianza Alta</div>
+        <div class="grid">
+          <div class="cell"><span class="k">Pick</span><span class="val">Eagles</span></div>
+          <div class="cell"><span class="k">Modelo</span><span class="num">63.7%</span></div>
+          <div class="cell"><span class="k">Mercado</span><span class="num">n/d</span></div>
+          <div class="cell"><span class="k">Edge</span><span class="num muted">n/d</span></div>
+          <div class="cell"><span class="k">Acción</span><span class="num">NO_TRADE</span>
+            <span class="num muted">sin apuesta</span></div>
+        </div>
+        <div class="models"><span class="chip">trueskill <b class="num">63.7%</b></span></div>
+        <div class="reason">Motivo: sin cuota de mercado</div>
+      </article></div>
+            </section>
+    <footer>Datos locales SQLite y cotizaciones públicas de Polymarket. Panel informativo: toda compra indicada es simulada; no se enviaron órdenes.</footer>
+  </main>
+</body>
+</html>
